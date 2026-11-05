@@ -445,6 +445,46 @@ async function decodeAudio(file) {
   if (ab.numberOfChannels > 1) for (let i = 0; i < out.length; i++) out[i] /= ab.numberOfChannels;
   return out;
 }
+/* Reads a recording a piece at a time, so a two-hour class needs no more memory than a short one. */
+const READER_URL = "https://cdn.jsdelivr.net/npm/mediabunny@1.61.6/dist/bundles/mediabunny.min.mjs";
+async function readPiece(sink, from, to) {
+  const parts = []; let rate = SR, total = 0;
+  for await (const s of sink.samples(from, to)) {
+    try {
+      rate = s.sampleRate;
+      const skip = Math.max(0, Math.round((from - s.timestamp) * rate));
+      const keep = Math.min(s.numberOfFrames, Math.round((to - s.timestamp) * rate)) - skip;
+      if (keep <= 0) continue;
+      const mono = new Float32Array(keep), plane = new Float32Array(s.numberOfFrames), chs = s.numberOfChannels;
+      for (let c = 0; c < chs; c++) {
+        s.copyTo(plane, { planeIndex: c, format: "f32-planar" });
+        for (let i = 0; i < keep; i++) mono[i] += plane[i + skip] / chs;
+      }
+      parts.push(mono); total += keep;
+    } finally { s.close(); }
+  }
+  const all = new Float32Array(total); let at = 0;
+  for (const p of parts) { all.set(p, at); at += p.length; }
+  if (!total || rate === SR) return all;
+  const ctx = new OfflineAudioContext(1, Math.ceil((total * SR) / rate), SR);
+  const buf = ctx.createBuffer(1, total, rate); buf.copyToChannel(all, 0);
+  const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start();
+  return (await ctx.startRendering()).getChannelData(0);
+}
+async function openRecording(file) {
+  try {
+    const { Input, BlobSource, ALL_FORMATS, AudioSampleSink } = await import(READER_URL);
+    const track = await new Input({ source: new BlobSource(file), formats: ALL_FORMATS }).getPrimaryAudioTrack();
+    if (!track || !(await track.canDecode())) throw new Error("no decoder");
+    const sink = new AudioSampleSink(track), duration = await track.computeDuration();
+    if (!(await readPiece(sink, 0, 1)).length) throw new Error("no audio");
+    return { duration, read: (from, to) => readPiece(sink, from, to) };
+  } catch {
+    /* Older browsers can't read piece by piece, so open the whole file at once. */
+    const pcm = await decodeAudio(file);
+    return { duration: pcm.length / SR, read: async (from, to) => pcm.slice(Math.round(from * SR), Math.round(to * SR)) };
+  }
+}
 function rms(a, from = 0, to = a.length) { let s = 0; for (let i = from; i < to; i++) s += a[i] * a[i]; return Math.sqrt(s / Math.max(1, to - from)); }
 function nextCut(pcm, pos) {
   if (pcm.length - pos <= 30 * SR) return pcm.length;
@@ -474,19 +514,21 @@ async function runJob(note, file) {
   keepAwake();
   let worker = null;
   try {
-    let pcm;
-    try { pcm = await decodeAudio(file); }
+    let rec;
+    try { rec = await openRecording(file); }
     catch { throw new Error("This device couldn't open that file. M4A, MP3, WAV, AAC, OGG and FLAC usually work. A very long recording can also run a phone out of memory. If so, open this same link on a laptop and transcribe it there."); }
-    note.audio.duration = pcm.length / SR;
+    note.audio.duration = rec.duration;
     j.stage = "model"; paintJob();
     const loadModel = () => makeWorker((f, n) => { j.dl[f] = n; paintJob(); }, multi);
     worker = await loadModel();
     j.stage = "run"; j.t0 = performance.now();
-    let pos = Math.round((note.doneSec || 0) * SR), retries = 0;
+    let pos = Math.round((note.doneSec || 0) * SR), retries = 0, finished = false;
     paintJob();
-    while (pos < pcm.length && !j.stop) {
+    while (!j.stop) {
+      const piece = await rec.read(pos / SR, pos / SR + 30.5);
+      if (piece.length < SR / 10) { finished = true; break; }
       /* After a failure, try a shorter piece on a fresh copy of the model, which frees all of its memory. */
-      const end = retries ? Math.min(pos + 15 * SR, pcm.length) : nextCut(pcm, pos), seg = pcm.slice(pos, end), offset = pos / SR, len = (end - pos) / SR;
+      const end = retries ? Math.min(15 * SR, piece.length) : nextCut(piece, 0), seg = piece.slice(0, end), offset = pos / SR, len = end / SR;
       if (rms(seg) > 0.0015) {
         normalize(seg);
         let chunks;
@@ -503,7 +545,7 @@ async function runJob(note, file) {
         }
         const fresh = [];
         for (const c of chunks) {
-          const t = applyDict((c.text || "").trim());
+          const t = applyDict((c.text || "").replace(/�/g, "").trim());
           if (isNoiseLine(t)) continue;
           const ts = c.timestamp || [];
           fresh.push({ s: offset + (ts[0] || 0), e: offset + (ts[1] == null ? len : ts[1]), t });
@@ -511,13 +553,13 @@ async function runJob(note, file) {
         note.segments.push(...fresh);
         appendLines(note, fresh.length);
       }
-      pos = end;
+      pos += end;
       note.doneSec = pos / SR;
       j.rate = (note.doneSec - j.fromSec) / ((performance.now() - j.t0) / 1000);
       scheduleSave(note, 1500);
       paintJob();
     }
-    note.status = pos >= pcm.length ? "ready" : "paused";
+    note.status = finished ? "ready" : "paused";
     if (note.status === "ready") toast("The transcript is finished.");
   } catch (e) {
     note.status = "paused";
@@ -1298,8 +1340,14 @@ function jobContent(n) {
   const recent = Date.now() - (n.updatedAt || 0) < 180000 && n.status === "transcribing" && !jobErr[n.id];
   return h("div", { class: "job" },
     jobErr[n.id] && h("p", { class: "err" }, jobErr[n.id]),
-    h("span", { class: "it" }, recent ? "This may still be transcribing on another device." : "Paused at " + fmt(n.doneSec || 0) + ". Choose " + ((n.audio && n.audio.name) || "the same file") + " again to continue."),
-    input, h("button", { class: "link", id: "resumeBtn", onclick: () => input.click() }, "Choose the file and continue"));
+    h("span", { class: "it" }, recent ? "This may still be transcribing on another device." : "Paused at " + fmt(n.doneSec || 0) + "."),
+    input, h("button", { class: "link", id: "resumeBtn", onclick: async () => {
+      /* The recording is saved on this device, so there's usually no need to find it again. */
+      const saved = await idbGet(n.id);
+      if (!saved) { toast("Choose " + ((n.audio && n.audio.name) || "the same file") + " again."); input.click(); return; }
+      if (!P.ready) { setBlob(n, saved); paintPlayer(); }
+      runJob(n, new File([saved], (n.audio && n.audio.name) || "recording"));
+    } }, "Continue"));
 }
 function paintJob() { const p = $("#jobPanel"), n = cur(); if (p && n && job && job.noteId === n.id) p.replaceChildren(jobContent(n) || ""); }
 

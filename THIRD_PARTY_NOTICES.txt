@@ -42,6 +42,12 @@ WHAT IS USED AND WHERE
    Source: https://fonts.google.com/specimen/Tinos
    Loaded from Google Fonts. Not stored in this repository.
 
+7. Mediabunny 1.61.6
+   Source: https://github.com/Vanilagy/mediabunny
+   License: Mozilla Public License 2.0. The full text is in
+   licenses/mediabunny-1.61.6-LICENSE.txt
+   Loaded unmodified from the jsDelivr CDN. Not stored in this repository.
+
 ========================================================================
 MIT LICENSE: OpenAI Whisper
 ========================================================================

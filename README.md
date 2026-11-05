@@ -23,6 +23,8 @@ Speech recognition uses [OpenAI Whisper](https://github.com/openai/whisper) (MIT
 
 The Breakdown uses [compromise](https://github.com/spencermountain/compromise) (MIT License) to find names and terms.
 
+Long recordings are read a piece at a time with [Mediabunny](https://github.com/Vanilagy/mediabunny) (Mozilla Public License 2.0).
+
 Full license texts are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 
 ## Copyright
