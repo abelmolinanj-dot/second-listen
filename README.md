@@ -9,3 +9,5 @@ Hear your classes again. Upload a recording and get a transcript you can replay 
 ## Credits
 
 Speech recognition uses [OpenAI Whisper](https://github.com/openai/whisper) (MIT License), through the [Xenova ONNX conversions](https://huggingface.co/Xenova/whisper-tiny) and [Transformers.js](https://github.com/huggingface/transformers.js) (Apache License 2.0).
+
+Full license texts are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
