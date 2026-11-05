@@ -90,6 +90,7 @@ input[type=checkbox] { accent-color: var(--rouge); width: 18px; height: 18px; fl
 .prose { line-height: 1.62; overflow-wrap: anywhere; text-align: left; min-width: 0 }
 .sg { cursor: pointer; border-radius: 2px; transition: background-color .3s, color .3s; -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: 1px 0 }
 .sg:hover { background: var(--now) }
+@media (pointer: coarse) { .sg { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none } }
 .sg.hl { background: var(--mark); color: var(--mark-ink) }
 .sg.now { background: var(--now); box-shadow: 0 1px 0 var(--rouge) }
 .sg.hl.now { background: var(--mark); box-shadow: 0 2px 0 var(--rouge) }
@@ -107,6 +108,8 @@ ul.plain li::marker { color: var(--rouge); content: "\2014  " }
 .quote small { font-size: .92rem; font-style: normal }
 .term { padding-block: 9px; border-bottom: 1px solid var(--hair) }
 .term b { font-weight: 400; font-style: italic; font-size: 1.14rem; color: var(--rouge); display: block }
+.term .n { color: var(--ink); font-size: .88rem }
+.dg-nav { gap: 0 16px; font-size: .95rem }
 .ts { display: inline; font-style: italic; color: var(--rouge); font-size: .86em; font-variant-numeric: tabular-nums; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; padding: 6px 2px; white-space: nowrap }
 /* Cards turn over */
 .flip { perspective: 1400px; cursor: pointer; width: 100% }
@@ -697,6 +700,257 @@ function reelOf(note) {
   return out;
 }
 
+/* ---------- The breakdown: people, terms, dates and main ideas, worked out on this device with no AI ---------- */
+const NLP_URL = "https://cdn.jsdelivr.net/npm/compromise@14.19.0/builds/three/compromise-three.mjs";
+let nlpLoad = null;
+const loadNlp = () => nlpLoad || (nlpLoad = import(NLP_URL).then((m) => m.default).catch(() => null));
+const NAME_TITLES = "Dr|Doctor|Professor|Prof|President|Mr|Mrs|Ms|Miss|Sir|Lady|Lord|King|Queen|Prince|Princess|Pope|Justice|Judge|Senator|Governor|Emperor|Chancellor|Saint";
+const TITLED = new RegExp("\\b(?:" + NAME_TITLES + ")\\.?\\s+((?:\\p{Lu}[\\p{L}'’-]+)(?:\\s+\\p{Lu}[\\p{L}'’-]+){0,2})", "gu");
+const TITLE_START = new RegExp("^(?:" + NAME_TITLES + ")\\.?\\s+", "i");
+const NOT_ACRONYM = new Set(["OK", "AM", "PM", "TV", "ID", "AI", "FYI", "ASAP", "USA", "US", "UK"]);
+const PLACE_NAMES = new Set(["virginia", "georgia", "carolina", "florence", "paris", "charlotte", "austin", "dakota", "carolinas"]);
+const LEAD_WORD = /^(?:The|A|An|In|On|At|By|For|From|To|With|This|That|These|Those|Under|Today|So|And|But|Then|Now|When|If|Okay|Next|Last|Remember|After|Before|During|We|You|They)\s+/;
+const PROPER_PHRASE = /\p{Lu}[\p{L}'’-]+(?:\s+(?:of the|of|and the|the)\s+\p{Lu}[\p{L}'’-]+|\s+\p{Lu}[\p{L}'’-]+)+/gu;
+const OF_PHRASE = /\b(\p{L}{4,})\s+of\s+(?:the\s+)?(\p{L}{4,})\b/gu;
+const GROUP_STOP = new Set("the a an and or but if so then than of to in on at by for from with as is are was were be been being it its it's this that these those there here he she they them we you i me my your our their his her not no do does did doing done have has had can could will would shall should may might must just only also very really about into out up down over under again more most some any all each both few such own same too when where why how what which who whom because while during before after through between go goes going get gets got make makes made take takes took say says said know knows knew think see come comes want need like one two three don't doesn't didn't isn't aren't let's i'm we're you're they're".split(" "));
+const COMMON = new Set(("its our their his her my your this that these those company companies plan plans power thing things stuff way ways lot lots kind kinds sort sorts type types part parts bit piece pieces people person guy guys man men woman women kid kids student students teacher professor class classes course lecture lectures exam exams test tests quiz quizzes midterm final homework assignment chapter page pages book books slide slides question questions answer answers example examples point points idea ideas fact facts reason reasons problem problems case cases place places time times day days week weeks month months year years today tomorrow yesterday minute minutes hour hours second seconds moment end start beginning middle number numbers amount side top bottom front back level levels group groups area areas world country state city life work job name names word words story stories picture pictures sense mistake mistakes difference change changes result results form forms use uses order line lines list lists term terms note notes look looks right left good bad big small great little new old next last first main key whole same different other important many much few several certain real sure high low long short large major mean means make makes something anything everything nothing someone everyone anyone yes okay hand hands head eye eyes room school money home house family friend friends water air food").split(" "));
+const DEF_SUBJECT = /^(?:(?:so|and|now|okay|ok|well|but|remember|remember that|basically|first|second|third|next|then)[, ]+)*(?:(?:a|an|the)\s+)?(\p{L}[\p{L}\p{N}'’-]*(?:\s+\p{L}[\p{L}\p{N}'’-]*){0,3}?)\s+(is|are|was|were|refers? to|means?|stands? for)\s+(.+)$/iu;
+const DEF_PREDICATE = /^(?:defined as|basically |essentially |simply |just |really |known as |called )*(?:a|an|the|how|when|what|where|any|one of|anything|something|everything)\b/i;
+const DEF_NAMED = /\b(?:called|known as|termed|referred to as|we call(?: this| that| it)?|the term)\s+(?:(?:a|an|the)\s+)?["“]?(\p{L}[\p{L}\p{N}'’-]*(?:\s+\p{L}[\p{L}\p{N}'’-]*){0,2}?)["”]?(?=[,.;:?!]|\s+(?:which|and|because|that|where|when|in|or|is|are|so|but)\b|\s*$)/iu;
+const NOT_SUBJECT = /^(?:this|that|these|those|it|he|she|they|we|you|i|there|here|what|which|who|one|all|some|each|why|how|today|answer|point|idea|question|problem|reason|thing|goal|key|difference|result|main|first|next|last)\b/i;
+const NUMBER_FACT = /(?:\$\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:thousand|million|billion|trillion))?|\b\d[\d,]*(?:\.\d+)?\s?(?:%|percent\b)|\b\d[\d,.]*\s(?:thousand|million|billion|trillion)\b|\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?|\b(?:in|by|from|since|until|around|about|of|after|before|during|year)\s+(?:1[0-9]{3}|20[0-9]{2})s?\b|\b(?:1[0-9]{3}|20[0-9]{2})s\b)/gi;
+const FILLER_START = /^(?:so|and|but|okay|ok|well|um|uh|like|right|yeah|alright|now|it|this|that|these|those|they|he|she|we|you|i)\b/i;
+const singular = (w) => (w.length > 3 && /s$/i.test(w) && !/(ss|us|is)$/i.test(w) ? w.replace(/ies$/i, "y").replace(/s$/i, "") : w);
+const clip = (t, max = 190) => (t.length <= max ? t : t.slice(0, t.lastIndexOf(" ", max)) + "…");
+const tidyName = (s) => s.replace(/[’']s$/i, "").replace(/^[^\p{L}]+|[^\p{L}\p{N}]+$/gu, "").trim();
+
+function sentencesOf(note) {
+  const out = [];
+  for (const seg of note.segments) {
+    const parts = String(seg.t || "").split(/(?<=[.!?。！？])\s+/);
+    let hold = "";
+    for (const p of parts) {
+      const t = hold + p;
+      if (/\b(?:Dr|Mr|Mrs|Ms|Prof|St|vs|e\.g|i\.e)\.$/i.test(t)) { hold = t + " "; continue; }
+      hold = "";
+      if (t.trim().length > 1) out.push({ t: t.trim(), at: seg.s });
+    }
+    if (hold.trim()) out.push({ t: hold.trim(), at: seg.s });
+  }
+  return out;
+}
+function tally(map, key, name, s) {
+  const e = map.get(key);
+  if (e) { e.count++; if (name.length > e.name.length) e.name = name; return e; }
+  const fresh = { name, count: 1, at: s.at, context: s.t };
+  map.set(key, fresh);
+  return fresh;
+}
+async function buildDigest(sents, nlp) {
+  const people = new Map(), places = new Map(), terms = new Map(), facts = new Map(), freq = new Map();
+  const lowerWords = new Set();
+  for (const s of sents) for (const w of s.t.match(/[\p{L}'’-]+/gu) || []) {
+    if (w === w.toLowerCase()) lowerWords.add(w);
+    if (w.length > 3 && !COMMON.has(w.toLowerCase())) { const k = singular(w.toLowerCase()); freq.set(k, (freq.get(k) || 0) + 1); }
+  }
+  let seen = new Set();
+  const once = (key) => { if (seen.has(key)) return false; seen.add(key); return true; };
+  const addPerson = (raw, s, titled) => {
+    const name = tidyName(raw); if (!name) return;
+    const bare = name.replace(TITLE_START, "");
+    if (!bare || new RegExp("^(?:" + NAME_TITLES + ")$", "i").test(bare)) return;
+    if (PLACE_NAMES.has(bare.toLowerCase())) { if (once("p:" + bare.toLowerCase())) tally(places, bare.toLowerCase(), bare, s); return; }
+    if (!once("n:" + bare.toLowerCase())) { const e = people.get(bare.toLowerCase()); if (e && name.length > e.name.length) e.name = name; return; }
+    const words = bare.split(/\s+/);
+    if (!words.every((w) => /^\p{Lu}/u.test(w) || /^(?:de|del|da|di|van|von|der|la|le|of|bin|ibn)$/.test(w))) return;
+    if (!titled && words.length === 1 && lowerWords.has(bare.toLowerCase())) return;
+    if (!titled && words.length === 1 && COMMON.has(bare.toLowerCase())) return;
+    tally(people, bare.toLowerCase(), name, s);
+  };
+  const addTerm = (raw, s, def, proper) => {
+    const name = tidyName(raw); if (name.length < 2) return;
+    const key = name.toLowerCase().split(/\s+/).map(singular).join(" ");
+    const e = terms.get(key);
+    if (e) {
+      if (proper) e.proper = true;
+      if (def && !e.def) { e.def = true; e.context = s.t; e.at = s.at; }
+      if (once("t:" + key)) { e.count++; e.surface[name] = (e.surface[name] || 0) + 1; }
+      return;
+    }
+    once("t:" + key);
+    terms.set(key, { key, name, count: 1, at: s.at, context: s.t, def: !!def, proper: !!proper, surface: { [name]: 1 } });
+  };
+  const lowFunction = new Set("some most many much more less each both all none rest most lots plenty because instead front outside inside think about have been were they them what with from".split(" "));
+  const groups = new Map();
+  let i = 0;
+  for (const s of sents) {
+    if (++i % 12 === 0) await new Promise((r) => setTimeout(r));
+    seen = new Set();
+    for (const m of s.t.matchAll(TITLED)) addPerson(m[0], s, true);
+    for (const m of s.t.matchAll(PROPER_PHRASE)) {
+      const phrase = m[0].replace(TITLE_START, "").replace(LEAD_WORD, "");
+      if (/\s/.test(phrase)) addTerm(phrase, s, false, true);
+    }
+    for (const m of s.t.matchAll(OF_PHRASE)) {
+      const a = m[1].toLowerCase(), b = singular(m[2].toLowerCase());
+      if (!COMMON.has(a) && !COMMON.has(singular(a)) && !lowFunction.has(a) && !lowFunction.has(b)) addTerm(m[0], s, false);
+    }
+    /* Word groups a lecture keeps repeating, like "Krebs cycle", count even when the grammar tagger splits them. */
+    for (const clause of s.t.split(/[,.;:!?()"“”]+/)) {
+      const w = clause.match(/[\p{L}\p{N}'’-]+/gu) || [];
+      for (let a = 0; a < w.length; a++) for (let len = 2; len <= 3 && a + len <= w.length; len++) {
+        const piece = w.slice(a, a + len);
+        if (piece.some((x) => GROUP_STOP.has(x.toLowerCase()) || COMMON.has(x.toLowerCase()) || COMMON.has(singular(x.toLowerCase())))) continue;
+        const key = piece.join(" ").toLowerCase();
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push({ text: piece.join(" "), s });
+      }
+    }
+    for (const m of s.t.matchAll(NUMBER_FACT)) {
+      const name = m[0].replace(/^(?:in|by|from|since|until|around|about|of|after|before|during|year)\s+/i, "").trim();
+      tally(facts, name.toLowerCase(), name, s);
+    }
+    if (nlp) {
+      const d = nlp(s.t);
+      const isName = {};
+      for (const raw of d.people().out("array")) { const n = tidyName(raw); isName[n.toLowerCase()] = 1; addPerson(raw, s, false); }
+      for (const raw of [...d.places().out("array"), ...d.organizations().out("array")]) {
+        const n = tidyName(raw);
+        if (n && /^\p{Lu}/u.test(n) && !COMMON.has(n.toLowerCase())) tally(places, n.toLowerCase(), n, s);
+      }
+      for (const sentence of d.json()) {
+        let run = [];
+        const flush = () => {
+          while (run.length && !run[run.length - 1].noun) run.pop();
+          while (run.length && !run[0].noun && !run[0].adj) run.shift();
+          for (let a = 0; a < run.length; a++) for (let b = a + 1; b <= Math.min(a + 3, run.length); b++) {
+            const piece = run.slice(a, b);
+            if (!piece[piece.length - 1].noun) continue;
+            if (piece.length === 1 && !piece[0].noun) continue;
+            if (piece.every((p) => COMMON.has(p.low) || COMMON.has(singular(p.low)))) continue;
+            if (COMMON.has(piece[0].low) && piece.length > 1 && piece[0].adj) continue;
+            addTerm(piece.map((p) => p.text).join(" "), s, false);
+          }
+          run = [];
+        };
+        for (const t of sentence.terms) {
+          const tags = t.tags || [], text = tidyName(t.text);
+          const blocked = tags.some((x) => ["Pronoun", "Person", "Place", "Organization", "Date", "Value", "Month", "WeekDay", "Determiner"].includes(x));
+          const noun = !blocked && (tags.includes("Noun") || /^(?:payable|receivable)$/i.test(text)), adj = !blocked && tags.includes("Adjective");
+          if ((noun || adj) && text.length > 1) { run.push({ text, low: text.toLowerCase(), noun, adj }); if (t.post && /[,.;:!?]/.test(t.post)) flush(); }
+          else flush();
+        }
+        flush();
+      }
+    }
+    const def = s.t.match(DEF_SUBJECT);
+    if (def && !NOT_SUBJECT.test(def[1]) && !def[1].toLowerCase().split(/\s+/).every((x) => COMMON.has(x) || COMMON.has(singular(x)))) {
+      let plainNoun = false;
+      if (nlp && /^(?:is|are)$/i.test(def[2])) { const first = (nlp(def[3]).json()[0] || { terms: [] }).terms[0]; const tags = (first && first.tags) || []; plainNoun = tags.includes("Noun") && !tags.some((x) => ["Pronoun", "Date", "Value", "Person", "Place"].includes(x)); }
+      if (/refer|mean|stand/i.test(def[2]) || DEF_PREDICATE.test(def[3]) || plainNoun) addTerm(def[1], s, true);
+    }
+    const named = s.t.match(DEF_NAMED);
+    if (named && !NOT_SUBJECT.test(named[1])) addTerm(named[1], s, true);
+    for (const m of s.t.match(/\b[A-Z][A-Z0-9]{1,6}\b/g) || []) if (!NOT_ACRONYM.has(m)) addTerm(m, s, false);
+  }
+  for (const [key, list] of groups) if (list.length >= (key.split(" ").length === 3 ? 2 : 3)) for (const g of list) { seen = new Set(); addTerm(g.text, g.s, false); }
+  /* Join "Hamilton" to "Alexander Hamilton". */
+  const peopleList = [...people.entries()].sort((a, b) => b[0].length - a[0].length);
+  for (const [key, e] of peopleList) {
+    if (key.includes(" ")) continue;
+    const full = peopleList.find(([k]) => k !== key && k.split(/\s+/).includes(key));
+    if (full) { full[1].count += e.count; if (e.at != null && (full[1].at == null || e.at < full[1].at)) { full[1].at = e.at; full[1].context = e.context; } people.delete(key); }
+  }
+  /* Keep the longest phrase when the shorter one rarely appears alone, and put each term under its usual spelling. */
+  const termKeys = [...terms.keys()].sort((a, b) => b.split(" ").length - a.split(" ").length);
+  for (const long of termKeys) {
+    const e = terms.get(long); if (!e || !long.includes(" ")) continue;
+    if (e.count < 2 && !e.def) continue;
+    const words = long.split(" ");
+    for (let a = 0; a < words.length; a++) for (let b = a + 1; b <= words.length; b++) {
+      if (b - a === words.length) continue;
+      const sub = words.slice(a, b).join(" "), se = terms.get(sub);
+      if (se && !se.def && se.count - e.count < 2) terms.delete(sub);
+    }
+  }
+  /* "Plan" alone adds nothing beside "Virginia Plan" and "New Jersey Plan". */
+  const counted = (t) => t.def || t.proper || t.count >= 2;
+  for (const [key, t] of [...terms.entries()]) {
+    if (key.includes(" ") || t.def) continue;
+    let cover = 0;
+    for (const [other, o] of terms) if (other !== key && counted(o) && other.split(" ").includes(key)) cover += o.count;
+    if (cover && t.count - cover < 2) terms.delete(key);
+  }
+  const nameBits = new Set();
+  for (const k of people.keys()) k.split(/\s+/).forEach((w) => nameBits.add(w));
+  for (const k of places.keys()) nameBits.add(k);
+  const asKey = (k) => k.split(/\s+/).map(singular).join(" ");
+  const namedKeys = new Set([...people.keys(), ...places.keys()].map(asKey));
+  const namedBits = new Set([...nameBits].map(singular));
+  const isNamed = (key) => { const w = key.split(" ").filter((x) => !/^(?:of|the|and|de|van|von)$/.test(x)); return namedKeys.has(key) || w.every((x) => namedBits.has(x)); };
+  const termList = [...terms.values()]
+    .filter((t) => counted(t) && !isNamed(t.key))
+    .map((t) => { const usual = Object.entries(t.surface).sort((a, b) => b[1] - a[1])[0][0]; return { ...t, name: usual[0].toUpperCase() + usual.slice(1), score: (t.def ? 50 : 0) + (t.proper ? 6 : 0) + t.count * (1 + 0.6 * (t.key.split(" ").length - 1)) }; })
+    .sort((a, b) => b.score - a.score);
+  /* A place or group that's only part of a named thing ("Federalist" in "Federalist Papers") stands down. */
+  for (const key of [...places.keys()]) if (!key.includes(" ") && places.get(key).count <= 1 && termList.some((t) => t.proper && t.key.split(" ").includes(singular(key)))) places.delete(key);
+  /* A person only named in a phrase like "Krebs cycle" isn't a person in this lecture. */
+  for (const [key, e] of [...people.entries()]) {
+    if (key.includes(" ")) continue;
+    if (termList.some((t) => t.key.split(" ").includes(key) && t.key !== key && t.count >= e.count)) people.delete(key);
+  }
+  for (const key of people.keys()) places.delete(key);
+  /* Main ideas: the sentences carrying the words this lecture keeps coming back to. */
+  const termWords = new Set(termList.slice(0, 15).flatMap((t) => t.key.split(" ")));
+  const scored = sents.map((s, idx) => {
+    const words = s.t.match(/[\p{L}\p{N}'’-]+/gu) || [];
+    if (words.length < 7 || words.length > 45 || s.t.endsWith("?")) return { idx, score: 0, s };
+    let score = 0;
+    for (const w of words) { const k = singular(w.toLowerCase()); if (w.length > 3 && !COMMON.has(k)) score += Math.min(freq.get(k) || 0, 6) * (termWords.has(k) ? 2 : 1); }
+    score /= Math.sqrt(words.length);
+    if (FILLER_START.test(s.t)) score *= 0.6;
+    if (SIGNAL.test(s.t)) score *= 1.3;
+    return { idx, score, s };
+  }).filter((x) => x.score > 0).sort((a, b) => b.score - a.score);
+  const ideas = [];
+  for (const x of scored) {
+    if (ideas.length >= Math.min(6, Math.ceil(sents.length / 6))) break;
+    if (ideas.some((y) => Math.abs(y.idx - x.idx) < 2)) continue;
+    ideas.push(x);
+  }
+  ideas.sort((a, b) => a.idx - b.idx);
+  const byCount = (m) => [...m.values()].sort((a, b) => b.count - a.count);
+  return {
+    english: !!nlp,
+    ideas: sents.length >= 6 ? ideas.map((x) => x.s) : [],
+    people: byCount(people),
+    terms: termList,
+    facts: [...facts.values()].sort((a, b) => (a.at || 0) - (b.at || 0)),
+    places: byCount(places)
+  };
+}
+const digests = new Map();
+function digestOf(n) {
+  let fp = n.segments.length;
+  for (const s of n.segments) { const t = String(s.t || ""); for (let i = 0; i < t.length; i++) fp = (fp * 31 + t.charCodeAt(i)) | 0; }
+  const c = digests.get(n.id);
+  if (c && c.fp === fp) return c.data;
+  if (c && c.busy) return c.data || null;
+  const next = { fp: c ? c.fp : null, data: c ? c.data : null, busy: true };
+  digests.set(n.id, next);
+  (async () => {
+    const foreign = n.lang && n.lang.code !== "en" && !n.lang.translate;
+    const nlp = foreign ? null : await loadNlp();
+    let data;
+    try { data = await buildDigest(sentencesOf(n), nlp); }
+    catch { data = await buildDigest(sentencesOf(n), null); }
+    data.foreign = !!foreign;
+    digests.set(n.id, { fp, data, busy: false });
+    if (state.view === "note" && state.noteId === n.id && state.tab === "breakdown" && !(document.activeElement && document.activeElement.matches("input,textarea"))) render();
+  })();
+  return next.data;
+}
+
 /* ---------- Audio player ---------- */
 const P = { a: new Audio(), noteId: null, ready: false, url: null, reel: null, reelI: 0, rate: parseFloat(lsGet("sl-rate", "1")) || 1, drag: false, lastNow: -1 };
 P.a.preload = "metadata";
@@ -853,7 +1107,7 @@ function makeFreeCards(n) {
     if (have.has(q)) continue;
     fresh.push({ q, a: answer, at: s.s != null ? fmt(s.s) : null, box: 0, due: 0 });
   }
-  if (!fresh.length) { toast(picked.length ? "Those cards already exist." : "Highlight a few lines in the transcript first."); return; }
+  if (!fresh.length) { toast(picked.length ? "Those cards already exist." : "Hold a few sentences in the transcript to highlight them first."); return; }
   n.kit = { ...(n.kit || {}), cards: [...arr(n.kit && n.kit.cards), ...fresh] };
   state.cardRun = null;
   scheduleSave(n);
@@ -1044,9 +1298,32 @@ function paintSeg(i) {
   el.classList.toggle("hl", !!s.h);
   el.classList.toggle("lost", !!s.lost);
 }
+/* One tap plays from that sentence. Holding it (or right-clicking) opens the menu. Notes with no audio open the menu on tap. */
+const HOLD_MS = 500;
+let holdT = null, held = false, holdAt = null;
+const cancelHold = () => { clearTimeout(holdT); holdT = null; };
+const openSegMenu = (i) => { if (state.sel !== i) selectSeg(i); };
+function tapSeg(i) {
+  const picked = window.getSelection && String(window.getSelection());
+  if (picked) return;
+  const n = cur(), seg = n && n.segments[i];
+  if (seg && seg.s != null && hasPlayer(n)) { closeSheet(); hear(seg.s); return; }
+  selectSeg(i);
+}
 function segSpan(seg, i) {
   return h("span", { class: "sg" + (seg.h ? " hl" : "") + (seg.lost ? " lost" : "") + (state.sel === i ? " sel" : ""), "data-i": i, role: "button", tabindex: "0",
-    onclick: () => selectSeg(i), onkeydown: (e) => { if (e.key === "Enter") selectSeg(i); } }, seg.t + " ");
+    onclick: () => { if (held) { held = false; return; } tapSeg(i); },
+    onkeydown: (e) => { if (e.key === "Enter") tapSeg(i); },
+    onpointerdown: (e) => {
+      held = false; cancelHold();
+      if (e.pointerType === "mouse") return;
+      holdAt = [e.clientX, e.clientY];
+      holdT = setTimeout(() => { held = true; openSegMenu(i); }, HOLD_MS);
+    },
+    onpointermove: (e) => { if (holdT && holdAt && Math.hypot(e.clientX - holdAt[0], e.clientY - holdAt[1]) > 10) cancelHold(); },
+    onpointerup: cancelHold,
+    onpointercancel: cancelHold,
+    oncontextmenu: (e) => { e.preventDefault(); cancelHold(); openSegMenu(i); } }, seg.t + " ");
 }
 function addToPage(box, seg, i) {
   let para = box.lastElementChild;
@@ -1069,7 +1346,7 @@ function transcriptTab(n) {
   if (!lines.children.length) lines.append(h("p", { class: "it", style: "padding-block:20px" }, n.segments.length ? "Nothing matches." : "The words appear here as they're transcribed."));
   return [
     (state.search || state.onlyHl) && h("button", { class: "link", id: "clearFilter", onclick: () => { state.search = ""; state.onlyHl = false; state.more = false; render(); } }, "Show the whole transcript"),
-    n.segments.length > 0 && lsGet("sl-hint", "") !== "1" && h("p", { class: "small it", id: "tapHint" }, "Tap any sentence."),
+    n.segments.length > 0 && lsGet("sl-hint2", "") !== "1" && h("p", { class: "small it", id: "tapHint" }, hasPlayer(n) ? "Tap a sentence to hear it. Hold it to highlight." : "Tap any sentence."),
     lines];
 }
 /* Everything optional lives here, out of sight until "More" is tapped. */
@@ -1121,7 +1398,7 @@ function correctWord(n) {
 function selectSeg(i) {
   const old = document.querySelector(".sg.sel"); if (old) old.classList.remove("sel");
   if (state.sel === i && !state.editing) { closeSheet(); return; }
-  lsSet("sl-hint", "1");
+  lsSet("sl-hint2", "1");
   const tip = $("#tapHint"); if (tip) tip.remove();
   state.sel = i; state.editing = false; state.sheetMore = false;
   const el = document.querySelector('.sg[data-i="' + i + '"]'); if (el) el.classList.add("sel");
@@ -1216,19 +1493,49 @@ function kitGate(n) {
 function breakdownTab(n) {
   const k = n.kit || {}, radar = radarOf(n), reel = reelOf(n);
   const reelLen = reel.reduce((t, r) => t + (r.e - r.s), 0);
+  const dg = n.segments.length ? digestOf(n) : null;
+  const shown = new Set(arr(k.terms).map((t) => t.term.toLowerCase()));
+  const autoTerms = dg ? dg.terms.filter((t) => !shown.has(t.name.toLowerCase())) : [];
+  const SHOW = 8;
+  const digRows = (key, list, label) => {
+    const all = state.digAll === key, rows = all ? list : list.slice(0, SHOW);
+    return [rows.map((e) => h("div", { class: "term" },
+      h("b", null, e.name, e.count > 1 && h("span", { class: "n" }, " · " + label(e.count))),
+      h("span", null, "“" + clip(e.context) + "” ", timeBtn(e.at)))),
+      list.length > SHOW && h("button", { class: "link", onclick: () => { state.digAll = all ? null : key; render(); } }, all ? "Show fewer" : "Show all " + list.length)];
+  };
+  const mentions = (c) => c + " mentions";
+  const dgSection = (id, title, kids) => h("section", { id: "dg-" + id, style: "scroll-margin-top:12px" }, h("h3", { style: "padding-bottom:8px" }, title), kids);
+  const sections = dg ? [
+    dg.ideas.length > 0 && ["ideas", "Main ideas"],
+    radar.length > 0 && ["radar", "Exam radar"],
+    dg.people.length > 0 && ["people", dg.english ? "People" : "Names"],
+    (arr(k.terms).length > 0 || autoTerms.length > 0) && ["terms", "Terms"],
+    dg.facts.length > 0 && ["facts", "Dates and numbers"],
+    dg.places.length > 0 && ["places", "Places and groups"]
+  ].filter(Boolean) : [];
   const blocks = [
     k.summary && h("section", { class: "stack" }, h("h3", null, "In plain words"), h("p", { class: "lead" }, k.summary)),
+    sections.length > 2 && h("nav", { class: "row dg-nav", "aria-label": "Jump to a section" }, sections.map(([id, title]) => h("button", { class: "link", onclick: () => { const el = document.getElementById("dg-" + id); if (el) el.scrollIntoView({ behavior: "smooth" }); } }, title))),
+    n.segments.length > 0 && !dg && h("p", { class: "it", id: "dgBusy" }, "Working out the names, terms and main ideas…"),
+    arr(k.outline).length > 0 && h("section", { class: "stack" }, h("h3", null, "Outline"),
+      k.outline.map((o) => h("div", null, h("div", { class: "row" }, h("b", { style: "font-weight:700" }, o.heading), timeBtn(o.at)), h("ul", { class: "plain" }, o.points.map((p) => h("li", null, p)))))),
+    dg && dg.ideas.length > 0 && h("section", { class: "stack", id: "dg-ideas", style: "scroll-margin-top:12px" }, h("h3", null, "Main ideas"),
+      dg.ideas.map((s) => h("div", { class: "quote" }, h("div", null, "“" + clip(s.t, 240) + "” ", timeBtn(s.at))))),
+    radar.length > 0 && h("section", { class: "stack", id: "dg-radar", style: "scroll-margin-top:12px" }, h("h3", null, "Exam radar"),
+      radar.map((s) => h("div", { class: "quote" }, h("div", null, "“" + s.quote + "” ", timeBtn(s.at)), s.why && h("small", null, s.why)))),
+    dg && dg.people.length > 0 && dgSection("people", dg.english ? "People" : "Names", digRows("people", dg.people, mentions)),
+    (arr(k.terms).length > 0 || autoTerms.length > 0) && dgSection("terms", "Terms", [
+      arr(k.terms).map((t) => h("div", { class: "term" }, h("b", null, t.term), h("span", null, t.def))),
+      digRows("terms", autoTerms, mentions)]),
+    dg && dg.facts.length > 0 && dgSection("facts", "Dates and numbers", digRows("facts", dg.facts, mentions)),
+    dg && dg.places.length > 0 && dgSection("places", "Places and groups", digRows("places", dg.places, mentions)),
     reel.length > 0 && h("section", { class: "stack" }, h("h3", null, "The reel"),
       h("p", null, "Your marks and everything flagged, played back to back: ", h("i", null, reel.length + (reel.length === 1 ? " moment" : " moments") + ", " + fmt(reelLen) + ".")),
       hasPlayer(n) ? h("button", { class: "grand ghost", id: "playReel", onclick: () => startReel(n) }, "Play the reel") : h("p", { class: "small it" }, n.example ? "The example has no recording. On your own recordings, this plays the moments aloud." : "This note has no recording to play.")),
-    radar.length > 0 && h("section", { class: "stack" }, h("h3", null, "Exam radar"),
-      radar.map((s) => h("div", { class: "quote" }, h("div", null, "“" + s.quote + "” ", timeBtn(s.at)), s.why && h("small", null, s.why)))),
-    arr(k.outline).length > 0 && h("section", { class: "stack" }, h("h3", null, "Outline"),
-      k.outline.map((o) => h("div", null, h("div", { class: "row" }, h("b", { style: "font-weight:700" }, o.heading), timeBtn(o.at)), h("ul", { class: "plain" }, o.points.map((p) => h("li", null, p)))))),
-    arr(k.terms).length > 0 && h("section", null, h("h3", { style: "padding-bottom:8px" }, "Terms"),
-      k.terms.map((t) => h("div", { class: "term" }, h("b", null, t.term), h("span", null, t.def)))),
     kitGate(n),
-    PUBLIC && !radar.length && !reel.length && h("p", { class: "it" }, "Highlight sentences in the transcript and they'll gather here as a reel you can play back. Moments your professor flags for the exam show up here on their own.")
+    dg && h("p", { class: "small it" }, dg.foreign ? "Pulled from the transcript automatically, on this device. People and terms work best in English for now." : dg.english ? "Pulled from the transcript automatically, on this device. Check names and spellings against the recording." : "Pulled from the transcript automatically, on this device. Connect to the internet once to see people and terms."),
+    PUBLIC && !radar.length && !reel.length && h("p", { class: "it" }, "Hold a sentence in the transcript to highlight it, and it'll gather here in a reel you can play back. Moments your professor flags for the exam show up here on their own.")
   ].filter(Boolean);
   return blocks.flatMap((b, i) => (i && blocks[i - 1].tagName === "SECTION" ? [eyeMark(), b] : [b]));
 }
@@ -1236,7 +1543,7 @@ function breakdownTab(n) {
 /* Flashcards */
 function cardsTab(n) {
   const cards = arr(n.kit && n.kit.cards);
-  if (!cards.length) return [h("p", { class: "it" }, PUBLIC ? "No cards yet. Highlight sentences in the transcript, then turn them into fill-in-the-blank cards." : "No cards yet. Have Claude write them, or make your own from the sentences you've marked."), freeCardsBtn(n), kitGate(n)];
+  if (!cards.length) return [h("p", { class: "it" }, PUBLIC ? "No cards yet. Hold a sentence in the transcript to highlight it, then turn your highlights into fill-in-the-blank cards." : "No cards yet. Have Claude write them, or make your own from the sentences you've marked."), freeCardsBtn(n), kitGate(n)];
   if (!state.cardRun || state.cardRun.noteId !== n.id) startCards(n, false);
   const run = state.cardRun;
   if (!run.queue.length) {

@@ -21,6 +21,8 @@ Found a bug or have an idea? [Open an issue](https://github.com/abelmolinanj-dot
 
 Speech recognition uses [OpenAI Whisper](https://github.com/openai/whisper) (MIT License), through the [Xenova ONNX conversions](https://huggingface.co/Xenova/whisper-tiny) and [Transformers.js](https://github.com/huggingface/transformers.js) (Apache License 2.0).
 
+The Breakdown uses [compromise](https://github.com/spencermountain/compromise) (MIT License) to find names and terms.
+
 Full license texts are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 
 ## Copyright
