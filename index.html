@@ -479,15 +479,28 @@ async function runJob(note, file) {
     catch { throw new Error("This device couldn't open that file. M4A, MP3, WAV, AAC, OGG and FLAC usually work. A very long recording can also run a phone out of memory. If so, open this same link on a laptop and transcribe it there."); }
     note.audio.duration = pcm.length / SR;
     j.stage = "model"; paintJob();
-    worker = await makeWorker((f, n) => { j.dl[f] = n; paintJob(); }, multi);
+    const loadModel = () => makeWorker((f, n) => { j.dl[f] = n; paintJob(); }, multi);
+    worker = await loadModel();
     j.stage = "run"; j.t0 = performance.now();
-    let pos = Math.round((note.doneSec || 0) * SR);
+    let pos = Math.round((note.doneSec || 0) * SR), retries = 0;
     paintJob();
     while (pos < pcm.length && !j.stop) {
-      const end = nextCut(pcm, pos), seg = pcm.slice(pos, end), offset = pos / SR, len = (end - pos) / SR;
+      /* After a failure, try a shorter piece on a fresh copy of the model, which frees all of its memory. */
+      const end = retries ? Math.min(pos + 15 * SR, pcm.length) : nextCut(pcm, pos), seg = pcm.slice(pos, end), offset = pos / SR, len = (end - pos) / SR;
       if (rms(seg) > 0.0015) {
         normalize(seg);
-        const chunks = await worker.run(seg, opts);
+        let chunks;
+        try {
+          if (!worker) worker = await loadModel();
+          chunks = await worker.run(seg, opts);
+          retries = 0;
+        } catch (e) {
+          if (worker) worker.end();
+          worker = null;
+          if (++retries > 2) throw e;
+          await new Promise((r) => setTimeout(r, 1000));
+          continue;
+        }
         const fresh = [];
         for (const c of chunks) {
           const t = applyDict((c.text || "").trim());
@@ -508,7 +521,8 @@ async function runJob(note, file) {
     if (note.status === "ready") toast("The transcript is finished.");
   } catch (e) {
     note.status = "paused";
-    jobErr[note.id] = e.message || String(e);
+    const msg = e.message || String(e);
+    jobErr[note.id] = /OrtRun|OrtCreate|error code|could not allocate|allocation failed|bad_alloc|out of bounds/i.test(msg) ? "This device ran out of memory. Everything up to here is saved. Close your other apps and tabs, then continue. If it stops again, open this same link on a laptop and transcribe it there." : msg;
   } finally {
     if (worker) worker.end();
     if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
