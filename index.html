@@ -545,7 +545,7 @@ async function runJob(note, file) {
         }
         const fresh = [];
         for (const c of chunks) {
-          const t = applyDict((c.text || "").replace(/�/g, "").trim());
+          const t = applyDict((c.text || "").replaceAll(String.fromCharCode(65533), "").trim());
           if (isNoiseLine(t)) continue;
           const ts = c.timestamp || [];
           fresh.push({ s: offset + (ts[0] || 0), e: offset + (ts[1] == null ? len : ts[1]), t });
