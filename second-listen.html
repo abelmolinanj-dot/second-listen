@@ -56,7 +56,7 @@ input[type=checkbox] { accent-color: var(--rouge); width: 18px; height: 18px; fl
 /* Title page */
 .title { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-block: 8px 10px }
 .title p { text-align: center; font-size: 1.15rem; max-width: 26em; font-style: italic }
-.emblem { width: min(250px, 66vw); height: auto; color: var(--ink) }
+.emblem { width: min(200px, 54vw); height: auto; color: var(--ink) }
 .emblem .spiral { transform-origin: 120px 92px; animation: turn 48s linear infinite }
 .emblem .smoke { animation: drift 9s ease-in-out infinite; transform-origin: 120px 50px }
 @keyframes turn { to { transform: rotate(360deg) } }
@@ -70,7 +70,7 @@ input[type=checkbox] { accent-color: var(--rouge); width: 18px; height: 18px; fl
 .tag { font-style: normal; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--rouge); vertical-align: 2px }
 .due { color: var(--rouge) }
 /* Tabs */
-.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; justify-content: space-between; gap: 6px; background: var(--paper); border-block: 1px solid var(--ink); margin-block: 18px 22px; padding-inline: 2px }
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; justify-content: space-between; gap: 6px; background: var(--paper); border-block: 1px solid var(--ink); margin-block: 10px 16px; padding-inline: 2px }
 .tabs button { min-height: 46px; font-style: italic; font-size: 1.04rem; position: relative; transition: color .2s }
 .tabs button[aria-selected=true] { color: var(--rouge) }
 .tabs button[aria-selected=true]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 7px; height: 1px; background: var(--rouge) }
@@ -129,9 +129,10 @@ ul.plain li::marker { color: var(--rouge); content: "\2014  " }
 /* Fixed at the foot */
 #player { position: fixed; z-index: 15; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--ink); padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); transition: transform .35s var(--ease) }
 #player .wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 2px }
-#player .ctl { display: flex; align-items: center; justify-content: space-between; gap: 6px }
-#player .ctl button { min-height: 44px; min-width: 44px; text-align: center; font-size: 1rem; font-style: italic }
-#player .play { width: 48px; height: 44px; display: grid; place-items: center; color: var(--rouge) }
+#player .ctl { display: flex; align-items: center; justify-content: space-between; gap: 4px }
+#player .seek { flex: 1; min-width: 0; gap: 6px }
+#player .ctl button { min-height: 44px; min-width: 38px; text-align: center; font-size: 1rem; font-style: italic }
+#player .play { width: 40px; height: 44px; flex: none; display: grid; place-items: center; color: var(--rouge) }
 #player .play svg { width: 26px; height: 26px }
 .seek { display: flex; align-items: center; gap: 10px; font-size: .8rem; font-style: italic; font-variant-numeric: tabular-nums }
 .seek input { flex: 1; min-width: 0; accent-color: var(--rouge); height: 22px; margin: 0; background: transparent }
@@ -258,6 +259,9 @@ const EXAMPLE = {
 };
 
 /* ---------- App state ---------- */
+/* Outside Claude there's no AI, so this is the free version: transcript, replay, reel, radar and cards. */
+const PUBLIC = !window.claude;
+if (PUBLIC) { const { summary, outline, terms, quiz, ...rest } = EXAMPLE.kit; EXAMPLE.kit = rest; }
 const notes = new Map([[EXAMPLE.id, EXAMPLE]]);
 const state = { view: "library", noteId: null, tab: "transcript", loaded: false, addText: false, search: "", onlyHl: false, sel: null, editing: false, confirmDelete: false, renaming: false, cardRun: null, quizRun: null, lang: lsGet("sl-lang", "en"), translate: lsGet("sl-translate", "0") === "1" };
 const S = { sample: undefined, downloads: null };
@@ -811,13 +815,15 @@ function paintPlayer() {
     const play = h("button", { class: "play", id: "playBtn", "aria-label": P.a.paused ? "Play" : "Pause", onclick: () => { if (P.a.paused) P.a.play().catch(() => {}); else P.a.pause(); } }, svg(P.a.paused ? PLAY : PAUSE));
     box.replaceChildren(h("div", { class: "wrap" },
       P.reel && h("div", { class: "row small it", style: "justify-content:space-between" }, "The reel: moment " + (P.reelI + 1) + " of " + P.reel.length, h("button", { class: "link", style: "min-height:24px", onclick: () => { P.reel = null; paintPlayer(); } }, "Leave the reel")),
-      h("div", { class: "seek" }, h("span", { id: "seekNow" }, "0:00"), seek, h("span", { id: "seekEnd" }, "0:00")),
       h("div", { class: "ctl" },
-        h("button", { id: "rateBtn", "aria-label": "Playback speed", onclick: () => { const r = [1, 1.25, 1.5, 1.75, 2, 0.75]; P.rate = r[(r.indexOf(P.rate) + 1) % r.length]; P.a.playbackRate = P.rate; lsSet("sl-rate", String(P.rate)); paintPlayer(); } }, P.rate + "×"),
-        h("button", { "aria-label": "Back 15 seconds", onclick: () => nudge(-15) }, "−15"),
         play,
+        h("div", { class: "seek" }, h("span", { id: "seekNow" }, "0:00"), seek, h("span", { id: "seekEnd" }, "0:00")),
+        h("button", { id: "rateBtn", "aria-label": "Playback speed", onclick: () => { const r = [1, 1.25, 1.5, 1.75, 2, 0.75]; P.rate = r[(r.indexOf(P.rate) + 1) % r.length]; P.a.playbackRate = P.rate; lsSet("sl-rate", String(P.rate)); paintPlayer(); } }, P.rate + "×"),
+        h("button", { id: "playerMore", "aria-label": P.more ? "Fewer controls" : "More controls", "aria-expanded": String(!!P.more), onclick: () => { P.more = !P.more; paintPlayer(); } }, P.more ? "×" : "···")),
+      P.more && h("div", { class: "ctl fade", style: "justify-content:space-around" },
+        h("button", { "aria-label": "Back 15 seconds", onclick: () => nudge(-15) }, "−15"),
         h("button", { "aria-label": "Forward 15 seconds", onclick: () => nudge(15) }, "+15"),
-        h("button", { id: "lostBtn", onclick: markLost, title: "Mark this moment as confusing" }, "Lost"))));
+        h("button", { id: "lostBtn", onclick: markLost, title: "Mark this moment as confusing" }, "I got lost"))));
     updateTime();
   }
   document.documentElement.style.setProperty("--playerH", box.offsetHeight + "px");
@@ -861,7 +867,7 @@ function openNote(id) {
     opening.segments = opening.segments.filter((s) => !isNoiseLine(s.t));
     scheduleSave(opening);
   }
-  Object.assign(state, { view: "note", noteId: id, tab: "transcript", search: "", onlyHl: false, sel: null, editing: false, confirmDelete: false, renaming: false, cardRun: null, quizRun: null });
+  Object.assign(state, { view: "note", noteId: id, tab: "transcript", search: "", onlyHl: false, sel: null, editing: false, confirmDelete: false, renaming: false, more: false, cardRun: null, quizRun: null });
   closeSheet();
   render(true);
   window.scrollTo({ top: 0, behavior: "instant" });
@@ -880,29 +886,28 @@ function libraryView() {
   const list = [...notes.values()].filter((n) => !n.example).sort((a, b) => b.updatedAt - a.updatedAt);
   const langSel = h("select", { id: "langPick", "aria-label": "Language of the recording", onchange: (e) => { state.lang = e.target.value; lsSet("sl-lang", state.lang); render(); } },
     LANGS.map(([c, name]) => h("option", { value: c, selected: c === state.lang }, name)));
-  return h("div", { class: "stack", style: "gap:0" },
+  return h("div", { class: "stack", style: "gap:24px" },
     h("header", { class: "title" }, emblem(), h("h1", null, "Second Listen"), h("p", null, "Everything you missed the first time.")),
-    eyeMark(),
     h("section", { class: "stack" },
       audio,
-      h("label", { class: "stack", style: "gap:0;font-style:italic" }, "The recording is in", langSel),
-      state.lang !== "en" && h("label", { class: "check" }, h("input", { type: "checkbox", id: "translateBox", checked: state.translate, onchange: (e) => { state.translate = e.target.checked; lsSet("sl-translate", state.translate ? "1" : "0"); } }), "Also translate it into English"),
-      state.lang !== "en" && h("p", { class: "small it" }, "Your first non-English recording downloads a second speech model, up to about 65 MB. It works best when a recording stays mostly in one language."),
       h("button", { class: "grand", id: "pickAudio", onclick: () => audio.click() }, "Choose a recording"),
-      h("button", { class: "link center", id: "toggleText", onclick: () => { state.addText = !state.addText; render(); }, "aria-expanded": String(state.addText) }, "or add a transcript instead"),
-      state.addText && textForm(),
-      h("p", { class: "small center it" }, "Your audio stays on this device and is never uploaded.")),
-    eyeMark(),
+      h("div", { class: "row", style: "justify-content:center" },
+        h("button", { class: "link", id: "toggleLang", "aria-expanded": String(!!state.showLang), onclick: () => { state.showLang = !state.showLang; render(); } }, "Language: " + langName(state.lang)),
+        h("button", { class: "link", id: "toggleText", "aria-expanded": String(state.addText), onclick: () => { state.addText = !state.addText; render(); } }, "Add a transcript")),
+      state.showLang && h("div", { class: "stack fade" },
+        langSel,
+        state.lang !== "en" && h("label", { class: "check" }, h("input", { type: "checkbox", id: "translateBox", checked: state.translate, onchange: (e) => { state.translate = e.target.checked; lsSet("sl-translate", state.translate ? "1" : "0"); } }), "Also translate it into English"),
+        state.lang !== "en" && h("p", { class: "small it" }, "Your first non-English recording downloads a second speech model, up to about 65 MB. It works best when a recording stays mostly in one language.")),
+      state.addText && textForm()),
     h("section", { class: "stack", style: "gap:10px" },
       h("h2", null, "Your notes"),
       h("div", null,
         !state.loaded && h("p", { class: "it" }, "Opening your notes…"),
-        state.loaded && !list.length && h("p", { class: "it", style: "padding-bottom:12px" }, "Your first recording will appear here. The example below shows how it works."),
         list.map(noteRow),
         noteRow(EXAMPLE)),
       state.offline && h("p", { class: "small it" }, "Your saved notes can't be reached right now. They may be out of date."),
-      storeMode === "local" && h("p", { class: "small it" }, "Notes are saved in this browser only. Open this page signed in to Claude to sync between your phone and laptop."),
-      h("p", { class: "small it" }, "On your Galaxy, Samsung Voice Recorder files are usually in My Files, under Recordings or Music.")));
+      state.loaded && !list.length && h("p", { class: "small it" }, "Your audio stays on this device and is never uploaded. On a Galaxy phone, Samsung Voice Recorder files are usually in My Files, under Recordings or Music."),
+      PUBLIC && h("p", { class: "small it" }, "Free, with no account. Your notes stay in this browser. To install it, open your browser's menu and choose Add to Home screen. Some schools and states require permission to record a class, so check first.")));
 }
 function textForm() {
   const title = h("input", { id: "textTitle", type: "text", placeholder: "Name it (Accounting 201, week 4)", "aria-label": "Transcript name" });
@@ -928,19 +933,18 @@ function noteRow(n) {
     h("span", null, meta.join(" · "), due > 0 && !n.example && h("span", { class: "due" }, " · " + due + " cards due")));
 }
 function noteView(n) {
-  const tabs = [["transcript", "Transcript"], ["breakdown", "Breakdown"], ["cards", "Cards"], ["quiz", "Quiz"], ["ask", "Ask"]];
+  const tabs = (PUBLIC ? [["transcript", "Transcript"], ["breakdown", "Breakdown"], ["cards", "Cards"]] : [["transcript", "Transcript"], ["breakdown", "Breakdown"], ["cards", "Cards"], ["quiz", "Quiz"], ["ask", "Ask"]]);
   const panels = { transcript: transcriptTab, breakdown: breakdownTab, cards: cardsTab, quiz: quizTab, ask: askTab };
+  const hasMore = !n.example || state.tab === "transcript";
   return h("div", null,
     h("div", { class: "row", style: "justify-content:space-between" },
       h("button", { class: "link", id: "back", onclick: () => { state.view = "library"; state.noteId = null; closeNoteUI(); render(true); window.scrollTo({ top: 0, behavior: "instant" }); } }, "← All notes"),
-      !n.example && h("button", { class: "link", onclick: () => { state.renaming = !state.renaming; state.confirmDelete = false; render(); } }, "Rename or delete")),
-    state.renaming && manageRow(n),
-    h("header", { style: "padding-top:10px" },
-      h("h2", { style: "overflow-wrap:anywhere" }, n.title, " ", n.example && h("span", { class: "tag" }, "Example")),
-      n.audio && n.audio.name && h("p", { class: "small it", style: "padding-top:4px" }, [n.audio.name, n.audio.duration ? fmt(n.audio.duration) : null, n.lang && n.lang.code !== "en" ? langName(n.lang.code) + (n.lang.translate ? ", translated" : "") : null].filter(Boolean).join(" · "))),
+      hasMore && h("button", { class: "link", id: "moreBtn", "aria-expanded": String(!!state.more), onclick: () => { state.more = !state.more; state.renaming = false; state.confirmDelete = false; render(); } }, state.more ? "Less" : "More")),
+    state.more && moreContent(n),
+    h("h2", { style: "overflow-wrap:anywhere;font-size:1.5rem;padding-top:4px" }, n.title, " ", n.example && h("span", { class: "tag" }, "Example")),
     h("div", { id: "jobPanel" }, jobContent(n)),
     h("nav", { class: "tabs", role: "tablist" }, tabs.map(([k, label]) =>
-      h("button", { role: "tab", id: "tab-" + k, "aria-selected": String(state.tab === k), onclick: () => { if (state.tab === k) return; state.tab = k; closeSheet(); render(true); window.scrollTo({ top: Math.min(window.scrollY, ($(".tabs").offsetTop || 0)), behavior: "instant" }); } }, label))),
+      h("button", { role: "tab", id: "tab-" + k, "aria-selected": String(state.tab === k), onclick: () => { if (state.tab === k) return; state.tab = k; state.more = false; closeSheet(); render(true); window.scrollTo({ top: Math.min(window.scrollY, ($(".tabs").offsetTop || 0)), behavior: "instant" }); } }, label))),
     h("div", { class: "stack", id: "panel" }, panels[state.tab](n)));
 }
 function manageRow(n) {
@@ -1021,20 +1025,32 @@ function transcriptTab(n) {
   const lines = h("div", { id: "lines" });
   n.segments.forEach((s, i) => { if ((!q || s.t.toLowerCase().includes(q)) && (!state.onlyHl || s.h || s.lost)) addToPage(lines, s, i); });
   if (!lines.children.length) lines.append(h("p", { class: "it", style: "padding-block:20px" }, n.segments.length ? "Nothing matches." : "The words appear here as they're transcribed."));
-  const search = h("input", { id: "search", type: "search", placeholder: "Search the transcript", value: state.search, "aria-label": "Search the transcript", oninput: (e) => {
-    state.search = e.target.value;
-    const pos = e.target.selectionStart; render();
-    const again = $("#search"); if (again) { again.focus(); again.setSelectionRange(pos, pos); }
-  } });
-  return [search,
-    h("div", { class: "row" },
-      h("button", { class: "link", "aria-pressed": String(state.onlyHl), onclick: () => { state.onlyHl = !state.onlyHl; render(); } }, state.onlyHl ? "Show everything" : "Only my marks"),
-      h("button", { class: "link", id: "copyT", onclick: () => copyText(plainTranscript(n)) }, "Copy"),
-      S.downloads && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + ".txt", plainTranscript(n)) }, "Save as .txt")),
-    !n.example && correctWord(n),
-    n.segments.length > 0 && h("p", { class: "small it" }, "Tap any sentence to hear it, mark it, or have it explained."),
+  return [
+    (state.search || state.onlyHl) && h("button", { class: "link", id: "clearFilter", onclick: () => { state.search = ""; state.onlyHl = false; state.more = false; render(); } }, "Show the whole transcript"),
+    n.segments.length > 0 && lsGet("sl-hint", "") !== "1" && h("p", { class: "small it", id: "tapHint" }, "Tap any sentence."),
     lines];
 }
+/* Everything optional lives here, out of sight until "More" is tapped. */
+function moreContent(n) {
+  const parts = [];
+  if (state.tab === "transcript") {
+    const search = h("input", { id: "search", type: "search", placeholder: "Search the transcript", value: state.search, "aria-label": "Search the transcript", oninput: (e) => {
+      state.search = e.target.value;
+      const pos = e.target.selectionStart; render();
+      const again = $("#search"); if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+    } });
+    parts.push(search, h("div", { class: "row" },
+      h("button", { class: "link", id: "onlyMarks", "aria-pressed": String(state.onlyHl), onclick: () => { state.onlyHl = !state.onlyHl; render(); } }, state.onlyHl ? "Show everything" : "Only my marks"),
+      h("button", { class: "link", id: "copyT", onclick: () => copyText(plainTranscript(n)) }, "Copy"),
+      S.downloads && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + ".txt", plainTranscript(n)) }, "Save as .txt")));
+    if (!n.example) parts.push(correctWord(n));
+  }
+  if (state.tab === "cards" && arr(n.kit && n.kit.cards).length) parts.push(h("div", { class: "row" }, freeCardsBtn(n), exportBtn(n)));
+  if (!n.example) parts.push(state.renaming ? manageRow(n) : h("button", { class: "link", id: "renameLink", onclick: () => { state.renaming = true; state.confirmDelete = false; render(); } }, "Rename or delete"));
+  return parts.length ? h("div", { class: "stack fade", id: "more", style: "gap:6px;padding-top:10px" }, parts) : null;
+}
+const freeCardsBtn = (n) => !n.example && h("button", { class: "link", id: "freeCards", onclick: () => makeFreeCards(n) }, "Make fill-in-the-blank cards from my marks");
+const exportBtn = (n) => S.downloads && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + "-cards.csv", arr(n.kit && n.kit.cards).map((c) => [c.q, c.a].map((v) => '"' + v.replace(/"/g, '""') + '"').join(",")).join("\n")) }, "Export for Anki (.csv)");
 function correctWord(n) {
   const from = h("input", { id: "fixFrom", type: "text", placeholder: "The wrong word", "aria-label": "The wrong word", oninput: tally });
   const to = h("input", { id: "fixTo", type: "text", placeholder: "The right word", "aria-label": "The right word" });
@@ -1063,7 +1079,9 @@ function correctWord(n) {
 function selectSeg(i) {
   const old = document.querySelector(".sg.sel"); if (old) old.classList.remove("sel");
   if (state.sel === i && !state.editing) { closeSheet(); return; }
-  state.sel = i; state.editing = false;
+  lsSet("sl-hint", "1");
+  const tip = $("#tapHint"); if (tip) tip.remove();
+  state.sel = i; state.editing = false; state.sheetMore = false;
   const el = document.querySelector('.sg[data-i="' + i + '"]'); if (el) el.classList.add("sel");
   paintSheet();
 }
@@ -1085,13 +1103,15 @@ function paintSheet() {
   }
   host.replaceChildren(h("div", { id: "sheet" }, h("div", null,
     h("div", { class: "row" },
-      seg.s != null && hasPlayer(n) && h("button", { class: "link rouge", id: "actHear", onclick: () => { hear(seg.s); closeSheet(); } }, "Hear this"),
-      h("button", { class: "link", id: "actMark", onclick: () => { seg.h = !seg.h; scheduleSave(n); paintSeg(i); paintSheet(); } }, seg.h ? "Remove highlight" : "Highlight"),
-      h("button", { class: "link", id: "actLost", onclick: () => { seg.lost = !seg.lost; scheduleSave(n); paintSeg(i); paintSheet(); } }, seg.lost ? "No longer lost" : "I got lost here"),
+      seg.s != null && hasPlayer(n) && h("button", { class: "link rouge", id: "actHear", onclick: () => { hear(seg.s); closeSheet(); } }, "Hear"),
+      h("button", { class: "link", id: "actMark", onclick: () => { seg.h = !seg.h; scheduleSave(n); paintSeg(i); paintSheet(); } }, seg.h ? "Unmark" : "Highlight"),
       S.sample && h("button", { class: "link", id: "actExplain", onclick: () => ask(n, 'Explain this simply: "' + seg.t + '"') }, "Explain"),
+      h("button", { class: "link", id: "actMore", "aria-expanded": String(!!state.sheetMore), onclick: () => { state.sheetMore = !state.sheetMore; paintSheet(); } }, state.sheetMore ? "Less" : "More"),
+      h("button", { class: "link", id: "actClose", style: "margin-left:auto;text-decoration:none", "aria-label": "Close", onclick: closeSheet }, "×")),
+    state.sheetMore && h("div", { class: "row fade" },
+      h("button", { class: "link", id: "actLost", onclick: () => { seg.lost = !seg.lost; scheduleSave(n); paintSeg(i); paintSheet(); } }, seg.lost ? "No longer lost" : "I got lost here"),
       S.sample && h("button", { class: "link", id: "actCard", onclick: () => cardFromLine(n, seg) }, "Make a card"),
-      !n.example && h("button", { class: "link", id: "actFix", onclick: () => { state.editing = true; paintSheet(); } }, "Fix the text"),
-      h("button", { class: "link", id: "actClose", onclick: closeSheet }, "Close")))));
+      !n.example && h("button", { class: "link", id: "actFix", onclick: () => { state.editing = true; paintSheet(); } }, "Fix the text")))));
 }
 function appendLines(n, count) {
   if (state.noteId !== n.id || state.tab !== "transcript" || state.search || state.onlyHl || !count) return;
@@ -1123,6 +1143,7 @@ function withTimes(text) {
 
 /* Breakdown */
 function kitGate(n) {
+  if (PUBLIC) return null;
   const busy = kitBusy[n.id], err = kitErr[n.id];
   if (busy) return h("div", { class: "job" },
     h("div", { class: "head" }, spinner(), h("span", { class: "it", style: "flex:1" }, "Writing your study kit…"), h("button", { class: "link", id: "stopKit", onclick: () => busy.stop() }, "Stop")),
@@ -1157,7 +1178,8 @@ function breakdownTab(n) {
       k.outline.map((o) => h("div", null, h("div", { class: "row" }, h("b", { style: "font-weight:700" }, o.heading), timeBtn(o.at)), h("ul", { class: "plain" }, o.points.map((p) => h("li", null, p)))))),
     arr(k.terms).length > 0 && h("section", null, h("h3", { style: "padding-bottom:8px" }, "Terms"),
       k.terms.map((t) => h("div", { class: "term" }, h("b", null, t.term), h("span", null, t.def)))),
-    kitGate(n)
+    kitGate(n),
+    PUBLIC && !radar.length && !reel.length && h("p", { class: "it" }, "Highlight sentences in the transcript and they'll gather here as a reel you can play back. Moments your professor flags for the exam show up here on their own.")
   ].filter(Boolean);
   return blocks.flatMap((b, i) => (i && blocks[i - 1].tagName === "SECTION" ? [eyeMark(), b] : [b]));
 }
@@ -1165,17 +1187,14 @@ function breakdownTab(n) {
 /* Flashcards */
 function cardsTab(n) {
   const cards = arr(n.kit && n.kit.cards);
-  const free = !n.example && h("button", { class: "link", id: "freeCards", onclick: () => makeFreeCards(n) }, "Make fill-in-the-blank cards from my marks (free, no AI)");
-  if (!cards.length) return [h("p", { class: "it" }, "No cards yet. Have Claude write them, or make your own from the sentences you've marked."), free, kitGate(n)];
+  if (!cards.length) return [h("p", { class: "it" }, PUBLIC ? "No cards yet. Highlight sentences in the transcript, then turn them into fill-in-the-blank cards." : "No cards yet. Have Claude write them, or make your own from the sentences you've marked."), freeCardsBtn(n), kitGate(n)];
   if (!state.cardRun || state.cardRun.noteId !== n.id) startCards(n, false);
   const run = state.cardRun;
-  const exp = S.downloads && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + "-cards.csv", cards.map((c) => [c.q, c.a].map((v) => '"' + v.replace(/"/g, '""') + '"').join(",")).join("\n")) }, "Export for Anki (.csv)");
   if (!run.queue.length) {
     const next = cards.reduce((m, c) => Math.min(m, c.due || 0), Infinity);
     return [h("div", { class: "stack center", style: "padding-block:20px" }, h("h3", null, run.done ? "That's the pile for now." : "You're caught up."),
         next > Date.now() && h("p", { class: "it" }, "The next card is due in " + Math.max(1, Math.ceil((next - Date.now()) / DAY)) + (Math.ceil((next - Date.now()) / DAY) <= 1 ? " day." : " days.")),
-        h("button", { class: "grand ghost", id: "reviewAll", onclick: () => { startCards(n, true); render(); } }, "Review all " + cards.length + " anyway")),
-      h("div", { class: "row" }, free, exp)];
+        h("button", { class: "grand ghost", id: "reviewAll", onclick: () => { startCards(n, true); render(); } }, "Review all " + cards.length + " anyway"))];
   }
   const c = run.queue[0];
   const grade = (ok) => {
@@ -1197,7 +1216,7 @@ function cardsTab(n) {
     : h("button", { class: "grand ghost", id: "show", onclick: turn }, "Turn it over");
   const acts = h("div", null, actions());
   return [h("p", { class: "small it center" }, run.queue.length + (run.queue.length === 1 ? " card left" : " cards left") + " in this pile"), flip, acts,
-    h("div", { class: "row" }, parseAt(c.at) != null && h("button", { class: "link rouge", id: "hearCard", onclick: () => hear(parseAt(c.at)) }, "Hear this part"), free, exp)];
+    parseAt(c.at) != null && h("button", { class: "link rouge center", id: "hearCard", onclick: () => hear(parseAt(c.at)) }, "Hear this part")];
 }
 
 /* Quiz */
@@ -1269,6 +1288,9 @@ async function selfTest() {
     box.textContent = "The speech model works here. Loaded in " + tLoad.toFixed(1) + " s. Handled 5 s of test sound in " + ((performance.now() - t1) / 1000).toFixed(1) + " s.";
   } catch (e) { box.textContent = "The speech model failed: " + (e.message || e); }
 }
+
+/* Installable on the public site. Claude's viewer doesn't allow service workers, so this only runs there. */
+if (PUBLIC && "serviceWorker" in navigator && $('link[rel="manifest"]')) navigator.serviceWorker.register("sw.js").catch(() => {});
 
 /* ---------- Start ---------- */
 window.addEventListener("beforeunload", () => { for (const id of dirty) flush(id); if (P.noteId && P.a.currentTime) lsSet("sl-pos-" + P.noteId, String(P.a.currentTime)); });
