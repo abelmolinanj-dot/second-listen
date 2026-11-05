@@ -1,0 +1,27 @@
+/* The About, Privacy, Terms and 404 pages: the same night folio as the app. */
+:root {
+  --paper: #f2ead9; --ink: #16100c; --rouge: #7f1526; --hair: rgba(22,16,12,.28);
+  --serif: "Times New Roman", Tinos, Times, "Liberation Serif", serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --paper: #0f0b0a; --ink: #f3ead8; --rouge: #e88a7f; --hair: rgba(243,234,216,.26);
+  color-scheme: dark;
+} }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 19px/1.55 var(--serif) }
+main { max-width: 640px; margin: 0 auto; padding: 28px 20px 64px }
+.back { display: inline-block; padding: 8px 0; margin-bottom: 28px }
+a { color: inherit; font-style: italic; text-decoration: underline; text-decoration-color: var(--hair); text-decoration-thickness: 1px; text-underline-offset: 4px }
+a:hover { color: var(--rouge); text-decoration-color: var(--rouge) }
+a:focus-visible { outline: 2px solid var(--rouge); outline-offset: 3px }
+h1, h2 { font-weight: 400; font-style: italic; line-height: 1.1; margin: 0; text-wrap: balance }
+h1 { font-size: clamp(2.6rem, 11vw, 3.8rem); letter-spacing: -.02em; margin-bottom: 10px }
+h2 { font-size: 1.5rem; color: var(--rouge); margin: 34px 0 8px }
+p, ul, ol { margin: 0 0 12px }
+ul, ol { padding-left: 1.2em }
+li { margin-bottom: 6px }
+.lede { font-size: 1.2rem; font-style: italic; margin-bottom: 8px }
+.date { font-size: .88rem; font-style: italic; margin-bottom: 0 }
+footer { margin-top: 44px; padding-top: 14px; border-top: 1px solid var(--hair); display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: .92rem }
+footer a { display: inline-block; padding: 6px 0 }

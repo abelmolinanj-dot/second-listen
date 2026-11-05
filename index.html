@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f0b0a"><meta name="description" content="Hear your classes again: transcripts, replay, a highlight reel and flashcards. Free, with your audio kept on your device."><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Second Listen</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f0b0a"><meta name="description" content="Hear your classes again: transcripts, replay, a highlight reel and flashcards. Free, with your audio kept on your device."><link rel="canonical" href="https://abelmolinanj-dot.github.io/second-listen/"><meta property="og:type" content="website"><meta property="og:site_name" content="Second Listen"><meta property="og:title" content="Second Listen"><meta property="og:description" content="Hear your classes again: transcripts, replay, a highlight reel and flashcards. Free, with your audio kept on your device."><meta property="og:url" content="https://abelmolinanj-dot.github.io/second-listen/"><meta property="og:image" content="https://abelmolinanj-dot.github.io/second-listen/share.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="An eye with a spiral iris beside the words Second Listen."><meta name="twitter:card" content="summary_large_image"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Second Listen</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap">
@@ -36,6 +36,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .link { font-style: italic; color: var(--ink); min-height: 40px; text-decoration: underline; text-decoration-color: var(--hair); text-underline-offset: 4px; text-decoration-thickness: 1px; transition: color .2s, text-decoration-color .2s }
 .link:hover { color: var(--rouge); text-decoration-color: var(--rouge) }
 .link.rouge { color: var(--rouge) }
+.foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 18px; padding-top: 14px; border-top: 1px solid var(--hair); font-size: .92rem }
+.foot .link { display: inline-flex; align-items: center; font-size: inherit }
 .grand { display: block; width: 100%; min-height: 58px; padding: 12px 20px; text-align: center; font-style: italic; font-size: 1.3rem; background: var(--ink); color: var(--on-ink); transition: background .25s, transform .25s var(--ease) }
 .grand:hover { background: var(--rouge) }
 .grand:active { transform: scale(.985) }
@@ -907,7 +909,47 @@ function libraryView() {
         noteRow(EXAMPLE)),
       state.offline && h("p", { class: "small it" }, "Your saved notes can't be reached right now. They may be out of date."),
       state.loaded && !list.length && h("p", { class: "small it" }, "Your audio stays on this device and is never uploaded. On a Galaxy phone, Samsung Voice Recorder files are usually in My Files, under Recordings or Music."),
-      PUBLIC && h("p", { class: "small it" }, "Free, with no account. Your notes stay in this browser. To install it, open your browser's menu and choose Add to Home screen. Some schools and states require permission to record a class, so check first.")));
+      PUBLIC && h("p", { class: "small it" }, "Free, with no account. Your notes stay in this browser, so back them up now and then. To install it, open your browser's menu and choose Add to Home screen. Some schools and states require permission to record a class, so check first.")),
+    PUBLIC && siteFooter(list.length > 0));
+}
+/* Public site only: backups and the links a real product owes its users. */
+function siteFooter(hasNotes) {
+  const restore = h("input", { id: "restoreInput", class: "vh", type: "file", accept: ".json,application/json", tabindex: "-1", "aria-hidden": "true", onchange: (e) => { restoreNotes(e.target.files[0]); e.target.value = ""; } });
+  return h("footer", { class: "foot" }, restore,
+    hasNotes && h("button", { class: "link", id: "backupNotes", onclick: backupNotes }, "Back up notes"),
+    h("button", { class: "link", id: "restoreNotes", onclick: () => restore.click() }, "Restore"),
+    h("a", { class: "link", href: "about.html" }, "About"),
+    h("a", { class: "link", href: "privacy.html" }, "Privacy"),
+    h("a", { class: "link", href: "terms.html" }, "Terms"));
+}
+function backupNotes() {
+  const list = [...notes.values()].filter((n) => !n.example);
+  saveFile("second-listen-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify({ app: "second-listen", version: 1, savedAt: Date.now(), notes: list, dict }));
+  toast("Backup saved to your downloads. It holds your notes, not your audio.");
+}
+async function restoreNotes(file) {
+  if (!file) return;
+  const bad = "That file isn't a Second Listen backup.";
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { toast(bad); return; }
+  if (!data || data.app !== "second-listen" || !Array.isArray(data.notes)) { toast(bad); return; }
+  const valid = (n) => n && typeof n.id === "string" && n.id && n.id !== EXAMPLE.id && typeof n.title === "string" && Array.isArray(n.segments) && n.segments.every((s) => s && typeof s.t === "string");
+  let added = 0, kept = 0;
+  for (const n of data.notes.filter(valid)) {
+    const have = notes.get(n.id);
+    if (have && (have.updatedAt || 0) >= (n.updatedAt || 0)) { kept++; continue; }
+    const { example, ...clean } = n;
+    notes.set(n.id, clean);
+    added++;
+  }
+  if (data.dict && typeof data.dict === "object" && !Array.isArray(data.dict)) {
+    for (const [k, v] of Object.entries(data.dict)) if (k && typeof v === "string" && !(k in dict)) dict[k] = v;
+    saveDict();
+  }
+  if (!added && !kept) { toast("That backup has no notes in it."); return; }
+  writeLocal();
+  render();
+  toast(added ? "Restored " + added + (added === 1 ? " note." : " notes.") + (kept ? " Kept " + kept + " you already had." : "") : "You already have everything in that backup.");
 }
 function textForm() {
   const title = h("input", { id: "textTitle", type: "text", placeholder: "Name it (Accounting 201, week 4)", "aria-label": "Transcript name" });
@@ -1042,7 +1084,7 @@ function moreContent(n) {
     parts.push(search, h("div", { class: "row" },
       h("button", { class: "link", id: "onlyMarks", "aria-pressed": String(state.onlyHl), onclick: () => { state.onlyHl = !state.onlyHl; render(); } }, state.onlyHl ? "Show everything" : "Only my marks"),
       h("button", { class: "link", id: "copyT", onclick: () => copyText(plainTranscript(n)) }, "Copy"),
-      S.downloads && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + ".txt", plainTranscript(n)) }, "Save as .txt")));
+      (S.downloads || PUBLIC) && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + ".txt", plainTranscript(n)) }, "Save as .txt")));
     if (!n.example) parts.push(correctWord(n));
   }
   if (state.tab === "cards" && arr(n.kit && n.kit.cards).length) parts.push(h("div", { class: "row" }, freeCardsBtn(n), exportBtn(n)));
@@ -1050,7 +1092,7 @@ function moreContent(n) {
   return parts.length ? h("div", { class: "stack fade", id: "more", style: "gap:6px;padding-top:10px" }, parts) : null;
 }
 const freeCardsBtn = (n) => !n.example && h("button", { class: "link", id: "freeCards", onclick: () => makeFreeCards(n) }, "Make fill-in-the-blank cards from my marks");
-const exportBtn = (n) => S.downloads && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + "-cards.csv", arr(n.kit && n.kit.cards).map((c) => [c.q, c.a].map((v) => '"' + v.replace(/"/g, '""') + '"').join(",")).join("\n")) }, "Export for Anki (.csv)");
+const exportBtn = (n) => (S.downloads || PUBLIC) && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + "-cards.csv", arr(n.kit && n.kit.cards).map((c) => [c.q, c.a].map((v) => '"' + v.replace(/"/g, '""') + '"').join(",")).join("\n")) }, "Export for Anki (.csv)");
 function correctWord(n) {
   const from = h("input", { id: "fixFrom", type: "text", placeholder: "The wrong word", "aria-label": "The wrong word", oninput: tally });
   const to = h("input", { id: "fixTo", type: "text", placeholder: "The right word", "aria-label": "The right word" });
@@ -1125,6 +1167,13 @@ async function copyText(t) {
   catch { toast("Your browser blocked copying here."); }
 }
 async function saveFile(filename, data) {
+  if (!S.downloads) {
+    const url = URL.createObjectURL(new Blob([data], { type: "text/plain;charset=utf-8" }));
+    const a = h("a", { href: url, download: filename });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return;
+  }
   try { await S.downloads.save({ filename, data }); }
   catch (e) { if (!(e && e.code === "declined")) toast("Couldn't save that file here."); }
 }
