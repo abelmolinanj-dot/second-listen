@@ -48,6 +48,15 @@ WHAT IS USED AND WHERE
    licenses/mediabunny-1.61.6-LICENSE.txt
    Loaded unmodified from the jsDelivr CDN. Not stored in this repository.
 
+8. FrequencyWords English word list (words.txt)
+   Source: https://github.com/hermitdave/FrequencyWords by Hermit Dave,
+           built from the OpenSubtitles 2018 corpus
+   License: Creative Commons Attribution-ShareAlike 4.0 International
+            https://creativecommons.org/licenses/by-sa/4.0/
+   Changes made for Second Listen: kept only the words from en_50k.txt,
+   dropped entries that are not plain words, and cut the list to the
+   20,000 most common. words.txt is shared under the same license.
+
 ========================================================================
 MIT LICENSE: OpenAI Whisper
 ========================================================================

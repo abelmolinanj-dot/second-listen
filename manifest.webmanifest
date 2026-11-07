@@ -1,7 +1,7 @@
 {
   "name": "Second Listen",
   "short_name": "Second Listen",
-  "description": "Hear your classes again: transcripts, replay, a highlight reel and flashcards. Free, with your audio kept on your device.",
+  "description": "Hear your classes again: a transcript you can replay, plus the key ideas, vocabulary and an outline. Free, with your audio kept on your device.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

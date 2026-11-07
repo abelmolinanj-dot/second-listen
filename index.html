@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f0b0a"><meta name="description" content="Hear your classes again: transcripts, replay, a highlight reel and flashcards. Free, with your audio kept on your device."><link rel="canonical" href="https://abelmolinanj-dot.github.io/second-listen/"><meta property="og:type" content="website"><meta property="og:site_name" content="Second Listen"><meta property="og:title" content="Second Listen"><meta property="og:description" content="Hear your classes again: transcripts, replay, a highlight reel and flashcards. Free, with your audio kept on your device."><meta property="og:url" content="https://abelmolinanj-dot.github.io/second-listen/"><meta property="og:image" content="https://abelmolinanj-dot.github.io/second-listen/share.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="An eye with a spiral iris beside the words Second Listen."><meta name="twitter:card" content="summary_large_image"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Second Listen</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f0b0a"><meta name="description" content="Hear your classes again: a transcript you can replay, plus the key ideas, vocabulary and an outline. Free, with your audio kept on your device."><link rel="canonical" href="https://abelmolinanj-dot.github.io/second-listen/"><meta property="og:type" content="website"><meta property="og:site_name" content="Second Listen"><meta property="og:title" content="Second Listen"><meta property="og:description" content="Hear your classes again: a transcript you can replay, plus the key ideas, vocabulary and an outline. Free, with your audio kept on your device."><meta property="og:url" content="https://abelmolinanj-dot.github.io/second-listen/"><meta property="og:image" content="https://abelmolinanj-dot.github.io/second-listen/share.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="An eye with a spiral iris beside the words Second Listen."><meta name="twitter:card" content="summary_large_image"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Second Listen</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap">
@@ -70,7 +70,6 @@ input[type=checkbox] { accent-color: var(--rouge); width: 18px; height: 18px; fl
 .nrow b { display: block; font-weight: 400; font-size: 1.32rem; line-height: 1.2; overflow-wrap: anywhere }
 .nrow span { font-size: .9rem; font-style: italic }
 .tag { font-style: normal; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--rouge); vertical-align: 2px }
-.due { color: var(--rouge) }
 /* Tabs */
 .tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; justify-content: space-between; gap: 6px; background: var(--paper); border-block: 1px solid var(--ink); margin-block: 10px 16px; padding-inline: 2px }
 .tabs button { min-height: 46px; font-style: italic; font-size: 1.04rem; position: relative; transition: color .2s }
@@ -111,15 +110,14 @@ ul.plain li::marker { color: var(--rouge); content: "\2014  " }
 .term .n { color: var(--ink); font-size: .88rem }
 .dg-nav { gap: 0 16px; font-size: .95rem }
 .ts { display: inline; font-style: italic; color: var(--rouge); font-size: .86em; font-variant-numeric: tabular-nums; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; padding: 6px 2px; white-space: nowrap }
-/* Cards turn over */
-.flip { perspective: 1400px; cursor: pointer; width: 100% }
-.flip .in { display: grid; transition: transform .7s var(--ease); transform-style: preserve-3d }
-.flip.over .in { transform: rotateY(180deg) }
-.face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-height: 300px; padding: 22px 22px 28px; border: 3px double var(--ink); background: var(--paper); display: flex; flex-direction: column; justify-content: center; gap: 14px; text-align: center }
-.face.back { transform: rotateY(180deg) }
-.face em { color: var(--rouge) }
-.face div { font-size: 1.42rem; line-height: 1.32; overflow-wrap: anywhere }
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+/* Key ideas and the outline */
+.idea { display: flex; flex-direction: column; gap: 8px; padding-block: 14px 16px; border-bottom: 1px solid var(--hair) }
+.idea h4 { margin: 0; font-weight: 400; font-style: italic; font-size: 1.36rem; line-height: 1.2; color: var(--rouge) }
+.idea .gist { font-size: 1.04rem; line-height: 1.45 }
+.idea .said { font-size: 1.1rem; line-height: 1.42 }
+.idea .lbl { display: block; font-size: .84rem; font-style: italic; letter-spacing: .02em; color: var(--rouge) }
+.idea ul.plain { margin: 0 }
+.idea .times { display: flex; flex-wrap: wrap; gap: 0 10px; font-size: 1rem }
 /* Quiz */
 .opt { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 4px; width: 100%; padding: 12px 2px; border-bottom: 1px solid var(--hair); transition: color .2s, padding .25s var(--ease) }
 .opt:not(:disabled):hover { color: var(--rouge); padding-left: 8px }
@@ -247,14 +245,6 @@ const EXAMPLE = {
       { term: "Fermentation", def: "The no-oxygen backup that regenerates NAD+ so glycolysis can continue." }
     ],
     signals: [],
-    cards: [
-      { q: "Name the three stages of cellular respiration in order.", a: "Glycolysis, the Krebs cycle, the electron transport chain.", at: "0:34" },
-      { q: "Where does glycolysis happen, and does it need oxygen?", a: "In the cytoplasm. It does not need oxygen.", at: "0:52" },
-      { q: "What does the Krebs cycle mainly produce?", a: "Electron carriers, NADH and FADH2, plus about 2 ATP.", at: "1:33" },
-      { q: "Which stage makes most of the ATP?", a: "The electron transport chain, through ATP synthase: roughly 26 to 28 ATP.", at: "2:21" },
-      { q: "What is the final electron acceptor?", a: "Oxygen.", at: "2:40" },
-      { q: "What is the purpose of fermentation?", a: "It regenerates NAD+ so glycolysis can keep running without oxygen.", at: "2:56" }
-    ].map((c) => ({ ...c, box: 0, due: 0 })),
     quiz: [
       { q: "Which stage produces the most ATP?", options: ["Glycolysis", "Krebs cycle", "Electron transport chain", "Fermentation"], answer: 2, why: "ATP synthase, powered by the proton gradient, makes roughly 26 to 28 ATP.", at: "2:21" },
       { q: "Why does the electron transport chain stop without oxygen?", options: ["Glucose runs out", "Electrons have nowhere to go", "ATP synthase breaks down", "NADH turns into pyruvate"], answer: 1, why: "Oxygen is the final electron acceptor, so without it the chain backs up.", at: "2:40" },
@@ -264,11 +254,11 @@ const EXAMPLE = {
 };
 
 /* ---------- App state ---------- */
-/* Outside Claude there's no AI, so this is the free version: transcript, replay, reel, radar and cards. */
+/* Outside Claude there's no AI, so this is the free version: transcript, replay, breakdown and outline. */
 const PUBLIC = !window.claude;
 if (PUBLIC) { const { summary, outline, terms, quiz, ...rest } = EXAMPLE.kit; EXAMPLE.kit = rest; }
 const notes = new Map([[EXAMPLE.id, EXAMPLE]]);
-const state = { view: "library", noteId: null, tab: "transcript", loaded: false, addText: false, search: "", onlyHl: false, sel: null, editing: false, confirmDelete: false, renaming: false, cardRun: null, quizRun: null, lang: lsGet("sl-lang", "en"), translate: lsGet("sl-translate", "0") === "1" };
+const state = { view: "library", noteId: null, tab: "transcript", loaded: false, addText: false, search: "", onlyHl: false, sel: null, editing: false, confirmDelete: false, renaming: false, quizRun: null, lang: lsGet("sl-lang", "en"), translate: lsGet("sl-translate", "0") === "1" };
 const S = { sample: undefined, downloads: null };
 const chats = {}, kitBusy = {}, kitErr = {}, jobErr = {};
 const cur = () => notes.get(state.noteId);
@@ -643,7 +633,7 @@ function breakdownPrompt(note) {
   return FRAME + forAI(note) + '\n</transcript>\n\nReply with only JSON in this shape:\n{"title":"a name for this class topic, at most 6 words","summary":"3 to 5 plain-English sentences a tired student would understand","outline":[{"heading":"section name","at":"m:ss or null","points":["short point"]}],"terms":[{"term":"word","def":"one-sentence definition in plain language"}],"signals":[{"quote":"the speaker\'s words, under 20 words","at":"m:ss or null","why":"why this looks testable, under 15 words"}]}\nFor signals, pick moments the speaker stressed, repeated, or tied to an exam or assignment. Use an empty list if there are none. ' + kitLanguageLine(note) + " Do not use Markdown.";
 }
 function practicePrompt(note) {
-  return FRAME + forAI(note) + '\n</transcript>\n\nReply with only JSON in this shape:\n{"cards":[{"q":"question","a":"short answer","at":"m:ss where this was explained, or null"}],"quiz":[{"q":"question","options":["four","answer","choices","here"],"answer":0,"why":"one sentence explaining the right answer","at":"m:ss where this was explained, or null"}]}\nWrite 10 to 20 cards and 6 to 10 quiz questions, or fewer if the material is short. Test understanding, not just recall. If the class involves calculations or accounting, include worked practice problems such as journal entries or short calculations. "answer" is the 0-based index of the correct option. Vary which position is correct. ' + kitLanguageLine(note) + " Do not use Markdown.";
+  return FRAME + forAI(note) + '\n</transcript>\n\nReply with only JSON in this shape:\n{"quiz":[{"q":"question","options":["four","answer","choices","here"],"answer":0,"why":"one sentence explaining the right answer","at":"m:ss where this was explained, or null"}]}\nWrite 6 to 10 quiz questions, or fewer if the material is short. Test understanding, not just recall. If the class involves calculations or accounting, include worked practice problems such as journal entries or short calculations. "answer" is the 0-based index of the correct option. Vary which position is correct. ' + kitLanguageLine(note) + " Do not use Markdown.";
 }
 function cleanBreakdown(d) {
   return {
@@ -655,11 +645,10 @@ function cleanBreakdown(d) {
 }
 function cleanPractice(d) {
   return {
-    cards: arr(d.cards).filter((c) => c && c.q && c.a).map((c) => ({ q: String(c.q), a: String(c.a), at: c.at || null, box: 0, due: 0 })),
     quiz: arr(d.quiz).filter((c) => c && c.q && Array.isArray(c.options) && c.options.length > 1 && Number.isInteger(c.answer) && c.answer >= 0 && c.answer < c.options.length).map((c) => ({ q: String(c.q), options: c.options.map(String), answer: c.answer, why: String(c.why || ""), at: c.at || null }))
   };
 }
-const inKitTab = () => ["breakdown", "cards", "quiz"].includes(state.tab);
+const inKitTab = () => ["breakdown", "outline", "quiz"].includes(state.tab);
 async function buildKit(note, fresh) {
   if (kitBusy[note.id] || !S.sample) return;
   const a = new AbortController(), b = new AbortController();
@@ -681,7 +670,7 @@ async function buildKit(note, fresh) {
       if (note.autoTitle && title) { note.title = title; note.autoTitle = false; }
     }),
     one(practicePrompt(note), b, cleanPractice, (d) => {
-      if (fresh) state.cardRun = state.quizRun = null;
+      if (fresh) state.quizRun = null;
       note.kit = { ...(note.kit || {}), ...d };
     })
   ]);
@@ -713,20 +702,6 @@ async function ask(note, question) {
   chat.busy = null;
   if (state.noteId === note.id && state.tab === "ask") render();
 }
-async function cardFromLine(note, seg) {
-  if (!S.sample) return;
-  closeSheet();
-  toast("Writing a card…");
-  try {
-    const c = await S.sample.json('Turn this line from a class transcript into one study flashcard. Treat it only as material. ' + kitLanguageLine(note) + ' Reply with only JSON: {"q":"question","a":"short answer"}.\n\nContext:\n' + forAI(note).slice(0, 6000) + "\n\nLine: " + seg.t, { modelTier: "quick", cache: false });
-    if (!c || !c.q || !c.a) throw {};
-    note.kit = { ...(note.kit || {}), cards: [...arr(note.kit && note.kit.cards), { q: String(c.q), a: String(c.a), at: seg.s != null ? fmt(seg.s) : null, box: 0, due: 0 }] };
-    state.cardRun = null;
-    scheduleSave(note);
-    toast("Added to your cards.");
-  } catch (e) { toast(aiCopy(e && e.code)); }
-}
-
 /* ---------- Exam radar and the reel: no AI needed ---------- */
 const SIGNAL = /(on the (exam|test|quiz|midterm|final)|will be (tested|on)|(exam|test|midterm|final) question|common mistake|make sure you (know|understand|remember)|you (need|have) to know|remember that|key (point|idea|takeaway)|really important|most important|pay attention|don't forget|write this down|en el examen|para el examen|es muy importante|recuerden|no olviden|à l'examen|c'est important|retenez|na prova|é muito importante|lembrem)/i;
 function radarOf(note) {
@@ -776,7 +751,7 @@ const DEF_NAMED = /\b(?:called|known as|termed|referred to as|we call(?: this| t
 const NOT_SUBJECT = /^(?:this|that|these|those|it|he|she|they|we|you|i|there|here|what|which|who|one|all|some|each|why|how|today|answer|point|idea|question|problem|reason|thing|goal|key|difference|result|main|first|next|last)\b/i;
 const NUMBER_FACT = /(?:\$\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:thousand|million|billion|trillion))?|\b\d[\d,]*(?:\.\d+)?\s?(?:%|percent\b)|\b\d[\d,.]*\s(?:thousand|million|billion|trillion)\b|\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?|\b(?:in|by|from|since|until|around|about|of|after|before|during|year)\s+(?:1[0-9]{3}|20[0-9]{2})s?\b|\b(?:1[0-9]{3}|20[0-9]{2})s\b)/gi;
 const FILLER_START = /^(?:so|and|but|okay|ok|well|um|uh|like|right|yeah|alright|now|it|this|that|these|those|they|he|she|we|you|i)\b/i;
-const singular = (w) => (w.length > 3 && /s$/i.test(w) && !/(ss|us|is)$/i.test(w) ? w.replace(/ies$/i, "y").replace(/s$/i, "") : w);
+const singular = (w) => (w.length > 3 && /s$/i.test(w) && !/(ss|us|is)$/i.test(w) ? (w.length > 4 && /ies$/i.test(w) ? w.replace(/ies$/i, "y") : w.replace(/s$/i, "")) : w);
 const clip = (t, max = 190) => (t.length <= max ? t : t.slice(0, t.lastIndexOf(" ", max)) + "…");
 const tidyName = (s) => s.replace(/[’']s$/i, "").replace(/^[^\p{L}]+|[^\p{L}\p{N}]+$/gu, "").trim();
 
@@ -802,7 +777,24 @@ function tally(map, key, name, s) {
   map.set(key, fresh);
   return fresh;
 }
-async function buildDigest(sents, nlp) {
+/* How common each word is in everyday spoken English, so words like "team" or "friend" never pass for vocabulary. */
+let rankLoad = null;
+const loadRanks = () => rankLoad || (rankLoad = fetch(new URL("words.txt", document.baseURI).href)
+  .then((r) => (r.ok ? r.text() : Promise.reject(new Error("no word list"))))
+  .then((t) => { const m = new Map(); let i = 0; for (const line of t.split("\n")) { const w = line.trim(); if (w && w[0] !== "#") m.set(w, ++i); } return m.size > 1000 ? m : null; })
+  .catch(() => { rankLoad = null; return null; }));
+/* Strips the "so, um, okay" from the front of a quote so it reads like a note. The transcript itself is never changed. */
+function tidyQuote(t) {
+  let s = String(t).replace(/(?<![\p{L}])(?:u+m+|u+h+|e+r+m+|hmm+)(?![\p{L}])[,.]?\s*/giu, "").replace(/\s{2,}/g, " ").trim(), prev;
+  do { prev = s; s = s.replace(/^(?:(?:so|and|okay|ok|alright|all right|now|well|basically|anyway)\b[,.]?|(?:like|right|yeah|you know|i mean)[,])\s+/i, ""); } while (s !== prev);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+const EXPLAINS = /\b(?:because|which means|that means|means that|in other words|the reason|leads? to|results? in|so that|depends on|unlike|whereas|compared to|the difference|instead of|is when|happens when|is why|that's why|allows?|causes?|creates?|helps?|without)\b/i;
+const EXAMPLE_CUE = /\b(?:for example|for instance|like when|imagine|let's say|say (?:you|your|i|we|a|an|the)\b|such as)/i;
+const EXAMPLE_INTRO = /\b(?:give you an example|here's an example|an example of this|take an example|for example)[.:,]?\s*$/i;
+const HOUSEKEEPING = /\b(?:next week|next class|next time|due (?:on |this |next )?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today)|is due|the reading|do the reading|office hours|that's it for today|see you|any questions|let's get started|syllabus|canvas|blackboard|attendance)\b/i;
+async function buildDigest(sents, nlp, ranks) {
+  const rankOf = (w) => { if (!ranks) return null; const l = w.toLowerCase().replace(/’/g, "'"); return Math.min(ranks.get(l) || 1e5, ranks.get(singular(l)) || 1e5); };
   const people = new Map(), places = new Map(), terms = new Map(), facts = new Map(), freq = new Map();
   const lowerWords = new Set();
   for (const s of sents) for (const w of s.t.match(/[\p{L}'’-]+/gu) || []) {
@@ -824,7 +816,7 @@ async function buildDigest(sents, nlp) {
     tally(people, bare.toLowerCase(), name, s);
   };
   const addTerm = (raw, s, def, proper) => {
-    const name = tidyName(raw); if (name.length < 2) return;
+    const name = tidyName(tidyName(raw).replace(/^(?:that's|that is|it's|it is|this is|there's|here's|what's|let's|that|this)\s+/i, "")); if (name.length < 2) return;
     const key = name.toLowerCase().split(/\s+/).map(singular).join(" ");
     const e = terms.get(key);
     if (e) {
@@ -944,10 +936,30 @@ async function buildDigest(sents, nlp) {
   const namedKeys = new Set([...people.keys(), ...places.keys()].map(asKey));
   const namedBits = new Set([...nameBits].map(singular));
   const isNamed = (key) => { const w = key.split(" ").filter((x) => !/^(?:of|the|and|de|van|von)$/.test(x)); return namedKeys.has(key) || w.every((x) => namedBits.has(x)); };
+  /* Vocabulary means words a class teaches, not words everyone already uses. A phrase like "social capital" counts because it keeps coming back as a unit. */
+  const isVocab = (t) => {
+    if (!ranks || t.proper) return true;
+    if (Object.keys(t.surface).some((s) => /^[A-Z][A-Z0-9]+$/.test(s))) return true;
+    const ws = t.key.split(" ").filter((w) => !/^(?:of|the|and|a|an|to|in|for|on)$/.test(w));
+    if (!ws.length) return false;
+    const r = ws.map(rankOf), most = Math.max(...r), head = r[r.length - 1];
+    if (t.def) return most > 1500;
+    if (ws.length === 1) return (most > 15000 && t.count >= 2) || (most > 6000 && t.count >= 3);
+    return (most > 6000 && t.count >= 2) || (Math.min(...r) > 1500 && t.count >= 2) || (head > 2000 && t.count >= 3) || (most > 2000 && t.count >= 4);
+  };
+  const matcher = (key) => new RegExp("(?<![\\p{L}])" + key.split(" ").map((w) => { const e = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); return /y$/.test(e) ? e.slice(0, -1) + "(?:y|ies)" : e + "(?:s|es)?"; }).join("[\\s-]+") + "(?![\\p{L}])", "iu");
+  /* Count each term once per sentence it appears in, so the numbers match what you'd find in the transcript. */
   const termList = [...terms.values()]
     .filter((t) => counted(t) && !isNamed(t.key))
+    .map((t) => { const re = matcher(t.key); let hits = 0; for (const s of sents) if (re.test(s.t)) hits++; return { ...t, re, count: hits || t.count }; })
+    .filter((t) => counted(t) && isVocab(t))
     .map((t) => { const usual = Object.entries(t.surface).sort((a, b) => b[1] - a[1])[0][0]; return { ...t, name: usual[0].toUpperCase() + usual.slice(1), score: (t.def ? 50 : 0) + (t.proper ? 6 : 0) + t.count * (1 + 0.6 * (t.key.split(" ").length - 1)) }; })
     .sort((a, b) => b.score - a.score);
+  /* "Bonding" on its own adds nothing beside "bonding social capital". */
+  for (let i = termList.length - 1; i >= 0; i--) {
+    const t = termList[i]; if (t.key.includes(" ")) continue;
+    if (termList.some((o) => o !== t && o.key.split(" ").includes(t.key) && t.count - o.count <= 2)) termList.splice(i, 1);
+  }
   /* A place or group that's only part of a named thing ("Federalist" in "Federalist Papers") stands down. */
   for (const key of [...places.keys()]) if (!key.includes(" ") && places.get(key).count <= 1 && termList.some((t) => t.proper && t.key.split(" ").includes(singular(key)))) places.delete(key);
   /* A person only named in a phrase like "Krebs cycle" isn't a person in this lecture. */
@@ -956,13 +968,21 @@ async function buildDigest(sents, nlp) {
     if (termList.some((t) => t.key.split(" ").includes(key) && t.key !== key && t.count >= e.count)) people.delete(key);
   }
   for (const key of people.keys()) places.delete(key);
+  /* People are usually named in full once, then by last name: count both. */
+  for (const e of people.values()) {
+    const last = e.name.replace(TITLE_START, "").split(/\s+/).pop();
+    if (!last || last.length < 3) continue;
+    const re = new RegExp("(?<![\\p{L}])" + last.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}])", "u");
+    let hits = 0; for (const s of sents) if (re.test(s.t)) hits++;
+    e.count = Math.max(e.count, hits);
+  }
   /* Main ideas: the sentences carrying the words this lecture keeps coming back to. */
   const termWords = new Set(termList.slice(0, 15).flatMap((t) => t.key.split(" ")));
   const scored = sents.map((s, idx) => {
     const words = s.t.match(/[\p{L}\p{N}'’-]+/gu) || [];
     if (words.length < 7 || words.length > 45 || s.t.endsWith("?")) return { idx, score: 0, s };
     let score = 0;
-    for (const w of words) { const k = singular(w.toLowerCase()); if (w.length > 3 && !COMMON.has(k)) score += Math.min(freq.get(k) || 0, 6) * (termWords.has(k) ? 2 : 1); }
+    for (const w of words) { const k = singular(w.toLowerCase()); if (w.length > 3 && !COMMON.has(k) && (!ranks || rankOf(k) > 300)) score += Math.min(freq.get(k) || 0, 6) * (termWords.has(k) ? 2 : 1); }
     score /= Math.sqrt(words.length);
     if (FILLER_START.test(s.t)) score *= 0.6;
     if (SIGNAL.test(s.t)) score *= 1.3;
@@ -976,14 +996,174 @@ async function buildDigest(sents, nlp) {
   }
   ideas.sort((a, b) => a.idx - b.idx);
   const byCount = (m) => [...m.values()].sort((a, b) => b.count - a.count);
+  await new Promise((r) => setTimeout(r));
+  const ctx = { sents, rankOf, termList, people: byCount(people) };
   return {
     english: !!nlp,
     ideas: sents.length >= 6 ? ideas.map((x) => x.s) : [],
-    people: byCount(people),
+    keyIdeas: keyIdeasOf(ctx),
+    outline: outlineOf(ctx),
+    people: ctx.people,
     terms: termList,
     facts: [...facts.values()].sort((a, b) => (a.at || 0) - (b.at || 0)),
     places: byCount(places)
   };
+}
+
+/* Shared by key ideas and the outline: what a sentence is about, weighted so rare words count for more. */
+function wordBag(t, rankOf) {
+  const bag = new Map();
+  for (const raw of t.toLowerCase().match(/\p{L}[\p{L}'’-]*/gu) || []) {
+    const w = singular(raw);
+    if (w.length < 3 || GROUP_STOP.has(w) || GROUP_STOP.has(raw)) continue;
+    const r = rankOf(w);
+    const weight = r == null ? (COMMON.has(w) ? 0.3 : 2) : r < 150 ? 0 : Math.log(r / 100);
+    if (weight > 0) bag.set(w, (bag.get(w) || 0) + weight);
+  }
+  return bag;
+}
+function addBag(into, bag) { for (const [w, v] of bag) into.set(w, (into.get(w) || 0) + v); return into; }
+function cosine(a, b) {
+  let dot = 0, na = 0, nb = 0;
+  for (const [w, v] of a) { na += v * v; const o = b.get(w); if (o) dot += v * o; }
+  for (const v of b.values()) nb += v * v;
+  return na && nb ? dot / Math.sqrt(na * nb) : 0;
+}
+/* A sentence worth quoting: a full thought, not a question, not a fragment. */
+const quotable = (t) => { const n = (t.match(/[\p{L}\p{N}'’-]+/gu) || []).length; return n >= 7 && n <= 48 && !/\?\s*$/.test(t) && !/^(?:any questions|questions|does that make sense|everybody|everyone)\b/i.test(t); };
+function infoScore(s, bag, skip) {
+  let sum = 0, n = 0;
+  for (const [w, v] of bag) { n++; if (!skip || !skip.has(w)) sum += v; }
+  return n ? sum / Math.sqrt((s.t.match(/[\p{L}\p{N}'’-]+/gu) || []).length) : 0;
+}
+function pickSpread(cands, howMany, used) {
+  const out = [];
+  for (const c of cands.sort((a, b) => b.score - a.score)) {
+    if (out.length >= howMany) break;
+    if (used.has(c.i) || out.some((o) => Math.abs(o.i - c.i) < 2 || cosine(o.bag, c.bag) > 0.6)) continue;
+    out.push(c); used.add(c.i);
+  }
+  return out.sort((a, b) => a.i - b.i);
+}
+
+/* Key ideas: the concepts this class keeps coming back to, each with what was said about it and every place it comes up. */
+function keyIdeasOf({ sents, rankOf, termList, people }) {
+  if (sents.length < 8 || !termList.length) return [];
+  const bags = sents.map((s) => wordBag(s.t, rankOf));
+  const total = sents.length;
+  const cands = termList.slice(0, 30).map((t) => {
+    const idx = []; sents.forEach((s, i) => { if (t.re.test(s.t)) idx.push(i); });
+    const spread = idx.length > 1 ? (idx[idx.length - 1] - idx[0]) / total : 0;
+    return { t, idx, score: idx.length * (1 + spread) * (t.def ? 1.6 : 1) * (t.key.includes(" ") ? 1.3 : 1) };
+  }).filter((c) => c.idx.length >= 2 || (c.t.def && c.idx.length));
+  cands.sort((a, b) => b.score - a.score);
+  const howMany = Math.max(3, Math.min(6, Math.round(total / 30) + 2));
+  const picked = [];
+  for (const c of cands) {
+    if (picked.length >= howMany) break;
+    const words = new Set(c.t.key.split(" "));
+    /* "Social capital" covers "capital", but "bonding social capital" is its own idea when the class defines it or keeps using it. */
+    const parent = picked.find((p) => {
+      const pw = p.t.key.split(" ");
+      if ([...words].every((w) => pw.includes(w))) return true;
+      if (pw.every((w) => words.has(w))) return !(c.t.def || c.idx.length >= 3);
+      return c.idx.filter((i) => p.idx.includes(i)).length >= c.idx.length * 0.6;
+    });
+    if (parent) { parent.kin.push(c.t.name); continue; }
+    picked.push({ ...c, kin: [] });
+  }
+  const named = [...termList.slice(0, 40).map((t) => ({ name: t.name, re: t.re, key: t.key })), ...people.slice(0, 15).map((p) => ({ name: p.name, re: new RegExp("(?<![\\p{L}])" + p.name.split(/\s+/).pop().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}])", "u"), key: p.name.toLowerCase() }))];
+  return picked.sort((a, b) => a.idx[0] - b.idx[0]).map((c) => {
+    const own = new Set(c.t.key.split(" "));
+    const used = new Set();
+    const defIdx = c.t.def ? sents.findIndex((s) => s.t === c.t.context) : -1;
+    if (defIdx >= 0) used.add(defIdx);
+    const near = new Set();
+    /* The sentence after a mention often carries the explanation, but only if it stays on the same subject. */
+    for (const i of c.idx) { near.add(i); if (i + 1 < total && !c.idx.includes(i + 1) && cosine(bags[i], bags[i + 1]) > 0.12) near.add(i + 1); }
+    const fit = (i) => quotable(sents[i].t) && !HOUSEKEEPING.test(sents[i].t);
+    const pool = [...near].filter(fit).map((i) => ({ i, bag: bags[i], score: infoScore(sents[i], bags[i], own) * (EXPLAINS.test(sents[i].t) ? 1.5 : 1) * (c.idx.includes(i) ? 1.4 : 1) * (SIGNAL.test(sents[i].t) ? 1.2 : 1) }));
+    let exampleAt = null;
+    for (const i of c.idx) {
+      for (let j = i; j <= Math.min(total - 1, i + 3) && exampleAt == null; j++) {
+        if (used.has(j)) continue;
+        if (EXAMPLE_INTRO.test(sents[j].t) && j + 1 < total && fit(j + 1)) exampleAt = j + 1;
+        else if (EXAMPLE_CUE.test(sents[j].t) && fit(j) && !SIGNAL.test(sents[j].t)) exampleAt = j;
+      }
+      if (exampleAt != null) break;
+    }
+    if (exampleAt != null) used.add(exampleAt);
+    const points = pickSpread(pool.filter((p) => !used.has(p.i)), 3, used);
+    const together = new Map();
+    const variant = (o) => { const ow = o.key.split(" ").filter((w) => !/^(?:of|the|and|a|an)$/.test(w)); return ow.every((w) => own.has(w)) || [...own].every((w) => ow.includes(w)); };
+    for (const i of c.idx) for (const o of named) if (!variant(o) && !c.kin.includes(o.name) && o.re.test(sents[i].t)) together.set(o.name, (together.get(o.name) || 0) + 1);
+    const related = [...together.entries()].filter(([, k]) => k >= (c.idx.length > 4 ? 2 : 1)).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([name]) => name);
+    const times = [];
+    for (const i of c.idx) { const at = sents[i].at; if (at != null && !times.some((x) => Math.abs(x - at) < 15)) times.push(at); }
+    return {
+      name: c.t.name, key: c.t.key, count: c.idx.length, kin: c.kin.slice(0, 3), related, times,
+      first: sents[c.idx[0]].at, last: sents[c.idx[c.idx.length - 1]].at, spread: (c.idx[c.idx.length - 1] - c.idx[0]) / total,
+      def: defIdx >= 0 ? { t: tidyQuote(sents[defIdx].t), at: sents[defIdx].at } : null,
+      points: points.map((p) => ({ t: tidyQuote(sents[p.i].t), at: sents[p.i].at })),
+      example: exampleAt != null ? { t: tidyQuote(sents[exampleAt].t), at: sents[exampleAt].at } : null
+    };
+  });
+}
+/* One plain sentence about an idea, made only from facts about the transcript. */
+function ideaGist(k) {
+  const where = k.first == null ? "" : k.spread > 0.6 ? ", all through the class" : k.last != null && k.last - k.first > 60 ? ", between " + fmt(k.first) + " and " + fmt(k.last) : ", around " + fmt(k.first);
+  const list = (a) => (a.length < 2 ? a[0] : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
+  return k.name + " comes up " + (k.count === 1 ? "once" : k.count + " times") + where + "." + (k.related.length ? " It's usually tied to " + list(k.related) + "." : "") + (k.kin.length ? " Also covered: " + list(k.kin) + "." : "");
+}
+
+/* The outline: the class split where the topic shifts, each part named for what it covers. */
+function outlineOf({ sents, rankOf, termList }) {
+  const n = sents.length;
+  if (n < 14) return [];
+  const end = sents[n - 1].at;
+  const timed = end != null && end > 60;
+  let parts = timed ? Math.round(end / 300) : Math.round(n / 40);
+  parts = Math.max(2, Math.min(10, parts, Math.floor(n / 6)));
+  const bags = sents.map((s) => wordBag(s.t, rankOf));
+  const W = Math.max(3, Math.min(12, Math.round(n / parts / 2)));
+  const minLen = Math.max(4, Math.floor((n / parts) * 0.5));
+  const gaps = [];
+  for (let b = minLen; b <= n - minLen; b++) {
+    const before = new Map(), after = new Map();
+    for (let i = Math.max(0, b - W); i < b; i++) addBag(before, bags[i]);
+    for (let i = b; i < Math.min(n, b + W); i++) addBag(after, bags[i]);
+    gaps.push({ b, sim: cosine(before, after) });
+  }
+  const cuts = [];
+  for (const g of gaps.sort((a, b) => a.sim - b.sim)) {
+    if (cuts.length >= parts - 1) break;
+    if (cuts.every((c) => Math.abs(c - g.b) >= minLen)) cuts.push(g.b);
+  }
+  cuts.sort((a, b) => a - b);
+  const ranges = [0, ...cuts, n].slice(0, -1).map((a, k, arr) => [a, k + 1 < arr.length ? arr[k + 1] : n]);
+  const terms = termList.slice(0, 40).map((t) => { const idx = []; sents.forEach((s, i) => { if (t.re.test(s.t)) idx.push(i); }); return { t, idx }; }).filter((x) => x.idx.length);
+  const seenHeads = new Set();
+  return ranges.map(([a, b], k) => {
+    const inPart = terms.map((x) => ({ ...x, c: x.idx.filter((i) => i >= a && i < b).length })).filter((x) => x.c > 0);
+    const heads = inPart.filter((x) => x.c >= 2 || (x.t.def && sents.slice(a, b).some((s) => s.t === x.t.context)))
+      .map((x) => ({ name: x.t.name, score: x.c * (x.c / x.idx.length) * (x.t.key.includes(" ") ? 1.3 : 1) }))
+      .sort((p, q) => q.score - p.score);
+    let title = (heads.find((x) => !seenHeads.has(x.name)) || heads[0] || {}).name;
+    if (!title) {
+      const bag = new Map(); for (let i = a; i < b; i++) addBag(bag, bags[i]);
+      const top = [...bag.entries()].sort((p, q) => q[1] - p[1])[0];
+      title = top ? top[0][0].toUpperCase() + top[0].slice(1) : "Part " + (k + 1);
+    }
+    if (seenHeads.has(title)) title = "More on " + title.charAt(0).toLowerCase() + title.slice(1);
+    seenHeads.add(title.replace(/^More on /, "").replace(/^./, (c) => c.toUpperCase()));
+    const partBag = new Map(); for (let i = a; i < b; i++) addBag(partBag, bags[i]);
+    const pool = []; for (let i = a; i < b; i++) if (quotable(sents[i].t) && !HOUSEKEEPING.test(sents[i].t)) pool.push({ i, bag: bags[i], score: cosine(bags[i], partBag) * (1 + infoScore(sents[i], bags[i]) / 10) * (EXPLAINS.test(sents[i].t) ? 1.2 : 1) * (SIGNAL.test(sents[i].t) ? 1.2 : 1) });
+    const gist = pickSpread(pool, b - a > 30 ? 3 : 2, new Set()).map((p) => ({ t: tidyQuote(sents[p.i].t), at: sents[p.i].at }));
+    const fresh = terms.filter((x) => x.idx[0] >= a && x.idx[0] < b && x.t.name !== title).slice(0, 4).map((x) => x.t.name);
+    let start = null; for (let i = a; i < b && start == null; i++) start = sents[i].at;
+    let stop = null; for (let i = b; i < n && stop == null; i++) stop = sents[i].at;
+    return { title, start, end: stop != null ? stop : timed ? end : null, gist, fresh };
+  });
 }
 const digests = new Map();
 function digestOf(n) {
@@ -996,13 +1176,13 @@ function digestOf(n) {
   digests.set(n.id, next);
   (async () => {
     const foreign = n.lang && n.lang.code !== "en" && !n.lang.translate;
-    const nlp = foreign ? null : await loadNlp();
+    const [nlp, ranks] = foreign ? [null, null] : await Promise.all([loadNlp(), loadRanks()]);
     let data;
-    try { data = await buildDigest(sentencesOf(n), nlp); }
-    catch { data = await buildDigest(sentencesOf(n), null); }
+    try { data = await buildDigest(sentencesOf(n), nlp, ranks); }
+    catch { data = await buildDigest(sentencesOf(n), null, null); }
     data.foreign = !!foreign;
     digests.set(n.id, { fp, data, busy: false });
-    if (state.view === "note" && state.noteId === n.id && state.tab === "breakdown" && !(document.activeElement && document.activeElement.matches("input,textarea"))) render();
+    if (state.view === "note" && state.noteId === n.id && (state.tab === "breakdown" || state.tab === "outline") && !(document.activeElement && document.activeElement.matches("input,textarea"))) render();
   })();
   return next.data;
 }
@@ -1141,36 +1321,6 @@ function paintPlayer() {
   document.documentElement.style.setProperty("--playerH", box.offsetHeight + "px");
 }
 
-/* ---------- Flashcards ---------- */
-const BOXES = [0, 1, 3, 7, 14, 30];
-const DAY = 86400000;
-const dueCards = (note) => arr(note.kit && note.kit.cards).filter((c) => (c.due || 0) <= Date.now());
-function startCards(note, all) {
-  const cards = arr(note.kit && note.kit.cards);
-  state.cardRun = { noteId: note.id, queue: (all ? cards : dueCards(note)).slice(), flipped: false, done: 0 };
-}
-/* Fill-in-the-blank cards from your own marks. Free, works with no AI. */
-const STOP = /^(because|before|after|should|would|could|there|their|these|those|which|while|about|really|actually|something|important|remember|people|thing|things|going|right|being|where|other)$/i;
-function makeFreeCards(n) {
-  const picked = n.segments.filter((s) => s.h || s.lost);
-  const have = new Set(arr(n.kit && n.kit.cards).map((c) => c.q));
-  const fresh = [];
-  for (const s of picked) {
-    const words = s.t.match(/[\p{L}\p{N}'-]{5,}/gu) || [];
-    const answer = words.filter((w) => !STOP.test(w)).sort((a, b) => b.length - a.length)[0];
-    if (!answer) continue;
-    const q = s.t.replace(answer, "______");
-    if (have.has(q)) continue;
-    fresh.push({ q, a: answer, at: s.s != null ? fmt(s.s) : null, box: 0, due: 0 });
-  }
-  if (!fresh.length) { toast(picked.length ? "Those cards already exist." : "Hold a few sentences in the transcript to highlight them first."); return; }
-  n.kit = { ...(n.kit || {}), cards: [...arr(n.kit && n.kit.cards), ...fresh] };
-  state.cardRun = null;
-  scheduleSave(n);
-  toast(fresh.length === 1 ? "Added 1 card." : "Added " + fresh.length + " cards.");
-  render();
-}
-
 /* ---------- Views ---------- */
 function closeNoteUI() { closeSheet(); clearPlayer(); paintPlayer(); }
 function openNote(id) {
@@ -1179,7 +1329,7 @@ function openNote(id) {
     opening.segments = opening.segments.filter((s) => !isNoiseLine(s.t));
     scheduleSave(opening);
   }
-  Object.assign(state, { view: "note", noteId: id, tab: "transcript", search: "", onlyHl: false, sel: null, editing: false, confirmDelete: false, renaming: false, more: false, cardRun: null, quizRun: null });
+  Object.assign(state, { view: "note", noteId: id, tab: "transcript", search: "", onlyHl: false, sel: null, editing: false, confirmDelete: false, renaming: false, more: false, quizRun: null });
   closeSheet();
   render(true);
   window.scrollTo({ top: 0, behavior: "instant" });
@@ -1274,7 +1424,7 @@ function textForm() {
     h("button", { class: "link center", onclick: () => file.click() }, "Open a .txt, .srt or .vtt file"));
 }
 function noteRow(n) {
-  const due = dueCards(n).length, running = job && job.noteId === n.id, meta = [];
+  const running = job && job.noteId === n.id, meta = [];
   if (n.audio && n.audio.duration) meta.push(fmt(n.audio.duration));
   if (n.lang && n.lang.code !== "en") meta.push(langName(n.lang.code));
   meta.push(n.kit && n.kit.summary ? "study kit ready" : n.segments.length + (n.segments.length === 1 ? " line" : " lines"));
@@ -1282,11 +1432,11 @@ function noteRow(n) {
   else if (n.status !== "ready") meta.push("paused");
   return h("button", { class: "nrow", onclick: () => openNote(n.id) },
     h("b", null, n.title, " ", n.example && h("span", { class: "tag" }, "Example")),
-    h("span", null, meta.join(" · "), due > 0 && !n.example && h("span", { class: "due" }, " · " + due + " cards due")));
+    h("span", null, meta.join(" · ")));
 }
 function noteView(n) {
-  const tabs = (PUBLIC ? [["transcript", "Transcript"], ["breakdown", "Breakdown"], ["cards", "Cards"]] : [["transcript", "Transcript"], ["breakdown", "Breakdown"], ["cards", "Cards"], ["quiz", "Quiz"], ["ask", "Ask"]]);
-  const panels = { transcript: transcriptTab, breakdown: breakdownTab, cards: cardsTab, quiz: quizTab, ask: askTab };
+  const tabs = (PUBLIC ? [["transcript", "Transcript"], ["breakdown", "Breakdown"], ["outline", "Outline"]] : [["transcript", "Transcript"], ["breakdown", "Breakdown"], ["outline", "Outline"], ["quiz", "Quiz"], ["ask", "Ask"]]);
+  const panels = { transcript: transcriptTab, breakdown: breakdownTab, outline: outlineTab, quiz: quizTab, ask: askTab };
   const hasMore = !n.example || state.tab === "transcript";
   return h("div", null,
     h("div", { class: "row", style: "justify-content:space-between" },
@@ -1426,12 +1576,10 @@ function moreContent(n) {
       (S.downloads || PUBLIC) && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + ".txt", plainTranscript(n)) }, "Save as .txt")));
     if (!n.example) parts.push(correctWord(n));
   }
-  if (state.tab === "cards" && arr(n.kit && n.kit.cards).length) parts.push(h("div", { class: "row" }, freeCardsBtn(n), exportBtn(n)));
+  if ((state.tab === "breakdown" || state.tab === "outline") && n.segments.length && (S.downloads || PUBLIC)) parts.push(h("button", { class: "link", id: "saveGuide", onclick: () => { const g = studyGuide(n); if (g) saveFile(safeName(n.title) + "-breakdown.txt", g); else toast("The breakdown is still being worked out. Try again in a moment."); } }, "Save the breakdown and outline as .txt"));
   if (!n.example) parts.push(state.renaming ? manageRow(n) : h("button", { class: "link", id: "renameLink", onclick: () => { state.renaming = true; state.confirmDelete = false; render(); } }, "Rename or delete"));
   return parts.length ? h("div", { class: "stack fade", id: "more", style: "gap:6px;padding-top:10px" }, parts) : null;
 }
-const freeCardsBtn = (n) => !n.example && h("button", { class: "link", id: "freeCards", onclick: () => makeFreeCards(n) }, "Make fill-in-the-blank cards from my marks");
-const exportBtn = (n) => (S.downloads || PUBLIC) && h("button", { class: "link", onclick: () => saveFile(safeName(n.title) + "-cards.csv", arr(n.kit && n.kit.cards).map((c) => [c.q, c.a].map((v) => '"' + v.replace(/"/g, '""') + '"').join(",")).join("\n")) }, "Export for Anki (.csv)");
 function correctWord(n) {
   const from = h("input", { id: "fixFrom", type: "text", placeholder: "The wrong word", "aria-label": "The wrong word", oninput: tally });
   const to = h("input", { id: "fixTo", type: "text", placeholder: "The right word", "aria-label": "The right word" });
@@ -1491,7 +1639,6 @@ function paintSheet() {
       h("button", { class: "link", id: "actClose", style: "margin-left:auto;text-decoration:none", "aria-label": "Close", onclick: closeSheet }, "×")),
     state.sheetMore && h("div", { class: "row fade" },
       h("button", { class: "link", id: "actLost", onclick: () => { seg.lost = !seg.lost; scheduleSave(n); paintSeg(i); paintSheet(); } }, seg.lost ? "No longer lost" : "I got lost here"),
-      S.sample && h("button", { class: "link", id: "actCard", onclick: () => cardFromLine(n, seg) }, "Make a card"),
       !n.example && h("button", { class: "link", id: "actFix", onclick: () => { state.editing = true; paintSheet(); } }, "Fix the text")))));
 }
 function appendLines(n, count) {
@@ -1544,7 +1691,7 @@ function kitGate(n) {
   const foreign = n.lang && n.lang.code !== "en" && !n.lang.translate;
   return h("div", { class: "stack" },
     err && h("p", { class: "err" }, err),
-    !has && h("p", null, "Have Claude write a summary, outline, key terms, flashcards and a quiz from this transcript."),
+    !has && h("p", null, "Have Claude write a summary, outline, key terms and a quiz from this transcript."),
     foreign && h("label", { class: "stack", style: "gap:0;font-style:italic" }, "Write my study kit in",
       h("select", { id: "kitLang", onchange: (e) => { n.kitLang = e.target.value; scheduleSave(n); } },
         h("option", { value: "en", selected: (n.kitLang || "en") === "en" }, "English"),
@@ -1556,85 +1703,128 @@ function breakdownTab(n) {
   const k = n.kit || {}, radar = radarOf(n), reel = reelOf(n);
   const reelLen = reel.reduce((t, r) => t + (r.e - r.s), 0);
   const dg = n.segments.length ? digestOf(n) : null;
-  const shown = new Set(arr(k.terms).map((t) => t.term.toLowerCase()));
+  const keyIdeas = dg ? arr(dg.keyIdeas) : [];
+  const shown = new Set([...arr(k.terms).map((t) => t.term.toLowerCase()), ...keyIdeas.map((x) => x.name.toLowerCase())]);
   const autoTerms = dg ? dg.terms.filter((t) => !shown.has(t.name.toLowerCase())) : [];
   const SHOW = 8;
   const digRows = (key, list, label) => {
     const all = state.digAll === key, rows = all ? list : list.slice(0, SHOW);
     return [rows.map((e) => h("div", { class: "term" },
       h("b", null, e.name, e.count > 1 && h("span", { class: "n" }, " · " + label(e.count))),
-      h("span", null, "“" + clip(e.context) + "” ", timeBtn(e.at)))),
+      h("span", null, e.def && h("i", null, "Defined: "), "“" + clip(tidyQuote(e.context)) + "” ", timeBtn(e.at)))),
       list.length > SHOW && h("button", { class: "link", onclick: () => { state.digAll = all ? null : key; render(); } }, all ? "Show fewer" : "Show all " + list.length)];
   };
   const mentions = (c) => c + " mentions";
   const dgSection = (id, title, kids) => h("section", { id: "dg-" + id, style: "scroll-margin-top:12px" }, h("h3", { style: "padding-bottom:8px" }, title), kids);
   const sections = dg ? [
-    dg.ideas.length > 0 && ["ideas", "Main ideas"],
+    (keyIdeas.length > 0 || dg.ideas.length > 0) && ["ideas", "Key ideas"],
     radar.length > 0 && ["radar", "Exam radar"],
+    (arr(k.terms).length > 0 || autoTerms.length > 0) && ["terms", "Vocabulary"],
     dg.people.length > 0 && ["people", dg.english ? "People" : "Names"],
-    (arr(k.terms).length > 0 || autoTerms.length > 0) && ["terms", "Terms"],
     dg.facts.length > 0 && ["facts", "Dates and numbers"],
     dg.places.length > 0 && ["places", "Places and groups"]
   ].filter(Boolean) : [];
+  const quoteLine = (q, cls) => h("p", { class: cls || "said" }, "“" + clip(q.t, 260) + "” ", timeBtn(q.at));
+  const ideaCard = (x) => {
+    const key = "idea:" + x.key, all = state.digAll === key, MAXT = 14;
+    return h("div", { class: "idea" },
+      h("h4", null, x.name),
+      h("p", { class: "gist" }, ideaGist(x)),
+      x.def && h("div", null, h("span", { class: "lbl" }, "What it is, in the class's words"), quoteLine(x.def)),
+      x.points.length > 0 && h("div", null, h("span", { class: "lbl" }, "What was said about it"), h("ul", { class: "plain" }, x.points.map((p) => h("li", { class: "said" }, "“" + clip(p.t, 260) + "” ", timeBtn(p.at))))),
+      x.example && h("div", null, h("span", { class: "lbl" }, "Example"), quoteLine(x.example)),
+      x.times.length > 1 && h("div", null, h("span", { class: "lbl" }, "Every mention. Tap to hear it."),
+        h("div", { class: "times" }, (all ? x.times : x.times.slice(0, MAXT)).map((t) => timeBtn(t)),
+          x.times.length > MAXT && h("button", { class: "link", onclick: () => { state.digAll = all ? null : key; render(); } }, all ? "fewer" : "+" + (x.times.length - MAXT) + " more"))));
+  };
   const blocks = [
     k.summary && h("section", { class: "stack" }, h("h3", null, "In plain words"), h("p", { class: "lead" }, k.summary)),
     sections.length > 2 && h("nav", { class: "row dg-nav", "aria-label": "Jump to a section" }, sections.map(([id, title]) => h("button", { class: "link", onclick: () => { const el = document.getElementById("dg-" + id); if (el) el.scrollIntoView({ behavior: "smooth" }); } }, title))),
-    n.segments.length > 0 && !dg && h("p", { class: "it", id: "dgBusy" }, "Working out the names, terms and main ideas…"),
-    arr(k.outline).length > 0 && h("section", { class: "stack" }, h("h3", null, "Outline"),
-      k.outline.map((o) => h("div", null, h("div", { class: "row" }, h("b", { style: "font-weight:700" }, o.heading), timeBtn(o.at)), h("ul", { class: "plain" }, o.points.map((p) => h("li", null, p)))))),
-    dg && dg.ideas.length > 0 && h("section", { class: "stack", id: "dg-ideas", style: "scroll-margin-top:12px" }, h("h3", null, "Main ideas"),
-      dg.ideas.map((s) => h("div", { class: "quote" }, h("div", null, "“" + clip(s.t, 240) + "” ", timeBtn(s.at))))),
+    n.segments.length > 0 && !dg && h("p", { class: "it", id: "dgBusy" }, "Working out the key ideas, vocabulary and names…"),
+    keyIdeas.length > 0 && h("section", { id: "dg-ideas", style: "scroll-margin-top:12px" }, h("h3", null, "Key ideas"), keyIdeas.map(ideaCard)),
+    dg && !keyIdeas.length && dg.ideas.length > 0 && h("section", { class: "stack", id: "dg-ideas", style: "scroll-margin-top:12px" }, h("h3", null, "Key ideas"),
+      dg.ideas.map((s) => h("div", { class: "quote" }, h("div", null, "“" + clip(tidyQuote(s.t), 240) + "” ", timeBtn(s.at))))),
     radar.length > 0 && h("section", { class: "stack", id: "dg-radar", style: "scroll-margin-top:12px" }, h("h3", null, "Exam radar"),
       radar.map((s) => h("div", { class: "quote" }, h("div", null, "“" + s.quote + "” ", timeBtn(s.at)), s.why && h("small", null, s.why)))),
-    dg && dg.people.length > 0 && dgSection("people", dg.english ? "People" : "Names", digRows("people", dg.people, mentions)),
-    (arr(k.terms).length > 0 || autoTerms.length > 0) && dgSection("terms", "Terms", [
+    (arr(k.terms).length > 0 || autoTerms.length > 0) && dgSection("terms", "Vocabulary", [
       arr(k.terms).map((t) => h("div", { class: "term" }, h("b", null, t.term), h("span", null, t.def))),
       digRows("terms", autoTerms, mentions)]),
+    dg && dg.people.length > 0 && dgSection("people", dg.english ? "People" : "Names", digRows("people", dg.people, mentions)),
     dg && dg.facts.length > 0 && dgSection("facts", "Dates and numbers", digRows("facts", dg.facts, mentions)),
     dg && dg.places.length > 0 && dgSection("places", "Places and groups", digRows("places", dg.places, mentions)),
     reel.length > 0 && h("section", { class: "stack" }, h("h3", null, "The reel"),
       h("p", null, "Your marks and everything flagged, played back to back: ", h("i", null, reel.length + (reel.length === 1 ? " moment" : " moments") + ", " + fmt(reelLen) + ".")),
       hasPlayer(n) ? h("button", { class: "grand ghost", id: "playReel", onclick: () => startReel(n) }, "Play the reel") : h("p", { class: "small it" }, n.example ? "The example has no recording. On your own recordings, this plays the moments aloud." : "This note has no recording to play.")),
     kitGate(n),
-    dg && h("p", { class: "small it" }, dg.foreign ? "Pulled from the transcript automatically, on this device. People and terms work best in English for now." : dg.english ? "Pulled from the transcript automatically, on this device. Check names and spellings against the recording." : "Pulled from the transcript automatically, on this device. Connect to the internet once to see people and terms."),
+    dg && h("p", { class: "small it" }, dg.foreign ? "Pulled from the transcript automatically, on this device. Key ideas and vocabulary work best in English for now." : dg.english ? "Pulled from the transcript automatically, on this device, using only what was said in class. Check names and spellings against the recording." : "Pulled from the transcript automatically, on this device. Connect to the internet once to see key ideas, vocabulary and names."),
     PUBLIC && !radar.length && !reel.length && h("p", { class: "it" }, "Hold a sentence in the transcript to highlight it, and it'll gather here in a reel you can play back. Moments your professor flags for the exam show up here on their own.")
   ].filter(Boolean);
   return blocks.flatMap((b, i) => (i && blocks[i - 1].tagName === "SECTION" ? [eyeMark(), b] : [b]));
 }
 
-/* Flashcards */
-function cardsTab(n) {
-  const cards = arr(n.kit && n.kit.cards);
-  if (!cards.length) return [h("p", { class: "it" }, PUBLIC ? "No cards yet. Hold a sentence in the transcript to highlight it, then turn your highlights into fill-in-the-blank cards." : "No cards yet. Have Claude write them, or make your own from the sentences you've marked."), freeCardsBtn(n), kitGate(n)];
-  if (!state.cardRun || state.cardRun.noteId !== n.id) startCards(n, false);
-  const run = state.cardRun;
-  if (!run.queue.length) {
-    const next = cards.reduce((m, c) => Math.min(m, c.due || 0), Infinity);
-    return [h("div", { class: "stack center", style: "padding-block:20px" }, h("h3", null, run.done ? "That's the pile for now." : "You're caught up."),
-        next > Date.now() && h("p", { class: "it" }, "The next card is due in " + Math.max(1, Math.ceil((next - Date.now()) / DAY)) + (Math.ceil((next - Date.now()) / DAY) <= 1 ? " day." : " days.")),
-        h("button", { class: "grand ghost", id: "reviewAll", onclick: () => { startCards(n, true); render(); } }, "Review all " + cards.length + " anyway"))];
+/* Outline: the class in parts, so a long recording is easy to find your way around. */
+function outlineTab(n) {
+  const k = n.kit || {};
+  if (!n.segments.length) return [h("p", { class: "it" }, "The outline appears here once there's some transcript.")];
+  if (arr(k.outline).length) return [h("section", { class: "stack" }, k.outline.map((o) => h("div", { class: "idea" }, h("div", { class: "row" }, h("h4", null, o.heading), timeBtn(o.at)), h("ul", { class: "plain" }, o.points.map((p) => h("li", { class: "gist" }, p)))))), kitGate(n)];
+  const dg = digestOf(n);
+  if (!dg) return [h("p", { class: "it", id: "dgBusy" }, "Working out the outline…")];
+  if (!arr(dg.outline).length) return [h("p", { class: "it" }, "This transcript is too short to split into parts. The Breakdown still has its key ideas."), kitGate(n)];
+  return [
+    h("p", { class: "small it" }, "The class in " + dg.outline.length + " parts, split where the topic shifts." + (hasPlayer(n) ? " Tap a time to hear that part." : "")),
+    h("section", null, dg.outline.map((p) => h("div", { class: "idea" },
+      h("div", { class: "row", style: "justify-content:space-between;align-items:baseline;gap:12px" }, h("h4", null, p.title), p.start != null && h("span", { class: "small" }, timeBtn(p.start), p.end != null ? "–" + fmt(p.end) : "")),
+      p.gist.length > 0 && h("ul", { class: "plain" }, p.gist.map((q) => h("li", { class: "said" }, "“" + clip(q.t, 240) + "” ", timeBtn(q.at)))),
+      p.fresh.length > 0 && h("p", { class: "gist" }, h("span", { class: "lbl" }, "First comes up here"), p.fresh.join(" · "))))),
+    h("p", { class: "small it" }, "Made automatically on this device from what was said. Headings come from the words each part uses most."),
+    kitGate(n)];
+}
+/* Everything in the Breakdown and Outline as plain text, for notes or printing. */
+function studyGuide(n) {
+  const dg = digestOf(n);
+  if (!dg) return null;
+  const at = (v) => (v != null ? " [" + fmt(v) + "]" : "");
+  const L = [n.title, "Breakdown from Second Listen", ""];
+  const head = (t) => L.push("", t.toUpperCase(), "");
+  if (n.kit && n.kit.summary) { head("In plain words"); L.push(n.kit.summary); }
+  if (arr(dg.keyIdeas).length) {
+    head("Key ideas");
+    for (const x of dg.keyIdeas) {
+      L.push(x.name, "  " + ideaGist(x));
+      if (x.def) L.push("  What it is: \"" + x.def.t + "\"" + at(x.def.at));
+      for (const p of x.points) L.push("  - \"" + p.t + "\"" + at(p.at));
+      if (x.example) L.push("  Example: \"" + x.example.t + "\"" + at(x.example.at));
+      if (x.times.length > 1) L.push("  Mentioned at: " + x.times.map(fmt).join(", "));
+      L.push("");
+    }
   }
-  const c = run.queue[0];
-  const grade = (ok) => {
-    if (ok) { c.box = Math.min(BOXES.length - 1, (c.box || 0) + 1); c.due = Date.now() + BOXES[c.box] * DAY; run.done++; run.queue.shift(); }
-    else { c.box = 0; c.due = 0; run.queue.push(run.queue.shift()); }
-    run.flipped = false;
-    scheduleSave(n);
-    render(true);
-  };
-  const flip = h("div", { class: "flip", id: "flip", role: "button", tabindex: "0", "aria-label": "Turn the card over" },
-    h("div", { class: "in" },
-      h("div", { class: "face" }, h("em", null, "question"), h("div", null, c.q)),
-      h("div", { class: "face back" }, h("em", null, "answer"), h("div", null, c.a))));
-  const turn = () => { run.flipped = !run.flipped; flip.classList.toggle("over", run.flipped); acts.replaceChildren(actions()); };
-  flip.addEventListener("click", turn);
-  flip.addEventListener("keydown", (e) => { if (e.key === "Enter") turn(); });
-  const actions = () => run.flipped
-    ? h("div", { class: "two" }, h("button", { class: "grand ghost", id: "again", onclick: () => grade(false) }, "Not yet"), h("button", { class: "grand", id: "gotIt", onclick: () => grade(true) }, "I knew it"))
-    : h("button", { class: "grand ghost", id: "show", onclick: turn }, "Turn it over");
-  const acts = h("div", null, actions());
-  return [h("p", { class: "small it center" }, run.queue.length + (run.queue.length === 1 ? " card left" : " cards left") + " in this pile"), flip, acts,
-    parseAt(c.at) != null && h("button", { class: "link rouge center", id: "hearCard", onclick: () => hear(parseAt(c.at)) }, "Hear this part")];
+  const radar = radarOf(n);
+  if (radar.length) { head("Exam radar"); radar.forEach((s) => L.push("- \"" + s.quote + "\"" + at(s.at))); }
+  const shown = new Set(arr(dg.keyIdeas).map((x) => x.name.toLowerCase()));
+  const vocab = dg.terms.filter((t) => !shown.has(t.name.toLowerCase()));
+  if (arr(n.kit && n.kit.terms).length || vocab.length) {
+    head("Vocabulary");
+    arr(n.kit && n.kit.terms).forEach((t) => L.push(t.term + ": " + t.def));
+    vocab.forEach((t) => L.push(t.name + " (" + t.count + (t.count === 1 ? " mention" : " mentions") + "): \"" + tidyQuote(t.context) + "\"" + at(t.at)));
+  }
+  const list = (title, rows) => { if (rows.length) { head(title); rows.forEach((e) => L.push(e.name + " (" + e.count + "): \"" + tidyQuote(e.context) + "\"" + at(e.at))); } };
+  list(dg.english ? "People" : "Names", dg.people);
+  list("Dates and numbers", dg.facts);
+  list("Places and groups", dg.places);
+  const outline = arr(n.kit && n.kit.outline).length ? null : arr(dg.outline);
+  if (outline && outline.length) {
+    head("Outline");
+    outline.forEach((p, i) => {
+      L.push((i + 1) + ". " + p.title + (p.start != null ? " (" + fmt(p.start) + (p.end != null ? "-" + fmt(p.end) : "") + ")" : ""));
+      p.gist.forEach((q) => L.push("   - \"" + q.t + "\"" + at(q.at)));
+      if (p.fresh.length) L.push("   First comes up here: " + p.fresh.join(", "));
+    });
+  } else if (n.kit && arr(n.kit.outline).length) {
+    head("Outline");
+    n.kit.outline.forEach((o, i) => { L.push((i + 1) + ". " + o.heading + at(parseAt(o.at))); o.points.forEach((p) => L.push("   - " + p)); });
+  }
+  L.push("", "Pulled from the transcript automatically. Quotes are what was said in class, lightly tidied.");
+  return L.join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
 /* Quiz */
