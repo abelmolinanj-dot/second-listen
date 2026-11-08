@@ -2,7 +2,7 @@
 
 **[Open Second Listen](https://abelmolinanj-dot.github.io/second-listen/)**
 
-Hear your classes again. Upload a recording and get a transcript you can replay from any sentence, a breakdown of the key ideas and vocabulary, and an outline of the class. It's free, needs no account, and your audio stays on your device.
+Hear your classes again. Upload a recording or video, or paste a YouTube transcript, and get a transcript you can replay from any sentence, a breakdown of the key ideas and vocabulary, and an outline of the class. It's free, needs no account, and your audio stays on your device.
 
 - [About](https://abelmolinanj-dot.github.io/second-listen/about.html): how it works and what it can't do yet
 - [Privacy](https://abelmolinanj-dot.github.io/second-listen/privacy.html)

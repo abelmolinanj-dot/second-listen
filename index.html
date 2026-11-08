@@ -45,7 +45,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .grand.ghost:hover { background: none; color: var(--rouge); border-color: var(--rouge) }
 .grand:disabled { opacity: .55; cursor: default }
 :focus-visible { outline: 1.5px solid var(--rouge); outline-offset: 3px }
-input[type=text], input[type=search], textarea, select { font: inherit; width: 100%; min-height: 46px; padding: 8px 2px; border: 0; border-bottom: 1px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink) }
+input[type=text], input[type=search], input[type=url], textarea, select { font: inherit; width: 100%; min-height: 46px; padding: 8px 2px; border: 0; border-bottom: 1px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink) }
 input::placeholder, textarea::placeholder { color: var(--ink); opacity: .72; font-style: italic }
 textarea { min-height: 140px; resize: vertical; border: 1px solid var(--hair); padding: 10px }
 select option { background: var(--paper); color: var(--ink) }
@@ -130,6 +130,11 @@ ul.plain li::marker { color: var(--rouge); content: "\2014  " }
 .line { display: flex; flex-direction: column; gap: 3px; padding-bottom: 6px; white-space: pre-wrap; overflow-wrap: anywhere }
 .line > span:first-child { white-space: normal; color: var(--rouge) }
 /* Fixed at the foot */
+#ytDock { position: fixed; z-index: 14; top: 0; left: 0; right: 0; padding-top: env(safe-area-inset-top, 0px); background: var(--paper); border-bottom: 1px solid var(--ink); display: flex; justify-content: center }
+#ytDock .frame { width: min(100%, 560px); aspect-ratio: 16 / 9; max-height: 42vh }
+#ytDock iframe { width: 100%; height: 100%; border: 0; display: block }
+html.has-yt #app { padding-top: calc(var(--ytH, 0px) + 16px) }
+html.has-yt section, html.has-yt .sg { scroll-margin-top: calc(var(--ytH, 0px) + 12px) !important }
 #player { position: fixed; z-index: 15; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--ink); padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); transition: transform .35s var(--ease) }
 #player .wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 2px }
 #player .ctl { display: flex; align-items: center; justify-content: space-between; gap: 4px }
@@ -148,6 +153,7 @@ ul.plain li::marker { color: var(--rouge); content: "\2014  " }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto } *, *::before, *::after { animation: none !important; transition: none !important } }
 </style>
 
+<div id="ytDock" hidden></div>
 <div id="app"></div>
 <div id="sheetHost"></div>
 <div id="player" hidden></div>
@@ -426,6 +432,8 @@ function makeWorker(onDl, multi) {
     };
   });
 }
+/* Recordings and videos: the app only uses the sound, so a lecture video or a Zoom recording works too. */
+const MEDIA_ACCEPT = "audio/*,video/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.flac,.mp4,.m4v,.mov,.webm,.mkv";
 async function decodeAudio(file) {
   const buf = await file.arrayBuffer();
   const ctx = new OfflineAudioContext(1, 1, SR);
@@ -506,7 +514,7 @@ async function runJob(note, file) {
   try {
     let rec;
     try { rec = await openRecording(file); }
-    catch { throw new Error("This device couldn't open that file. M4A, MP3, WAV, AAC, OGG and FLAC usually work. A very long recording can also run a phone out of memory. If so, open this same link on a laptop and transcribe it there."); }
+    catch { throw new Error("This device couldn't open that file. M4A, MP3, WAV, MP4 and MOV usually work, along with most other audio and video. A very long recording can also run a phone out of memory. If so, open this same link on a laptop and transcribe it there."); }
     note.audio.duration = rec.duration;
     j.stage = "model"; paintJob();
     const loadModel = () => makeWorker((f, n) => { j.dl[f] = n; paintJob(); }, multi);
@@ -588,9 +596,23 @@ function parseTranscript(text) {
     return out;
   }
   const lines = clean.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  /* YouTube's "Show transcript" copies as a time on one line and the words on the next. */
+  const bare = /^(?:\d+:)?\d{1,2}:\d{2}$/;
+  const timeLines = lines.filter((l) => bare.test(l)).length;
+  if (timeLines >= 3 && timeLines >= lines.length / 4) {
+    const raw = []; let at = null;
+    for (const l of lines) {
+      if (bare.test(l)) { at = parseAt(l); continue; }
+      if (/^(?:\d+\s+(?:hours?|minutes?|seconds?),?\s*)+$/i.test(l) || /^(?:transcript|search in video|search transcript|show transcript|chapters?|sync to video time)$/i.test(l)) continue;
+      if (at != null) { raw.push({ s: at, t: l }); at = null; }
+      else if (raw.length) raw[raw.length - 1].t += " " + l;
+    }
+    return joinCaptionLines(raw);
+  }
   const stamp = /^\[?((?:\d+:)?\d{1,2}:\d{2})\]?\s*[-:]?\s+(.+)$/;
   if (lines.filter((l) => stamp.test(l)).length > lines.length / 2) {
-    return lines.map((l) => { const m = l.match(stamp); return m ? { s: parseAt(m[1]), e: null, t: m[2] } : { s: null, e: null, t: l }; });
+    const timed = lines.map((l) => { const m = l.match(stamp); return m ? { s: parseAt(m[1]), e: null, t: m[2] } : { s: null, e: null, t: l }; });
+    return timed.every((x) => x.s != null) ? joinCaptionLines(timed) : timed;
   }
   const out = [];
   for (const line of lines) {
@@ -599,10 +621,30 @@ function parseTranscript(text) {
   }
   return out;
 }
-function addTextNote(title, text) {
+/* Caption lines are fragments, so join them into whole sentences that still start at the right time. */
+function joinCaptionLines(raw) {
+  const out = []; let cur = null;
+  for (const r of raw) {
+    if (!cur) cur = { s: r.s, e: null, t: r.t };
+    else cur.t += " " + r.t;
+    if (/[.!?]["')\]]*$/.test(cur.t) || cur.t.split(/\s+/).length >= 28) { out.push(cur); cur = null; }
+  }
+  if (cur) out.push(cur);
+  for (let i = 0; i < out.length - 1; i++) out[i].e = out[i + 1].s;
+  return out;
+}
+const ytId = (link) => { const m = String(link).match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/|youtube-nocookie\.com\/embed\/)([\w-]{11})/); return m ? m[1] : null; };
+function addTextNote(title, text, link) {
+  let yt = null;
+  if (link) {
+    const id = ytId(link);
+    if (!id) { toast("That doesn't look like a YouTube link."); return; }
+    yt = { id, url: "https://www.youtube.com/watch?v=" + id };
+  }
   const segments = parseTranscript(text);
-  if (!segments.length) { toast("That transcript looks empty."); return; }
-  const note = { id: newId(), title: title || "Untitled transcript", autoTitle: !title, source: "text", status: "ready", createdAt: Date.now(), updatedAt: Date.now(), segments };
+  if (!segments.length) { toast(yt ? "Paste the video's transcript too. On YouTube, it's under the description: Show transcript." : "That transcript looks empty."); return; }
+  if (yt && !segments.some((s) => s.s != null)) toast("This transcript has no times in it, so tapping a sentence won't move the video.");
+  const note = { id: newId(), title: title || (yt ? "YouTube video" : "Untitled transcript"), autoTitle: !title, source: yt ? "youtube" : "text", yt, status: "ready", createdAt: Date.now(), updatedAt: Date.now(), segments };
   notes.set(note.id, note);
   scheduleSave(note, 0);
   openNote(note.id);
@@ -1188,15 +1230,78 @@ function digestOf(n) {
 }
 
 /* ---------- Audio player ---------- */
-const P = { a: new Audio(), noteId: null, ready: false, url: null, reel: null, reelI: 0, rate: parseFloat(lsGet("sl-rate", "1")) || 1, drag: false, lastNow: -1 };
-P.a.preload = "metadata";
+/* P.a is the audio element, or for a YouTube note, a stand-in with the same controls that drives the embedded video. */
+const AUDIO = new Audio();
+const P = { a: AUDIO, noteId: null, ready: false, url: null, reel: null, reelI: 0, rate: parseFloat(lsGet("sl-rate", "1")) || 1, drag: false, lastNow: -1 };
+AUDIO.preload = "metadata";
 let lastTouch = 0;
 ["touchmove", "wheel"].forEach((ev) => window.addEventListener(ev, () => (lastTouch = Date.now()), { passive: true }));
 function clearPlayer() {
+  if (P.noteId && P.ready && P.a.currentTime > 0) lsSet("sl-pos-" + P.noteId, String(P.a.currentTime));
   P.a.pause();
+  if (P.a !== AUDIO) { P.a.destroy(); P.a = AUDIO; }
+  ytTicket++;
+  showDock(false);
   if (P.url) { URL.revokeObjectURL(P.url); P.url = null; }
-  P.a.removeAttribute("src");
+  AUDIO.removeAttribute("src");
   Object.assign(P, { noteId: null, ready: false, reel: null, reelI: 0, lastNow: -1 });
+}
+
+/* ---------- YouTube: the video plays from YouTube, pinned to the top, and the transcript moves it ---------- */
+let ytApi = null, ytTicket = 0;
+function loadYouTube() {
+  if (ytApi) return ytApi;
+  ytApi = new Promise((resolve, reject) => {
+    if (window.YT && window.YT.Player) return resolve(window.YT);
+    const prior = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prior) try { prior(); } catch {} resolve(window.YT); };
+    const s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    s.onerror = () => reject(new Error("YouTube didn't load"));
+    document.head.append(s);
+    setTimeout(() => reject(new Error("YouTube took too long")), 20000);
+  }).catch((e) => { ytApi = null; throw e; });
+  return ytApi;
+}
+function showDock(on) {
+  const dock = $("#ytDock"), root = document.documentElement;
+  if (!dock) return null;
+  if (!on) { dock.hidden = true; dock.replaceChildren(); root.classList.remove("has-yt"); root.style.setProperty("--ytH", "0px"); return null; }
+  const target = h("div");
+  dock.replaceChildren(h("div", { class: "frame" }, target));
+  dock.hidden = false;
+  root.classList.add("has-yt");
+  sizeDock();
+  return target;
+}
+function sizeDock() { const dock = $("#ytDock"); if (dock && !dock.hidden) document.documentElement.style.setProperty("--ytH", dock.offsetHeight + "px"); }
+window.addEventListener("resize", sizeDock);
+async function youtubeMedia(target, id, start) {
+  const YT = await loadYouTube();
+  return new Promise((resolve, reject) => {
+    let player, timer = null;
+    const tick = () => { clearInterval(timer); timer = setInterval(onTime, 250); };
+    const media = {
+      get currentTime() { try { return player.getCurrentTime() || 0; } catch { return 0; } },
+      set currentTime(v) { try { player.seekTo(v, true); } catch {} },
+      get duration() { try { return player.getDuration() || 0; } catch { return 0; } },
+      get paused() { try { const s = player.getPlayerState(); return s !== 1 && s !== 3; } catch { return true; } },
+      set playbackRate(r) { try { player.setPlaybackRate(r); } catch {} },
+      play() { try { player.playVideo(); } catch {} return Promise.resolve(); },
+      pause() { try { player.pauseVideo(); } catch {} },
+      title() { try { return (player.getVideoData() || {}).title || ""; } catch { return ""; } },
+      destroy() { clearInterval(timer); try { player.destroy(); } catch {} }
+    };
+    player = new YT.Player(target, {
+      host: "https://www.youtube-nocookie.com", videoId: id, width: "100%", height: "100%",
+      playerVars: { playsinline: 1, rel: 0, start: Math.floor(start || 0) },
+      events: {
+        onReady: () => { sizeDock(); resolve(media); },
+        onError: () => reject(new Error("This video can't be played here.")),
+        onStateChange: (e) => { if (e.data === 1) { tick(); onPlay(); } else if (e.data === 2 || e.data === 0) { clearInterval(timer); onTime(); onPause(); } }
+      }
+    });
+  });
 }
 function setBlob(note, blob) {
   if (P.url) URL.revokeObjectURL(P.url);
@@ -1212,13 +1317,25 @@ async function loadPlayer(note) {
   clearPlayer();
   P.noteId = note.id;
   if (note.source === "audio") { const blob = await idbGet(note.id); if (P.noteId === note.id && blob) setBlob(note, blob); }
+  else if (note.source === "youtube" && note.yt) {
+    const ticket = ++ytTicket, target = showDock(true);
+    try {
+      const media = await youtubeMedia(target, note.yt.id, parseFloat(lsGet("sl-pos-" + note.id, "0")) || 0);
+      if (ticket !== ytTicket || P.noteId !== note.id) { media.destroy(); return; }
+      P.a = media; P.ready = true; media.playbackRate = P.rate;
+      const name = media.title();
+      if (note.autoTitle && name) { note.title = name; note.autoTitle = false; scheduleSave(note); render(); }
+    } catch (e) {
+      if (ticket === ytTicket) { showDock(false); toast((e && e.message === "This video can't be played here." ? e.message : "YouTube couldn't load. Check your connection.") + " The transcript still works."); }
+    }
+  }
   paintPlayer();
 }
-const hasPlayer = (n) => n && !n.example && n.source === "audio";
+const hasPlayer = (n) => n && !n.example && (n.source === "audio" || n.source === "youtube");
 function hear(sec) {
   const n = cur();
   if (sec == null || !n) return;
-  if (!P.ready) { jumpTo(sec); if (hasPlayer(n)) toast("Choose the recording at the foot of the page to hear it."); return; }
+  if (!P.ready) { jumpTo(sec); if (n.source === "youtube") toast("The video hasn't loaded yet."); else if (hasPlayer(n)) toast("Choose the recording at the foot of the page to hear it."); return; }
   P.a.currentTime = Math.max(0, sec - 0.2);
   P.a.play().catch(() => {});
   paintPlayer();
@@ -1226,7 +1343,7 @@ function hear(sec) {
 function startReel(n) {
   const r = reelOf(n);
   if (!r.length) return;
-  if (!P.ready) { toast(hasPlayer(n) ? "Choose the recording at the foot of the page first." : "This note has no recording to play."); return; }
+  if (!P.ready) { toast(n.source === "youtube" ? "The video hasn't loaded yet." : hasPlayer(n) ? "Choose the recording at the foot of the page first." : "This note has no recording to play."); return; }
   P.reel = r; P.reelI = 0;
   P.a.currentTime = r[0].s;
   P.a.play().catch(() => {});
@@ -1242,9 +1359,12 @@ function markLost() {
   scheduleSave(n);
   toast("Marked. Ask can explain the parts you lost.");
 }
-P.a.addEventListener("play", () => paintPlayer());
-P.a.addEventListener("pause", () => { if (P.noteId) { lsSet("sl-pos-" + P.noteId, String(P.a.currentTime)); paintPlayer(); } });
-P.a.addEventListener("timeupdate", () => {
+function onPlay() { paintPlayer(); }
+function onPause() { if (P.noteId) { lsSet("sl-pos-" + P.noteId, String(P.a.currentTime)); paintPlayer(); } }
+AUDIO.addEventListener("play", onPlay);
+AUDIO.addEventListener("pause", onPause);
+AUDIO.addEventListener("timeupdate", onTime);
+function onTime() {
   const t = P.a.currentTime;
   if (P.reel) {
     const it = P.reel[P.reelI];
@@ -1266,11 +1386,12 @@ P.a.addEventListener("timeupdate", () => {
       el.classList.add("now");
       if (Date.now() - lastTouch > 6000 && state.sel == null) {
         const r = el.getBoundingClientRect();
-        if (r.top < 70 || r.bottom > innerHeight - 150) el.scrollIntoView({ block: "center" });
+        const cover = document.documentElement.classList.contains("has-yt") ? $("#ytDock").offsetHeight : 0;
+        if (r.top < 70 + cover || r.bottom > innerHeight - 150) el.scrollIntoView({ block: "center" });
       }
     }
   }
-});
+}
 try {
   if (navigator.mediaSession) {
     navigator.mediaSession.setActionHandler("seekbackward", () => nudge(-15));
@@ -1289,11 +1410,11 @@ const PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><p
 const PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3.2v14H7zM13.8 5H17v14h-3.2z"/></svg>';
 function paintPlayer() {
   const box = $("#player"), n = cur();
-  const show = state.view === "note" && hasPlayer(n);
+  const show = state.view === "note" && hasPlayer(n) && n.source !== "youtube";
   box.hidden = !show;
   if (!show) { document.documentElement.style.setProperty("--playerH", "0px"); return; }
   if (!P.ready) {
-    const input = h("input", { class: "vh", id: "reattach", type: "file", accept: "audio/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.flac", tabindex: "-1", "aria-hidden": "true", onchange: async (e) => {
+    const input = h("input", { class: "vh", id: "reattach", type: "file", accept: MEDIA_ACCEPT, tabindex: "-1", "aria-hidden": "true", onchange: async (e) => {
       const f = e.target.files[0]; if (!f) return;
       if (n.audio && n.audio.size && f.size !== n.audio.size) { toast("That isn't the same file as " + n.audio.name + "."); return; }
       await idbPut(n.id, f); setBlob(n, f); paintPlayer();
@@ -1344,7 +1465,7 @@ function render(animate) {
   paintPlayer();
 }
 function libraryView() {
-  const audio = h("input", { id: "audioInput", class: "vh", type: "file", accept: "audio/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.flac", tabindex: "-1", "aria-hidden": "true", onchange: (e) => startAudio(e.target.files[0]) });
+  const audio = h("input", { id: "audioInput", class: "vh", type: "file", accept: MEDIA_ACCEPT, tabindex: "-1", "aria-hidden": "true", onchange: (e) => startAudio(e.target.files[0]) });
   const list = [...notes.values()].filter((n) => !n.example).sort((a, b) => b.updatedAt - a.updatedAt);
   const langSel = h("select", { id: "langPick", "aria-label": "Language of the recording", onchange: (e) => { state.lang = e.target.value; lsSet("sl-lang", state.lang); render(); } },
     LANGS.map(([c, name]) => h("option", { value: c, selected: c === state.lang }, name)));
@@ -1352,10 +1473,10 @@ function libraryView() {
     h("header", { class: "title" }, emblem(), h("h1", null, "Second Listen"), h("p", null, "Everything you missed the first time.")),
     h("section", { class: "stack" },
       audio,
-      h("button", { class: "grand", id: "pickAudio", onclick: () => audio.click() }, "Choose a recording"),
+      h("button", { class: "grand", id: "pickAudio", onclick: () => audio.click() }, "Choose a recording or video"),
       h("div", { class: "row", style: "justify-content:center" },
         h("button", { class: "link", id: "toggleLang", "aria-expanded": String(!!state.showLang), onclick: () => { state.showLang = !state.showLang; render(); } }, "Language: " + langName(state.lang)),
-        h("button", { class: "link", id: "toggleText", "aria-expanded": String(state.addText), onclick: () => { state.addText = !state.addText; render(); } }, "Add a transcript")),
+        h("button", { class: "link", id: "toggleText", "aria-expanded": String(state.addText), onclick: () => { state.addText = !state.addText; render(); } }, "Add a transcript or YouTube video")),
       state.showLang && h("div", { class: "stack fade" },
         langSel,
         state.lang !== "en" && h("label", { class: "check" }, h("input", { type: "checkbox", id: "translateBox", checked: state.translate, onchange: (e) => { state.translate = e.target.checked; lsSet("sl-translate", state.translate ? "1" : "0"); } }), "Also translate it into English"),
@@ -1413,19 +1534,22 @@ async function restoreNotes(file) {
 }
 function textForm() {
   const title = h("input", { id: "textTitle", type: "text", placeholder: "Name it (Accounting 201, week 4)", "aria-label": "Transcript name" });
+  const link = h("input", { id: "ytLink", type: "url", inputmode: "url", autocomplete: "off", placeholder: "YouTube link, if it's a video (optional)", "aria-label": "YouTube link" });
   const box = h("textarea", { id: "textBody", placeholder: "Paste your transcript or notes", "aria-label": "Transcript text" });
   const file = h("input", { id: "textFile", class: "vh", type: "file", accept: ".txt,.vtt,.srt,.md,text/plain", tabindex: "-1", "aria-hidden": "true", onchange: async (e) => {
     const f = e.target.files[0]; if (!f) return;
     box.value = await f.text();
     if (!title.value) title.value = f.name.replace(/\.[^.]+$/, "");
   } });
-  return h("div", { class: "stack fade" }, title, box, file,
-    h("button", { class: "grand ghost", id: "saveText", onclick: () => addTextNote(title.value.trim(), box.value) }, "Keep it and study"),
+  return h("div", { class: "stack fade" }, title, link, box, file,
+    h("p", { class: "small it" }, "For a YouTube video, paste its link above. Then, on YouTube, open the description, tap Show transcript, and copy it into the box. Tapping a sentence here jumps the video to that moment."),
+    h("button", { class: "grand ghost", id: "saveText", onclick: () => addTextNote(title.value.trim(), box.value, link.value.trim()) }, "Keep it and study"),
     h("button", { class: "link center", onclick: () => file.click() }, "Open a .txt, .srt or .vtt file"));
 }
 function noteRow(n) {
   const running = job && job.noteId === n.id, meta = [];
   if (n.audio && n.audio.duration) meta.push(fmt(n.audio.duration));
+  if (n.source === "youtube") meta.push("YouTube");
   if (n.lang && n.lang.code !== "en") meta.push(langName(n.lang.code));
   meta.push(n.kit && n.kit.summary ? "study kit ready" : n.segments.length + (n.segments.length === 1 ? " line" : " lines"));
   if (running) meta.push("transcribing now");
@@ -1480,7 +1604,7 @@ function jobContent(n) {
       h("span", { class: "small it" }, detail));
   }
   if (n.status === "ready" && !jobErr[n.id]) return null;
-  const input = h("input", { id: "resumeInput", class: "vh", type: "file", accept: "audio/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.flac", tabindex: "-1", "aria-hidden": "true", onchange: async (e) => {
+  const input = h("input", { id: "resumeInput", class: "vh", type: "file", accept: MEDIA_ACCEPT, tabindex: "-1", "aria-hidden": "true", onchange: async (e) => {
     const f = e.target.files[0]; if (!f) return;
     if (n.audio && n.audio.size && f.size !== n.audio.size) { toast("That isn't the same file as " + n.audio.name + "."); return; }
     await idbPut(n.id, f);
