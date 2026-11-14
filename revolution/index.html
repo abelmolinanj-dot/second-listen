@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1b2433">
+<title>Dispatches of '76</title>
+<meta name="description" content="A turn-based strategy game of the American Revolution. Command the Continental Army, pay for it, and answer letters from your generals.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Inter:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="tb-date"><span id="date">July 1776</span><span id="turnof" class="muted"></span></div>
+    <button class="tb-stat" id="btn-ledger" title="Treasury and ledger">
+      <span class="tb-label">Treasury</span><span id="treasury">$0k</span>
+    </button>
+    <div class="tb-stat" title="Cause: how much the country still believes in the Revolution. At zero, you lose.">
+      <span class="tb-label">Cause</span>
+      <span class="cause"><span id="cause-bar"></span></span><span id="cause-num">0</span>
+    </div>
+    <button class="tb-btn" id="btn-letters" title="Letters">✉<span id="letters-badge" hidden></span></button>
+    <button class="tb-btn" id="btn-menu" title="Menu">☰</button>
+  </header>
+
+  <main id="mapwrap">
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Map of the northern colonies"></svg>
+    <div id="zoom">
+      <button id="zoom-in" aria-label="Zoom in">+</button>
+      <button id="zoom-out" aria-label="Zoom out">−</button>
+      <button id="zoom-fit" aria-label="Show whole map">⤢</button>
+    </div>
+    <div id="toast" hidden></div>
+  </main>
+
+  <aside id="panel"></aside>
+</div>
+
+<div id="modal" hidden>
+  <div id="modal-card" role="dialog" aria-modal="true"></div>
+</div>
+
+<script type="module" src="js/ui.js"></script>
+</body>
+</html>
