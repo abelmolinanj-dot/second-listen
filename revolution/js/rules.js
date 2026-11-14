@@ -48,9 +48,11 @@ export function fmtMen(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0
 export function money(n) { return "$" + Math.round(n) + "k"; }
 
 // Raw fighting strength before terrain and generals.
-export function power(state, army) {
+export function power(state, army, regionId) {
   const g = generalOf(state, army);
-  const mq = g && g.trait === "oldwolf" ? 0.7 : MILITIA_QUALITY;
+  let mq = g && g.trait === "oldwolf" ? 0.7 : MILITIA_QUALITY;
+  // Militia fight from behind trees and stone walls far better than in the open.
+  if (regionId && REGIONS[regionId].terrain) mq = Math.max(mq, 0.75);
   return army.regulars * QUALITY[army.side] + militiaMen(army) * mq;
 }
 
@@ -236,8 +238,10 @@ function battleFactors(state, att, def, regionId, { surprise = false, sea = fals
   const ag = generalOf(state, att);
   const dg = generalOf(state, def);
   const r = REGIONS[regionId];
-  let A = power(state, att) * (1 + 0.12 * (ag ? ag.atk : 0));
-  let D = power(state, def) * (1 + 0.12 * (dg ? dg.def : 0));
+  let A = power(state, att, regionId) * (1 + 0.12 * (ag ? ag.atk : 0));
+  let D = power(state, def, regionId) * (1 + 0.12 * (dg ? dg.def : 0));
+  if (r.terrain === "hills") D *= 1.2;
+  else if (r.terrain === "forest") D *= 1.1;
   if (ag && ag.trait === "bold") A *= 1.15;
   if (isWinter(state) && !surprise) A *= 0.8;
   if (surprise) A *= 1.4;

@@ -9,6 +9,10 @@ import {
 } from "./rules.js";
 import { newGame, endTurn, SCENARIO, SAVE_VERSION } from "./turn.js";
 import { answerLetter, unanswered } from "./letters.js";
+import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
+import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
+import { playScene } from "./scenes.js";
+import { PORTRAITS } from "./data/assets.js";
 
 const SAVE_KEY = "dispatches76-save";
 const $ = (s) => document.querySelector(s);
@@ -38,22 +42,23 @@ const svg = $("#map");
 const view = { x: 0, y: 0, w: WIDTH, h: HEIGHT };
 
 function buildMap() {
-  let s = `<rect x="-2000" y="-2000" width="${WIDTH + 4000}" height="${HEIGHT + 4000}" fill="var(--sea)"/>`;
-  s += `<g id="regions">`;
-  for (const [id, poly] of Object.entries(shapes)) s += `<path class="region" data-region="${id}" d="${polygonPath(poly)}"/>`;
-  s += `</g>`;
+  const regionPaths = (cls) => Object.entries(shapes).map(([id, poly]) => `<path class="${cls}" data-region="${id}" d="${polygonPath(poly)}"/>`).join("");
+  let s = `<defs>${TERRAIN_DEFS}${SOLDIER_DEFS}</defs>`;
+  s += `<rect x="-2000" y="-2000" width="${WIDTH + 4000}" height="${HEIGHT + 4000}" fill="var(--sea)"/>`;
+  s += `<g id="land">${regionPaths("land")}</g>`;
+  s += `<g class="deco">${terrainLayer(shapes, seeds)}</g>`;
+  s += `<g id="regions">${regionPaths("region")}</g>`;
   s += `<path class="sea" fill-rule="evenodd" d="${seaPath()}"/>`;
   s += `<path class="coast" d="${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}"/>`;
   for (const l of LAKES) s += `<path class="lake" d="${polygonPath(l)}"/>`;
   for (const r of RIVERS) s += `<path class="river" d="${linePath(r.pts)}"/>`;
+  s += `<g class="deco">${overlayLayer(seeds)}${placeIcons(seeds)}</g>`;
   s += `<g id="marks">`;
   for (const [id, r] of Object.entries(REGIONS)) {
     const [x, y] = seeds[id];
-    if (r.fort) s += `<path class="fortmark" d="M${x - 5},${y + 22}l5,-6l5,6z"/>`;
-    else if (r.city) s += `<circle class="citydot" cx="${x}" cy="${y + 18}" r="3"/>`;
-    s += `<text class="label${r.city ? " city" : ""}" x="${x}" y="${y + 34}">${esc(r.name)}</text>`;
+    s += `<text class="label${r.city ? " city" : ""}" x="${x}" y="${y + 33}">${esc(r.name)}</text>`;
   }
-  s += `</g><g id="highlights"></g><g id="tokens"></g>`;
+  s += `</g><g id="highlights"></g><g id="booms"></g><g id="tokens"></g>`;
   svg.innerHTML = s;
   fitView();
 }
@@ -73,10 +78,10 @@ function fitView(focus) {
   setView();
 }
 function corridorBox() {
-  const ids = ["highlands", "philadelphia", "longisland", "chester", "morristown", "trenton", "westchester"];
+  const ids = ["highlands", "philadelphia", "longisland", "trenton", "newark", "westchester"];
   const pts = ids.map((id) => seeds[id]);
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-  return [Math.min(...xs) - 50, Math.min(...ys) - 50, Math.max(...xs) + 50, Math.max(...ys) + 60];
+  return [Math.min(...xs) - 30, Math.min(...ys) - 40, Math.max(...xs) + 30, Math.max(...ys) + 40];
 }
 
 function zoomAt(factor, cx, cy) {
@@ -174,7 +179,7 @@ function doMove(regionId) {
   if (typeof r === "string") { toast(r); return; }
   ui.split = false;
   ui.target = null;
-  if (r.type === "battle") showBattle(r);
+  if (r.type === "battle") { markBattles([r]); setTimeout(() => showBattle(r), 750); }
   const army = state.armies[r.armyId] || armyAt(state, regionId, "P");
   ui.army = army && army.side === "P" ? army.id : null;
   ui.region = regionId;
@@ -195,27 +200,49 @@ function renderMap() {
     }
   }
   $("#highlights").innerHTML = hl;
-  // Army tokens.
-  let tk = "";
+  // Army figures. Each keeps its element between renders, so a move slides it across the map.
+  const layer = $("#tokens");
+  const seen = new Set();
   const byRegion = {};
   for (const a of armyList(state)) (byRegion[a.region] ||= []).push(a);
-  for (const [rid, list] of Object.entries(byRegion)) {
-    list.sort((a, b) => (a.side === "P" ? -1 : 1));
+  const order = Object.entries(byRegion).sort((x, y) => seeds[x[0]][1] - seeds[y[0]][1]);
+  for (const [rid, list] of order) {
+    list.sort((a) => (a.side === "P" ? -1 : 1));
     list.forEach((a, i) => {
       const [x, y] = seeds[rid];
-      const ox = list.length > 1 ? (i === 0 ? -24 : 24) : 0;
+      const ox = list.length > 1 ? (i === 0 ? -22 : 22) : 0;
       const g = generalOf(state, a);
-      const cls = a.side === "B" && a.hessian ? "H" : a.side;
-      const w = 50, h = 22;
-      tk += `<g class="token ${cls}${a.moved && a.side === "P" ? " moved" : ""}${ui.army === a.id ? " selected" : ""}" data-army="${a.id}" data-region="${rid}" transform="translate(${x + ox - w / 2},${y - h / 2})">`;
-      tk += `<rect class="body" width="${w}" height="${h}" rx="4"/>`;
-      if (a.dugIn) tk += `<rect class="dug" x="-3" y="-3" width="${w + 6}" height="${h + 6}" rx="6"/>`;
-      tk += `<text x="${g ? w / 2 + 6 : w / 2}" y="15">${fmtMen(armyMen(a))}</text>`;
-      if (g) tk += `<circle class="gen" cx="2" cy="${h / 2}" r="9"/><text class="gen-t" x="2" y="${h / 2 + 3}">${esc(g.short[0])}</text>`;
-      tk += `</g>`;
+      let el = layer.querySelector(`[data-army="${a.id}"]`);
+      const fresh = !el;
+      if (fresh) { el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.dataset.army = a.id; el.style.transition = "none"; }
+      el.dataset.region = rid;
+      el.setAttribute("class", `token ${a.side}${a.moved && a.side === "P" ? " moved" : ""}`);
+      const key = [armyMen(a), a.general, a.moved, a.dugIn, ui.army === a.id, a.hessian, militiaMen(a) > a.regulars].join("|");
+      if (el.dataset.key !== key) {
+        el.dataset.key = key;
+        el.innerHTML = armyFigure({ side: a.side, hessian: a.hessian, men: armyMen(a), regulars: a.regulars, militia: militiaMen(a), general: a.general, short: g ? g.short : "", moved: a.moved, dugIn: a.dugIn, selected: ui.army === a.id, label: fmtMen(armyMen(a)) });
+      }
+      el.style.transform = `translate(${x + ox}px, ${y}px)`;
+      layer.appendChild(el); // keeps northern armies behind southern ones
+      if (fresh) requestAnimationFrame(() => { el.style.transition = ""; });
+      seen.add(a.id);
     });
   }
-  $("#tokens").innerHTML = tk;
+  for (const el of [...layer.children]) if (!seen.has(el.dataset.army)) el.remove();
+}
+
+// Crossed swords where battles were just fought.
+function markBattles(battles) {
+  const layer = $("#booms");
+  for (const b of battles) {
+    const [x, y] = seeds[b.region];
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "boom");
+    g.style.transform = `translate(${x}px, ${y - 20}px)`;
+    g.innerHTML = battleMarker();
+    layer.appendChild(g);
+    setTimeout(() => g.remove(), 3200);
+  }
 }
 
 // ---------- top bar ----------
@@ -239,7 +266,10 @@ function generalCard(g, id) {
   const pips = (n) => "●".repeat(n) + "○".repeat(3 - n);
   const loyal = g.side === "P" && g.loyalty !== undefined
     ? `<div class="loyal">Loyalty <span class="bar"><i class="${g.loyalty < 40 ? "low" : ""}" style="width:${g.loyalty}%"></i></span> ${Math.round(g.loyalty)}</div>` : "";
-  return `<div class="general"><div class="portrait ${g.side}">${esc(g.short[0])}</div><div>
+  const pic = PORTRAITS[id]
+    ? `<img src="${PORTRAITS[id]}" alt="">`
+    : `<svg viewBox="-8 -8 16 16">${bust(g.side === "P" ? "#2e4a7d" : g.hessian ? "#26375f" : "#b3312a")}</svg>`;
+  return `<div class="general"><div class="portrait ${g.side}">${pic}</div><div>
     <div class="gname">${esc(g.name)}</div>
     <div class="pips">Attack ${pips(g.atk)} &nbsp; Defense ${pips(g.def)}</div>
     <div class="gtrait">${esc(g.traitText)}</div>${loyal}</div></div>`;
@@ -269,7 +299,7 @@ function renderPanel() {
     const g = generalOf(state, a);
     h += `<h2>${esc(describeArmy(state, a))}</h2><p class="sub">at ${esc(REGIONS[a.region].name)}${a.moved ? " · has acted this month" : ""}${a.dugIn ? " · dug in" : ""}</p>`;
     h += armySummary(a);
-    if (g) h += generalCard(g);
+    if (g) h += generalCard(g, a.general);
     else {
       const spare = reserveGenerals(state, "P");
       if (spare.length) h += `<div class="row"><select id="assign"><option value="">Assign a general…</option>${spare.map((id) => `<option value="${id}">${esc(state.generals[id].name)}</option>`).join("")}</select></div>`;
@@ -282,7 +312,7 @@ function renderPanel() {
       const fg = generalOf(state, foe);
       h += `<p><b>Attack ${esc(REGIONS[ui.target].name)}</b>: ${fmtMen(armyMen(foe))} ${foe.hessian ? "Hessians" : "British"}${fg ? ` under ${esc(fg.short)}` : ""}${foe.dugIn ? ", dug in" : ""}.</p>`;
       h += `<p class="odds ${pWin >= 0.6 ? "good" : pWin < 0.4 ? "bad" : ""}">${oddsLabel(pWin)}: about ${Math.round(pWin * 100)}% chance to win</p>`;
-      h += `<p class="hint">${REGIONS[ui.target].fort ? "Fort: defenders much stronger. " : REGIONS[ui.target].city ? "City: defenders a bit stronger. " : ""}${isWinter(state) ? "Winter: attacking is harder. " : ""}</p>`;
+      h += `<p class="hint">${REGIONS[ui.target].fort ? "Fort: defenders much stronger. " : REGIONS[ui.target].city ? "City: defenders a bit stronger. " : ""}${REGIONS[ui.target].terrain === "hills" ? "Hills favor the defender. " : REGIONS[ui.target].terrain === "forest" ? "Forest favors the defender. " : ""}${isWinter(state) ? "Winter: attacking is harder. " : ""}</p>`;
       h += `<div class="row"><button class="btn danger" id="do-attack">${ui.split ? "Attack with half" : "Attack"}</button><button class="btn" id="cancel-attack">Cancel</button></div>`;
     } else if (!a.moved) {
       h += `<p class="hint">Tap a highlighted region to move there. Red outlines are attacks.</p>`;
@@ -292,9 +322,11 @@ function renderPanel() {
   } else if (ui.region) {
     const r = REGIONS[ui.region], rs = state.regions[ui.region];
     const foe = armyAt(state, ui.region, "B");
-    h += `<h2>${esc(r.name)}</h2><p class="sub">${rs.owner === "P" ? "Held by Congress" : "Held by the British"}${r.city ? " · city" : ""}${r.fort ? " · fort" : ""}${r.coastal ? " · coast" : ""}</p>`;
+    h += `<h2>${esc(r.name)}</h2><p class="sub">${rs.owner === "P" ? "Held by Congress" : "Held by the British"}${r.city ? " · city" : ""}${r.fort ? " · fort" : ""}${r.coastal ? " · coast" : ""}${r.terrain ? ` · ${r.terrain}` : ""}</p>`;
     h += `<div class="stats"><div class="stat"><b>${Math.round(rs.loyalist)}%</b><span>Loyalists</span></div><div class="stat"><b>${money(regionIncome(state, ui.region))}</b><span>Taxes / month</span></div></div>`;
-    if (foe) { h += armySummary(foe); const fg = generalOf(state, foe); if (fg) h += generalCard(fg); }
+    if (foe) { h += armySummary(foe); const fg = generalOf(state, foe); if (fg) h += generalCard(fg, foe.general); }
+    if (r.terrain === "hills") h += `<p class="hint">Hills: defenders are 20% stronger, and militia fight almost as well as regulars.</p>`;
+    if (r.terrain === "forest") h += `<p class="hint">Forest: defenders are 10% stronger, and militia fight almost as well as regulars.</p>`;
     if (r.note) h += `<p class="hint">${esc(r.note)}</p>`;
     h += recruitButtons(ui.region);
   } else {
@@ -370,8 +402,10 @@ const paras = (text) => text.split(/\n\n+/).map((p) => `<p>${esc(p).replace(/\n/
 
 function letterHtml(l) {
   const late = l.turn > l.written;
-  let h = `<div class="meta">${esc(l.fromName)}${late ? ` · <span class="delayed">Written a month ago. The courier was delayed.</span>` : ""}</div>`;
-  h += `<h2>${esc(l.title)}</h2><div class="letter">${paras(l.body)}</div>`;
+  const g = state.generals[l.from];
+  const pic = g ? `<div class="portrait ${g.side}">${PORTRAITS[l.from] ? `<img src="${PORTRAITS[l.from]}" alt="">` : `<svg viewBox="-8 -8 16 16">${bust(g.side === "P" ? "#2e4a7d" : "#b3312a")}</svg>`}</div>` : "";
+  let h = `<div class="letter-head">${pic}<div><div class="meta">${esc(l.fromName)}${late ? ` · <span class="delayed">Written a month ago. The courier was delayed.</span>` : ""}</div>`;
+  h += `<h2>${esc(l.title)}</h2></div></div><div class="letter">${paras(l.body)}</div>`;
   if (!l.resolved && l.choices.length) {
     h += `<div class="choices">${l.choices.map((c, i) => `<button class="choice" data-choice="${i}"><b>${esc(c.label)}</b>${c.hint ? `<span>${esc(c.hint)}</span>` : ""}</button>`).join("")}</div>`;
   } else if (l.outcome) {
@@ -391,10 +425,17 @@ function showLetters(after) {
         const outcome = answerLetter(state, l.id, Number(b.dataset.choice));
         save();
         const lost = state.lastSurprise; state.lastSurprise = null;
-        modal(`<h2>${esc(l.title)}</h2><p class="outcome">${esc(outcome || "Your answer was sent.")}</p>${lost && typeof lost === "object" ? battleHtml(lost) : ""}<div class="modal-actions"><button class="btn primary" id="next">${unanswered(state).length ? "Next letter" : "Continue"}</button></div>`, (c) => {
+        const showOutcome = () => modal(`<h2>${esc(l.title)}</h2><p class="outcome">${esc(outcome || "Your answer was sent.")}</p>${lost && typeof lost === "object" ? battleHtml(lost) : ""}<div class="modal-actions"><button class="btn primary" id="next">${unanswered(state).length ? "Next letter" : "Continue"}</button></div>`, (c) => {
           c.querySelector("#next").onclick = () => (unanswered(state).length ? showLetters(after) : after ? after() : closeModal());
         });
         renderTop();
+        if (l.event === "declaration") { $("#modal").hidden = true; playScene("declaration", {}, showOutcome); }
+        else if (lost && typeof lost === "object") {
+          $("#modal").hidden = true;
+          render();
+          markBattles([lost]);
+          playScene("crossing", { extra: [lost.attackerWins ? `${REGIONS[lost.region].name} is taken. The country takes heart.` : `The attack on ${REGIONS[lost.region].name} fails.`] }, showOutcome);
+        } else showOutcome();
       };
     });
     return;
@@ -479,15 +520,24 @@ function onEndTurn() {
   const before = state.log.length;
   const startTurn = state.turn;
   ui.army = null; ui.target = null; ui.split = false;
+  const wasWinter = isWinter(state);
   const summary = endTurn(state);
   save();
   render();
-  if (state.gameOver) { showGameOver(summary); return; }
+  $("#end-turn") && ($("#end-turn").disabled = true);
+  if (summary) markBattles(summary.battles);
   const fresh = state.log.filter((l) => l.turn >= startTurn).slice(0, state.log.length - before);
-  showReport(summary, fresh);
+  const voices = state.letters.filter((l) => l.voice && l.written === startTurn);
+  // Let the British moves play out on the map before the report covers it.
+  setTimeout(() => {
+    if (state.gameOver) { showGameOver(summary); return; }
+    const next = () => showReport(summary, fresh, voices);
+    if (isWinter(state) && !wasWinter && !state.seenScenes?.winter) { (state.seenScenes ||= {}).winter = true; save(); playScene("winter", {}, next); }
+    else next();
+  }, summary && (summary.battles.length || summary.moves.length) ? 1300 : 300);
 }
 
-function showReport(summary, lines) {
+function showReport(summary, lines, voices = []) {
   let h = `<h2>${esc(dateLabel(state))}</h2>`;
   const battles = summary ? summary.battles : [];
   if (battles.length) h += `<h3>Battles</h3>` + battles.map(battleHtml).join("");
@@ -495,6 +545,7 @@ function showReport(summary, lines) {
   if (moves.length) h += `<h3>Enemy movements</h3>` + moves.map((m) => `<div class="logline">${m.side === "B" ? "British troops" : "Your troops"} moved from ${esc(REGIONS[m.from].name)} to ${esc(REGIONS[m.to].name)}.</div>`).join("");
   const notes = lines.filter((l) => l.kind !== "date").reverse();
   if (notes.length) h += `<h3>Reports</h3>` + notes.map((l) => `<div class="logline ${l.kind}">${esc(l.text)}</div>`).join("");
+  if (voices.length) h += `<h3>Voices from the ranks</h3>` + voices.map((v) => `<div class="letter" style="font-size:15px;padding:10px 14px"><p>${esc(v.body)}</p><p class="from">${esc(v.title)}</p></div>`).join("");
   if (isWinter(state)) h += `<p class="hint">❄ Winter: armies outside cities lose men each month, and attacks are harder.</p>`;
   const open = unanswered(state).length;
   h += `<div class="modal-actions"><button class="btn primary" id="go">${open ? `Read ${open} letter${open > 1 ? "s" : ""}` : "Continue"}</button></div>`;
@@ -503,6 +554,13 @@ function showReport(summary, lines) {
 
 function showGameOver(summary) {
   const g = state.gameOver;
+  if (!showGameOver.played) {
+    showGameOver.played = true;
+    $("#modal").hidden = true;
+    playScene(g.result === "defeat" ? "defeat" : "victory", { title: esc(g.title), extra: [g.text] }, () => showGameOver(summary));
+    return;
+  }
+  showGameOver.played = false;
   let h = `<div class="title-hero"><div class="seal">${g.result === "defeat" ? "⚑" : "★"}</div><h1>${esc(g.title)}</h1></div><p>${esc(g.text)}</p>`;
   if (summary && summary.battles.length) h += `<h3>The last battles</h3>` + summary.battles.map(battleHtml).join("");
   h += `<h3>Your record</h3><div class="stats" style="color:var(--ink)">
@@ -558,7 +616,7 @@ function startNew() {
   $("#modal").hidden = true;
   fitView();
   render();
-  showLetters();
+  playScene("fleet", {}, () => showLetters());
 }
 
 buildMap();

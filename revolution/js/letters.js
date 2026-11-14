@@ -225,7 +225,9 @@ registerEvents([{ id: "soldier", from: "soldier", title: (s, ctx) => `From the $
 
 export function soldierLetter(state, outcome) {
   const rand = makeRng(state);
-  sendLetter(state, "soldier", { unit: pick(rand, UNITS), text: pick(rand, SOLDIER_LINES[outcome]) });
+  const l = sendLetter(state, "soldier", { unit: pick(rand, UNITS), text: pick(rand, SOLDIER_LINES[outcome]) });
+  l.read = true; // shown in the month's report, so it doesn't add to the unread count
+  l.voice = true;
 }
 
 export { enemy, armyAt };

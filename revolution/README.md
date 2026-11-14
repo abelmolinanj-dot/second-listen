@@ -19,7 +19,10 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 
 ## What's in the prototype
 
-- **Map** of the northern colonies, Virginia to Canada, with 34 regions. The New York–Philadelphia corridor is magnified so it's playable on a phone.
+- **Map** of the northern colonies, Virginia to Canada, with 34 regions, drawn like a period map: mountain ranges, forests, farmland, the main post roads, towns, forts, rivers and named waters. The New York–Philadelphia corridor is magnified so it's playable on a phone.
+- **Terrain that matters**: hills (defenders +20%) and forest (+10%); in either, militia fight nearly as well as regulars.
+- **Soldiers on the map**: Continentals in blue and buff, redcoats, Hessians in brass caps and militia in hunting shirts. Bigger armies show more men. Armies carry the Grand Union Flag or the King's Colours, and march across the map when they move.
+- **Cutscenes** for the British fleet arriving, the Declaration, crossing the Delaware, the first winter, and the end of the campaign.
 - **Armies** of regulars and militia. Militia are cheap but weaker, and go home after 3 months.
 - **Generals** with attack and defense ratings, traits (Howe is cautious, Arnold is bold, Rall is complacent in winter) and, on your side, **loyalty**.
 - **Letters** from generals, Congress, a spy, Robert Morris and Benjamin Franklin. Your answers have consequences. Commanders who are badly outnumbered write to you for orders, and letters from far away arrive a month late.
@@ -41,12 +44,27 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/ai.js` | The British commander |
 | `js/letters.js` | The letter system and letters every scenario can use |
 | `js/geo.js` | Map geometry: coastline, rivers, region shapes |
+| `js/terrain.js` | Map artwork: mountains, forests, roads, towns, waves, compass |
+| `js/soldiers.js` | Soldier figures, flags and general medallions |
+| `js/scenes.js` | Cutscenes and their drawn artwork |
+| `js/data/assets.js` | Portraits and paintings to use when they're added |
+| `img/` | Image files, with sources recorded in `img/CREDITS.md` |
 | `js/data/regions.js` | Regions and which ones border each other |
 | `js/data/generals.js` | Generals and their traits |
 | `js/data/scenario1776.js` | Starting setup, reinforcements and scripted letters for 1776 |
 | `tools/simulate.mjs` | Plays the campaign many times without a screen, for testing balance |
 
 Balance test, from this folder: `node tools/simulate.mjs 60 defensive` (strategies: `passive`, `simple`, `defensive`). A reasonable player wins about a third of the time and survives about a quarter. A player who does nothing always loses.
+
+## Adding portraits and paintings
+
+The game draws its own art until real images are added. To add one:
+
+1. Put the file in `img/portraits/` (generals) or `img/scenes/` (cutscenes). Square-ish portraits work best.
+2. List it in `js/data/assets.js`, for example `washington: "img/portraits/washington.jpg"`.
+3. Record where it came from in `img/CREDITS.md`.
+
+`assets.js` lists suggested public-domain paintings for each general and scene. Use paintings from before 1900, photos of them, or your own pictures. Avoid images from movies, TV, other games or modern artists unless you have permission.
 
 ## Roadmap
 
