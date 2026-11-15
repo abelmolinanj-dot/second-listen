@@ -14,7 +14,7 @@ treasury with a balance sheet.
 All sixteen ideas below were approved. They are built in phases, small and visible first, so each phase can be
 played and judged before the next. Anything that turns out too complicated gets cut or moved to a simpler spinoff.
 
-**Phase 1: atmosphere and learning (quick wins)**
+**Phase 1: atmosphere and learning** (built November 15, 2026)
 1. Loading tips and quotes: real quotes from the era between screens, with who said them and when.
 2. Dark night turns: the map dims to night while the British move, with lantern light on your camps.
 3. Weather and seasons: the map changes with the season (snow in winter, autumn color); rain slows marches, fog hides moves.
@@ -24,7 +24,7 @@ played and judged before the next. Anything that turns out too complicated gets 
 7. Achievements with history: goals like "Win Saratoga without abandoning Ticonderoga", each with a note.
 8. Voiced first lines: the browser reads the opening of key letters aloud until real voices are recorded. Off by default.
 
-**Phase 2: people who remember**
+**Phase 2: people who remember** (built November 15, 2026)
 9. Generals who remember: loyalty, wounds, victories and grudges carry between campaigns (Arnold's road to 1780).
 10. Honors of the era: the Thanks of Congress, swords of honor, gold medals, earned by your generals.
 11. Foreign volunteers: Lafayette, Steuben (drills militia into regulars), Kosciuszko (fortifies faster), Pulaski.

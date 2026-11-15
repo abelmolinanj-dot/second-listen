@@ -12,6 +12,7 @@ import { answerLetter, unanswered, senderName, senderRole } from "./letters.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { randomQuote } from "./data/quotes.js";
 import { awardHonors, noteFact, noteLetter } from "./book.js";
+import { applyLegacy, recordLegacy, getLegacy } from "./legacy.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
 import { playScene } from "./scenes.js";
@@ -292,6 +293,7 @@ function renderMap() {
 function markBattles(battles) {
   const layer = $("#booms");
   if (battles.length) sfx.battle(Math.max(...battles.map((b) => (b.attacker?.men || 0) + (b.defender?.men || 0))));
+  noteWounds(battles);
   for (const b of battles) {
     const [x, y] = seeds[b.region];
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -728,6 +730,9 @@ function showGameOver(summary) {
   const H = scenarioOf(state).SCENARIO.history;
   if (H) h += `<div class="history-box"><h3>What really happened</h3><p>${esc(H.summary)}</p><p>${esc(H.outcome)}</p><ul>${H.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></div>`;
   // Honors earned for the first time.
+  // Congress votes its thanks: honors that stay with the general in later campaigns.
+  const voted = recordLegacy(state, g);
+  if (voted.length) h += `<h3>Congress votes its thanks</h3>` + voted.map((v) => `<div class="honor congress">${portraitOf(v.id)}<div><b>${esc(state.generals[v.id]?.name || v.id)}</b><span>${esc(v.honor)}, ${esc(v.why)}</span></div></div>`).join("");
   const fresh = awardHonors(state, g);
   if (fresh.length) h += `<h3>Honors earned</h3>` + fresh.map((a) => `<div class="honor"><div class="honor-medal">★</div><div><b>${esc(a.title)}</b><span>${esc(a.goal)}</span><p>${esc(a.note)}</p></div></div>`).join("");
   h += `<div class="modal-actions"><button class="btn" id="view">Look at the map</button><button class="btn" id="again">Play again</button><button class="btn primary" id="tocamp">Campaign map</button></div>`;
@@ -795,6 +800,7 @@ function showMenu() {
 function startNew(scenarioId = "1776", guide = false) {
   state = newGame(undefined, scenarioId);
   state.mission = scenarioId;
+  applyLegacy(state); // generals remember earlier campaigns
   const S = scenarioOf(state).SCENARIO;
   ui.army = null; ui.region = null; ui.target = null;
   save();
@@ -825,4 +831,17 @@ function speakLetter(l) {
   const paras = l.body.split(/\n\n+/).filter((p) => !(p.length < 30 && /,$/.test(p)));
   const sentences = (paras[0] || "").match(/[^.!?]+[.!?]+/g) || [paras[0] || ""];
   speak(`${l.fromName}. ${sentences.slice(0, 2).join(" ")}`);
+}
+
+// A general on the losing side of a battle is sometimes wounded. It goes into his record for later campaigns.
+function noteWounds(battles) {
+  for (const b of battles) {
+    const loser = b.attackerWins ? b.defender : b.attacker;
+    if (loser.side !== "P" || !loser.general) continue;
+    const id = Object.keys(state.generals).find((k) => state.generals[k].short === loser.general);
+    if (!id || Math.random() > 0.12) continue;
+    const text = `Wounded at ${REGIONS[b.region].name}, ${dateLabel(state)}.`;
+    (state.wounds ||= []).push({ general: id, text });
+    state.log.unshift({ turn: state.turn, text: `General ${state.generals[id].short} was wounded at ${REGIONS[b.region].name}.`, kind: "bad" });
+  }
 }

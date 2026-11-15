@@ -69,7 +69,7 @@ export function money(n) { return "$" + Math.round(n) + "k"; }
 // Raw fighting strength before terrain and generals.
 export function power(state, army, regionId) {
   const g = generalOf(state, army);
-  let mq = g && g.trait === "oldwolf" ? 0.7 : MILITIA_QUALITY;
+  let mq = g && g.trait === "oldwolf" ? 0.7 : g && g.trait === "drillmaster" ? 0.85 : MILITIA_QUALITY;
   // Militia fight from behind trees and stone walls far better than in the open.
   if (regionId && REGIONS[regionId].terrain) mq = Math.max(mq, 0.75);
   return army.regulars * QUALITY[army.side] + militiaMen(army) * mq;
@@ -274,6 +274,7 @@ function battleFactors(state, att, def, regionId, { surprise = false, sea = fals
   if (def.dugIn && dg && dg.trait === "entrenched") D *= 1.15;
   // Riflemen pick off officers from cover: deadly in forest and hills, ordinary in the open.
   if (r.terrain && ag && ag.trait === "riflemen") A *= 1.2;
+  if (!r.terrain && !r.fort && ag && ag.trait === "cavalry") A *= 1.2;
   if (r.terrain && dg && dg.trait === "riflemen") D *= 1.15;
   if (state.regions[regionId].works && def.side === "P") D *= 1.15;
   if (surprise && dg && dg.trait === "complacent") D *= 0.55;
@@ -408,7 +409,8 @@ function fight(state, att, def, regionId, opts) {
   // Cause reacts to how the Continentals fared.
   const patriotWon = winner.side === "P";
   const big = ratio > 1.6;
-  if (patriotWon) changeCause(state, (attackerWins ? 4 : 3) + (big ? 2 : 0), `Victory at ${REGIONS[regionId].name}.`);
+  const beloved = (ag && ag.trait === "beloved" && att.side === "P") || (dg && dg.trait === "beloved" && def.side === "P");
+  if (patriotWon) changeCause(state, (attackerWins ? 4 : 3) + (big ? 2 : 0) + (beloved ? 2 : 0), `Victory at ${REGIONS[regionId].name}.`);
   else if (!report.surrendered) changeCause(state, -(lg && lg.trait === "steadfast" ? 2 : 3) - (big ? 1 : 0), `Defeat at ${REGIONS[regionId].name}.`);
   for (const a of [att, def]) if (state.armies[a.id] && armyMen(a) < 150) {
     if (a.general) state.generals[a.general].status = "reserve";
@@ -437,6 +439,9 @@ export function digIn(state, armyId) {
   if (!a || a.moved) return "This army already acted this month.";
   a.moved = true;
   a.dugIn = true;
+  // An engineer fortifies the ground for good.
+  const eg = generalOf(state, a);
+  if (eg && eg.trait === "engineer" && a.side === "P") state.regions[a.region].works = true;
   log(state, `${describeArmy(state, a)} dug in at ${REGIONS[a.region].name}.`);
   return null;
 }

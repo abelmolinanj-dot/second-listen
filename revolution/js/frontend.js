@@ -12,6 +12,7 @@ import { bust } from "./soldiers.js";
 import { sfx, music, soundPrefs, setSfx, setMusic, setVolume, setVoice, speak, stopSpeaking } from "./sound.js";
 import { askConfirm } from "./confirm.js";
 import { getBook } from "./book.js";
+import { getLegacy } from "./legacy.js";
 import { ACHIEVEMENTS } from "./data/achievements.js";
 import { FACTS } from "./data/facts.js";
 import { EVENTS } from "./letters.js";
@@ -224,6 +225,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
         <div class="gc-sub">${esc(f.role)}${f.life ? ` · ${esc(f.life)}` : ""}</div>
         ${g ? `<div class="gc-stats"><span>Attack ${pips(g.atk)}</span><span>Defense ${pips(g.def)}</span>${g.loyalty !== undefined ? `<span>Loyalty <b>${g.loyalty}</b></span>` : ""}</div>
         <div class="gc-trait"><b>${esc(traitName)}</b>${traitDesc ? ": " + esc(traitDesc) : ""}</div>` : ""}
+        ${recordHtml(id)}
         <div class="gc-bio"><p>${esc(f.bio)}</p><p class="gc-after"><b>Afterward:</b> ${esc(f.after)}</p></div>
         <div class="gc-more">Read more ›</div></div></button>`;
     }).join("");
@@ -314,4 +316,14 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
   }
 
   return { showMain, showCampaign, hide, isOpen: () => !root.hidden };
+}
+
+// A general's record across all your campaigns, from legacy.js.
+function recordHtml(id) {
+  const r = getLegacy()[id];
+  if (!r || !r.campaigns) return "";
+  const bits = [`${r.campaigns} campaign${r.campaigns > 1 ? "s" : ""} with you`, `won ${r.won}`, `lost ${r.lost}`];
+  if (r.loyalty !== null && r.loyalty !== undefined) bits.push(`last loyalty ${r.loyalty}`);
+  const extra = [...(r.honors || []).map((h) => `★ ${h}`), ...(r.wounds || []), ...(r.notes || [])];
+  return `<div class="gc-record"><b>Your record:</b> ${bits.join(" · ")}${extra.length ? `<ul>${extra.map((x) => `<li>${x.replace(/[<>&]/g, "")}</li>`).join("")}</ul>` : ""}</div>`;
 }

@@ -20,6 +20,15 @@ export const GENERALS = {
     trait: null, traitText: "A steady brigade commander." },
   stirling:   { side: "P", name: "Lord Stirling", short: "Stirling", rank: 4, atk: 1, def: 2, loyalty: 75,
     trait: "rearguard", traitText: "Rearguard: his army loses fewer men when it is beaten." },
+  // Foreign volunteers
+  lafayette:  { side: "P", name: "Marquis de Lafayette", short: "Lafayette", rank: 6, atk: 2, def: 2, loyalty: 95,
+    trait: "beloved", traitText: "Beloved: his victories lift the Cause even more, and France watches him." },
+  kosciuszko: { side: "P", name: "Thaddeus Kosciuszko", short: "Kosciuszko", rank: 4, atk: 0, def: 3, loyalty: 85,
+    trait: "engineer", traitText: "Engineer: wherever his army digs in, the ground is fortified for good." },
+  steuben:    { side: "P", name: "Baron von Steuben", short: "Steuben", rank: 5, atk: 1, def: 2, loyalty: 85,
+    trait: "drillmaster", traitText: "Drillmaster: militia under him fight almost like regulars." },
+  pulaski:    { side: "P", name: "Casimir Pulaski", short: "Pulaski", rank: 4, atk: 3, def: 1, loyalty: 70,
+    trait: "cavalry", traitText: "Cavalry: strikes hard in open country, where there are no woods or hills." },
   // The Northern Department, 1777
   gates:      { side: "P", name: "Horatio Gates", short: "Gates", rank: 8, atk: 1, def: 3, loyalty: 60,
     trait: "entrenched", traitText: "Entrenched: when dug in, his lines are even harder to break. Popular with New England, and ambitious." },

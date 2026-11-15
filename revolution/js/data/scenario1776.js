@@ -79,7 +79,7 @@ export function setupScenario(state) {
   }
   state.generals.lee.status = "away";
   // Commanders who belong to later campaigns.
-  for (const id of ["gates", "schuyler", "stclair", "stark", "morgan", "burgoyne", "fraser", "riedesel", "stleger"]) state.generals[id].status = "away";
+  for (const id of ["gates", "schuyler", "stclair", "stark", "morgan", "burgoyne", "fraser", "riedesel", "stleger", "lafayette", "kosciuszko", "steuben", "pulaski"]) state.generals[id].status = "away";
 
   const P = (region, regulars, militia, general) => {
     const a = newArmy(state, { side: "P", region, regulars, general });
@@ -511,6 +511,59 @@ Congress has at last agreed that men should enlist for three years or the length
 
 G. Washington`,
     choices: [{ label: "Welcome them", hint: `+${menWords(2500)} regulars join Washington.`, apply(state) { const w = washArmy(state); if (w) w.regulars += 2500; return "New regiments marched into Washington's camp."; } }],
+  },
+  // ---------- camp life ----------
+  {
+    id: "r76_martha", random: true, weight: 3, fromTurn: 6, untilTurn: 9, from: "mwashington", place: "Winter quarters",
+    when: (state) => !!washArmy(state),
+    title: "Mrs. Washington comes to camp",
+    body: () => `Gentlemen,
+
+I am told the General will spend the winter in quarters, and so I shall join him, as I have every winter since the war began. I have no gift for war, but I can mend a shirt, nurse a fever and keep the officers' wives knitting stockings for men who have none.
+
+I ask only for a wagon and a safe road.
+
+Martha Washington`,
+    choices: [
+      { label: "Send an escort and a wagon", hint: "Washington's loyalty rises, Cause +1, and fewer of his men die this winter.", apply(state) { state.flags.marthaInCamp = true; changeLoyalty(state, "washington", 5); changeCause(state, 1, "Martha Washington joined the army in winter quarters."); return "Mrs. Washington arrived in camp with her trunks and her knitting. The General was seen to smile for the first time in weeks."; } },
+      { label: "Advise her that the roads are too dangerous", hint: "Nothing changes.", apply(state) { changeLoyalty(state, "washington", -3); return "She wrote back that she had traveled worse roads, and would come in the spring."; } },
+    ],
+  },
+  {
+    id: "r76_women", random: true, weight: 2, fromTurn: 2, untilTurn: 10, from: "greene", place: "Camp",
+    when: (state) => state.generals.greene.status === "active",
+    title: "The women of the camp",
+    body: () => `Sir,
+
+There are some hundreds of women following this army: soldiers' wives and widows, with children. They cook, wash, mend and nurse the sick, and without them I believe half the regiments would go home. But they eat, and the commissaries want orders.
+
+Shall they draw half rations, as the General has allowed before, or be sent away?
+
+N. Greene`,
+    choices: [
+      { label: `Grant them half rations (${money(4)})`, hint: "Your armies stay healthier, Cause +1.", apply(state) { if (state.treasury >= 4) spend(state, 4, "letters"); for (const a of armyList(state, "P")) a.regulars = Math.round(a.regulars * 1.02); changeCause(state, 1, "The camp women were given rations."); return "The women drew their rations. The hospital tents were cleaner within the week."; } },
+      { label: "Send them away", hint: "Saves money, but some men will leave with their families.", apply(state) { for (const a of armyList(state, "P")) a.regulars = Math.round(a.regulars * 0.97); return "The women were turned out of camp. That night, a good many soldiers went with them."; } },
+    ],
+  },
+  {
+    id: "r76_hospitals", random: true, weight: 2, fromTurn: 3, untilTurn: 8, from: "congress", place: "Philadelphia",
+    title: "The army's hospitals",
+    body: [
+      () => `Sir,
+
+Dr. Morgan, Director General of our hospitals, writes that the sick are dying for want of blankets, medicines and clean straw. More men are lost to camp fever and dysentery than to the enemy. He asks for money to set up proper hospitals before winter.
+
+John Hancock, President`,
+      () => `Sir,
+
+The surgeons beg Congress for help. Men lie on bare floors in barns and churches, and a fever that starts in one ward spreads through all of them. With money for blankets, medicine and nurses, they say, half these deaths could be prevented.
+
+John Hancock`,
+    ],
+    choices: [
+      { label: `Fund the hospitals (${money(12)})`, hint: "Your armies lose far fewer men in winter for the rest of the campaign.", apply(state) { if (state.treasury < 12) return "The treasury could not cover it. The surgeons did what they could."; spend(state, 12, "letters"); state.flags.hospitals = true; return "Blankets, medicines and nurses went to every hospital. The death rate fell within the month."; } },
+      { label: "There is no money for it", hint: "Nothing changes.", apply: () => "The surgeons were told to manage. Many did not." },
+    ],
   },
   // ---------- chance letters: a few turn up in each game ----------
   {

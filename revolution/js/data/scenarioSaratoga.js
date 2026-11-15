@@ -97,6 +97,14 @@ export function setupScenario(state) {
 export const REINFORCEMENTS = [];
 
 // ---------- helpers ----------
+// Generals remember. If the player commanded Arnold in an earlier campaign, Washington's letter says so.
+function arnoldMemory(state) {
+  const rec = state.legacy?.arnold;
+  if (!rec || rec.loyalty === null || rec.loyalty === undefined) return "I would ask the Board to make use of his talents, and to remember that he feels his treatment by Congress keenly.";
+  if (rec.loyalty >= 80) return "He speaks warmly of the Board, which has stood by him before when Congress did not. I think you will find no officer more willing.";
+  if (rec.loyalty < 55) return "I must warn the Board that he has not forgotten how he was treated. He says openly that the Board let Congress humiliate him, and he does not forgive easily. Handle him with care.";
+  return "He is as touchy as ever about his rank, but he will fight. I would ask the Board to make use of his talents.";
+}
 // What Schuyler has heard about the British army in New York. It hints at how this game's history was rolled.
 function rumor(state) {
   const plan = state.flags.history?.clinton;
@@ -297,11 +305,11 @@ A. St. Clair`,
   {
     id: "sar_arnold", scripted: true, turn: 1, from: "washington",
     title: "Arnold is coming north",
-    body: () => `Gentlemen,
+    body: (state) => `Gentlemen,
 
 Howe has put his army on board ship and sailed, I believe for Philadelphia, so I must keep the main army here. But I can send the Northern Department a general who knows the country and has never been accused of being slow.
 
-General Arnold is on his way to Albany. I would ask the Board to make use of his talents, and to remember that he feels his treatment by Congress keenly.
+General Arnold is on his way to Albany. ${arnoldMemory(state)}
 
 G. Washington`,
     choices: [{
@@ -703,6 +711,23 @@ John Hancock`,
     ],
   },
 
+  // ---------- camp life ----------
+  {
+    id: "sar_baroness", random: true, weight: 2, kind: "intel", fromTurn: 3, untilTurn: 5, from: "spy", fromName: "Taken from a captured courier",
+    when: (state) => !!burgoyne(state),
+    ctx: () => ({ reliable: true, truth: true }),
+    title: "A letter from Burgoyne's camp",
+    body: (state) => `Our pickets stopped a courier riding north toward Canada. Among his dispatches was a private letter in German from the Baroness von Riedesel, wife of the Brunswick general, who travels with the army and her three small daughters.
+
+Our interpreter says she writes of short rations and tired men, of her children sleeping in a carriage, and of General Burgoyne giving suppers and drinking champagne late into the night as if nothing were wrong.
+
+There is nothing military in it, except what it tells us about the state of their camp.`,
+    choices: [
+      { label: "Send it on to Canada, unopened in spirit", hint: "Cause +1: the country hears the Board behaves like gentlemen.", apply(state) { changeCause(state, 1, "The Board sent a lady's letter on through the lines."); return "The letter was sealed again and sent through the lines under a flag of truce, with the Board's compliments to the Baroness."; } },
+      { label: "Let Burgoyne know we've read it", hint: "His officers lose heart: Burgoyne is more likely to ask for terms.", apply(state) { state.flags.burgoyneDespairs = true; return "A copy went back through the lines with a note: the Board hopes the champagne holds out. Burgoyne's officers were not amused."; } },
+    ],
+  },
+
   // ---------- chance events: a few of these turn up in each game ----------
   {
     id: "sar_oneida", random: true, weight: 2, fromTurn: 0, untilTurn: 3, from: (state) => commander(state), place: "Albany",
@@ -804,7 +829,7 @@ A young Polish officer, Colonel Thaddeus Kosciuszko, has joined us as an enginee
 
 He needs men, tools and money to build them.`,
     choices: [
-      { label: `Fortify Saratoga (${money(12)})`, hint: "Saratoga becomes much harder to attack for the rest of the campaign.", apply(state) { if (state.treasury < 12) return "There was no money for the works."; spend(state, 12, "fortifications"); state.regions.saratoga.works = true; return "Kosciuszko's lines went up on Bemis Heights: breastworks, redoubts and batteries covering the river road."; } },
+      { label: `Fortify Saratoga (${money(12)})`, hint: "Saratoga becomes much harder to attack, and Kosciuszko joins as a general you can assign.", apply(state) { if (state.treasury < 12) return "There was no money for the works."; spend(state, 12, "fortifications"); state.regions.saratoga.works = true; state.generals.kosciuszko.status = "reserve"; return "Kosciuszko's lines went up on Bemis Heights: breastworks, redoubts and batteries covering the river road. Kosciuszko himself is ready to serve: assign him to an army, and every place it digs in will be fortified."; } },
       { label: "Not now", hint: "Keep the money.", apply: () => "Kosciuszko bowed and went back to his maps." },
     ],
   },

@@ -21,7 +21,10 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 
 - **A main menu** with Continue, Campaign, Conquest (coming), Generals, Settings and Credits.
 - **A campaign map**: the war as a trail of eight missions from Boston in 1775 to Yorktown in 1781. Tap a mission for its briefing: a painting, the situation, your orders, difficulty, and your best result in stars (1–3). The Campaign of 1776 is playable; the rest show when they're coming. Missions are listed in `js/data/missions.js`.
-- **Who's Who**: every general and Founding Father, with ratings, traits and a short biography of who they were and what became of them (`js/data/figures.js`).
+- **Who's Who**: every general, foreign volunteer and Founding Father, with ratings, traits, a short biography, and their record with you across campaigns (`js/data/figures.js`).
+- **Generals who remember**: loyalty, battles won and lost, wounds and honors carry from one campaign to the next (`js/legacy.js`), and later letters mention them. Congress votes its thanks, gold medals and swords of honor at the end of a campaign.
+- **Foreign volunteers** with abilities from their real careers: Kosciuszko (engineer), Steuben (drillmaster), Pulaski (cavalry), Lafayette (beloved). Kosciuszko can join at Saratoga; the others arrive in later campaigns.
+- **Camp life**: Martha Washington in winter quarters, the women of the camp, the army's hospitals, and an intercepted letter from Burgoyne's camp.
 
 - **Map** of the northern colonies, Virginia to Canada, with 34 regions, drawn like a period map: mountain ranges, forests, farmland, the main post roads, towns, forts, rivers and named waters. The New York–Philadelphia corridor is magnified so it's playable on a phone.
 - **Terrain that matters**: hills (defenders +20%) and forest (+10%); in either, militia fight nearly as well as regulars.

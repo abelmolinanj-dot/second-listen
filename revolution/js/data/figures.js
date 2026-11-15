@@ -70,6 +70,22 @@ export const FIGURES = {
     after: "In January 1781 he won the Battle of Cowpens, one of the most complete American victories of the war.",
   },
 
+  kosciuszko: {
+    group: "P", name: "Thaddeus Kosciuszko", role: "Colonel of Engineers, volunteer from Poland", life: "1746 to 1817",
+    bio: "A Polish-Lithuanian officer trained as a military engineer in France, who came to America in 1776. He chose and fortified Bemis Heights, where Burgoyne's army was stopped, and later designed the fortress at West Point.",
+    after: "He led a national uprising in Poland in 1794. In his will he asked that his American money be used to free and educate enslaved people. Thomas Jefferson, his executor, never carried it out.",
+  },
+  steuben: {
+    group: "P", name: "Baron Friedrich Wilhelm von Steuben", role: "Inspector General, volunteer from Prussia", life: "1730 to 1794",
+    bio: "A former Prussian staff officer who arrived at Valley Forge in February 1778, speaking almost no English. He drilled the starving army himself, swearing in three languages, and turned it into soldiers who could stand against British regulars.",
+    after: "His drill manual, the \"Blue Book,\" was used by the army for decades. He became an American citizen and settled in New York.",
+  },
+  pulaski: {
+    group: "P", name: "Casimir Pulaski", role: "General of Cavalry, volunteer from Poland", life: "1745 to 1779",
+    bio: "A Polish cavalry commander who had fought against Russia and came to America on Benjamin Franklin's recommendation. At the Brandywine in 1777 he led a charge that helped cover the army's retreat.",
+    after: "Often called the father of the American cavalry, he was mortally wounded at Savannah in 1779.",
+  },
+
   // ----- The Crown -----
   howe: {
     group: "B", name: "Sir William Howe", role: "Commander in Chief, British Army", life: "1729 to 1814",
@@ -149,7 +165,7 @@ export const FIGURES = {
     after: "He became the first Secretary of the Treasury and was killed in a duel with Aaron Burr.",
   },
   lafayette: {
-    group: "F", name: "Marquis de Lafayette", role: "Major General, volunteer from France", life: "1757 to 1834",
+    group: "P", name: "Marquis de Lafayette", role: "Major General, volunteer from France", life: "1757 to 1834",
     bio: "A rich French nobleman who bought his own ship and sailed to America at nineteen to join the cause. Congress made him a major general, and he became like a son to Washington.",
     after: "He helped trap Cornwallis at Yorktown, and later played a part in the French Revolution.",
   },
@@ -167,6 +183,11 @@ export const FIGURES = {
     group: "F", name: "Thomas Paine", role: "Writer, aide to General Greene", life: "1737 to 1809",
     bio: "An English corset-maker and failed tax collector who came to Philadelphia in 1774. His pamphlet Common Sense, in January 1776, argued for independence in plain words anyone could follow, and sold in enormous numbers. He marched with the army in the retreat across New Jersey.",
     after: "He wrote The Rights of Man in defense of the French Revolution, was nearly executed in Paris, and died poor in New York.",
+  },
+  mwashington: {
+    group: "F", name: "Martha Washington", role: "With the army in winter quarters", life: "1731 to 1802",
+    bio: "A wealthy Virginia widow who married George Washington in 1759. She spent every winter of the war in camp with him, from Cambridge to Valley Forge and Morristown, organizing officers' wives to knit, mend and nurse.",
+    after: "She became the first First Lady, though the title came later.",
   },
   spy: { group: "X", name: "A friend behind the lines", role: "Intelligence", bio: "", after: "" },
   soldier: { group: "X", name: "A soldier in the ranks", role: "", bio: "", after: "" },

@@ -145,7 +145,10 @@ function closeMonth(state) {
   if (winter) {
     for (const a of Object.values(state.armies)) {
       const inCity = REGIONS[a.region].city;
-      const rate = a.side === "P" ? (inCity ? 0.01 : state.arrears > 0 ? 0.06 : 0.03) : inCity ? 0 : 0.02;
+      let rate = a.side === "P" ? (inCity ? 0.01 : state.arrears > 0 ? 0.06 : 0.03) : inCity ? 0 : 0.02;
+      // Funded hospitals and good care in camp save lives.
+      if (a.side === "P" && state.flags.hospitals) rate *= 0.6;
+      if (a.side === "P" && state.flags.marthaInCamp && a.general === "washington") rate *= 0.7;
       a.regulars = Math.round(a.regulars * (1 - rate));
       for (const b of a.militia) b.men = Math.round(b.men * (1 - rate * 1.5));
     }
