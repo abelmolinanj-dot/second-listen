@@ -13,8 +13,12 @@ import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
+import { FACTS } from "./data/facts.js";
+import { sfx, music, soundPrefs, setSfx, setMusic } from "./sound.js";
+import { createTutorial } from "./tutorial.js";
 
 const SAVE_KEY = "dispatches76-save";
+const PLAYED_KEY = "dispatches76-played";
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
@@ -36,6 +40,44 @@ function loadSave() {
   } catch { return null; }
 }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ } }
+function hasPlayed() { try { return !!localStorage.getItem(PLAYED_KEY); } catch { return false; } }
+function markPlayed() { try { localStorage.setItem(PLAYED_KEY, "1"); } catch { /* ignore */ } }
+
+const tutorial = createTutorial({ getState: () => state, save });
+
+// ---------- "Did you know?" ----------
+function monthKey() {
+  const m = state.startMonth + state.turn;
+  return `${state.startYear + Math.floor(m / 12)}-${String((m % 12) + 1).padStart(2, "0")}`;
+}
+// Take the first unseen fact that matches, and remember it so it isn't shown again this campaign.
+function takeFact(match) {
+  state.factsSeen ||= [];
+  const i = FACTS.findIndex((f, idx) => !state.factsSeen.includes(idx) && match(f));
+  if (i < 0) return null;
+  state.factsSeen.push(i);
+  return FACTS[i];
+}
+function monthlyFact(regions = []) {
+  const key = monthKey();
+  return takeFact((f) => f.when === key)
+    || takeFact((f) => f.when && f.when < key)
+    || takeFact((f) => !f.when && f.region && regions.includes(f.region))
+    || takeFact((f) => f.topic && (f.topic !== "winter" || isWinter(state)))
+    || takeFact((f) => !f.when);
+}
+// A region's note: one that has already happened by this month, rotating as the months pass.
+function regionFact(id) {
+  const key = monthKey();
+  const list = FACTS.filter((f) => f.region === id && (!f.when || f.when <= key));
+  if (!list.length) return null;
+  const f = list[state.turn % list.length];
+  const idx = FACTS.indexOf(f);
+  state.factsSeen ||= [];
+  if (!state.factsSeen.includes(idx)) state.factsSeen.push(idx);
+  return f;
+}
+const factHtml = (f) => (f ? `<div class="didyouknow"><b>Did you know?</b> ${esc(f.text)}</div>` : "");
 
 // ---------- map ----------
 const svg = $("#map");
@@ -169,9 +211,10 @@ function onMapTap(target, clientX, clientY) {
     }
   }
   const mine = armyAt(state, regionId, "P");
-  if (mine && (!tok || tok.dataset.army === mine.id)) { ui.army = mine.id; ui.region = regionId; ui.target = null; ui.split = false; }
+  if (mine && (!tok || tok.dataset.army === mine.id)) { ui.army = mine.id; ui.region = regionId; ui.target = null; ui.split = false; sfx.tap(); }
   else { ui.army = null; ui.region = regionId; ui.target = null; }
   render();
+  if (ui.army && state.armies[ui.army].general === "washington") tutorial.event("select");
 }
 
 function doMove(regionId) {
@@ -185,6 +228,7 @@ function doMove(regionId) {
   ui.region = regionId;
   save();
   render();
+  tutorial.event("act");
 }
 
 function renderMap() {
@@ -234,6 +278,7 @@ function renderMap() {
 // Crossed swords where battles were just fought.
 function markBattles(battles) {
   const layer = $("#booms");
+  if (battles.length) sfx.battle(Math.max(...battles.map((b) => (b.attacker?.men || 0) + (b.defender?.men || 0))));
   for (const b of battles) {
     const [x, y] = seeds[b.region];
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -328,6 +373,7 @@ function renderPanel() {
     if (r.terrain === "hills") h += `<p class="hint">Hills: defenders are 20% stronger, and militia fight almost as well as regulars.</p>`;
     if (r.terrain === "forest") h += `<p class="hint">Forest: defenders are 10% stronger, and militia fight almost as well as regulars.</p>`;
     if (r.note) h += `<p class="hint">${esc(r.note)}</p>`;
+    h += factHtml(regionFact(ui.region));
     h += recruitButtons(ui.region);
   } else {
     h += `<h2>${esc(SCENARIO.title)}</h2><p class="sub">You are the Board of War: you run the army and pay for it.</p>`;
@@ -341,7 +387,7 @@ function renderPanel() {
   on("do-attack", () => doMove(ui.target));
   on("cancel-attack", () => { ui.target = null; render(); });
   on("split", () => { ui.split = !ui.split; render(); });
-  on("dig", () => { const e = digIn(state, ui.army); if (e) toast(e); save(); render(); });
+  on("dig", () => { const e = digIn(state, ui.army); if (e) toast(e); else { sfx.tap(); tutorial.event("act"); } save(); render(); });
   on("end-turn", onEndTurn);
   on("open-letters", () => showLetters());
   on("rec-reg", () => doRecruit("regulars"));
@@ -368,8 +414,10 @@ function doRecruit(kind) {
   if (e) { toast(e); return; }
   const a = armyAt(state, regionId, "P");
   if (a) { ui.army = a.id; }
+  sfx.drumroll();
   save();
   render();
+  tutorial.event("act");
 }
 
 function render() {
@@ -377,6 +425,7 @@ function render() {
   renderTop();
   renderMap();
   renderPanel();
+  tutorial.refresh();
 }
 
 let toastTimer;
@@ -420,6 +469,7 @@ function showLetters(after) {
   if (open.length) {
     const l = open[open.length - 1];
     l.read = true;
+    sfx.letter();
     modal(letterHtml(l) + `<p class="meta" style="margin-top:12px">${open.length > 1 ? `${open.length - 1} more letter${open.length > 2 ? "s" : ""} waiting.` : ""}</p>`, (card) => {
       for (const b of card.querySelectorAll("[data-choice]")) b.onclick = () => {
         const outcome = answerLetter(state, l.id, Number(b.dataset.choice));
@@ -507,10 +557,10 @@ function ledgerHtml() {
 function showLedger() {
   modal(ledgerHtml(), (c) => {
     c.querySelector("#close").onclick = closeModal;
-    c.querySelector("#print").onclick = () => { printMoney(state); save(); renderTop(); showLedger(); };
+    c.querySelector("#print").onclick = () => { printMoney(state); sfx.coins(); save(); renderTop(); showLedger(); };
   });
 }
-$("#btn-ledger").onclick = () => state && showLedger();
+$("#btn-ledger").onclick = () => { if (!state) return; sfx.coins(); showLedger(); tutorial.event("ledger"); };
 $("#btn-letters").onclick = () => state && showLetters();
 $("#btn-menu").onclick = () => showMenu();
 
@@ -521,6 +571,8 @@ function onEndTurn() {
   const startTurn = state.turn;
   ui.army = null; ui.target = null; ui.split = false;
   const wasWinter = isWinter(state);
+  sfx.drumroll();
+  tutorial.event("endTurn");
   const summary = endTurn(state);
   save();
   render();
@@ -532,7 +584,7 @@ function onEndTurn() {
   setTimeout(() => {
     if (state.gameOver) { showGameOver(summary); return; }
     const next = () => showReport(summary, fresh, voices);
-    if (isWinter(state) && !wasWinter && !state.seenScenes?.winter) { (state.seenScenes ||= {}).winter = true; save(); playScene("winter", {}, next); }
+    if (isWinter(state) && !wasWinter && !state.seenScenes?.winter) { (state.seenScenes ||= {}).winter = true; save(); music.dirge(); playScene("winter", {}, next); }
     else next();
   }, summary && (summary.battles.length || summary.moves.length) ? 1300 : 300);
 }
@@ -547,6 +599,8 @@ function showReport(summary, lines, voices = []) {
   if (notes.length) h += `<h3>Reports</h3>` + notes.map((l) => `<div class="logline ${l.kind}">${esc(l.text)}</div>`).join("");
   if (voices.length) h += `<h3>Voices from the ranks</h3>` + voices.map((v) => `<div class="letter" style="font-size:15px;padding:10px 14px"><p>${esc(v.body)}</p><p class="from">${esc(v.title)}</p></div>`).join("");
   if (isWinter(state)) h += `<p class="hint">❄ Winter: armies outside cities lose men each month, and attacks are harder.</p>`;
+  h += factHtml(monthlyFact([...battles.map((b) => b.region), ...moves.map((m) => m.to)]));
+  save();
   const open = unanswered(state).length;
   h += `<div class="modal-actions"><button class="btn primary" id="go">${open ? `Read ${open} letter${open > 1 ? "s" : ""}` : "Continue"}</button></div>`;
   modal(h, (c) => { c.querySelector("#go").onclick = () => (open ? showLetters() : closeModal()); });
@@ -557,6 +611,8 @@ function showGameOver(summary) {
   if (!showGameOver.played) {
     showGameOver.played = true;
     $("#modal").hidden = true;
+    markPlayed();
+    if (g.result === "defeat") music.dirge(); else music.victory();
     playScene(g.result === "defeat" ? "defeat" : "victory", { title: esc(g.title), extra: [g.text] }, () => showGameOver(summary));
     return;
   }
@@ -595,28 +651,39 @@ function showTitle() {
   <h2 style="margin-top:14px">${esc(SCENARIO.title)}</h2><p>${esc(SCENARIO.blurb)}</p>
   <h3>To win</h3><ul class="goals">${SCENARIO.goals.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>
   ${howToPlay()}
+  <label class="check"><input type="checkbox" id="guide" ${hasPlayed() ? "" : "checked"}> Guide me through the first two months</label>
   <div class="modal-actions">${saved ? `<button class="btn" id="continue">Continue (${esc(dateLabel(saved))})</button>` : ""}<button class="btn primary" id="new">Begin the campaign</button></div>`, (c) => {
-    c.querySelector("#new").onclick = startNew;
+    c.querySelector("#new").onclick = () => startNew(c.querySelector("#guide").checked);
     const cont = c.querySelector("#continue");
     if (cont) cont.onclick = () => { state = saved; closeModal(); fitView(); if (unanswered(state).length) showLetters(); };
   });
 }
 
 function showMenu() {
-  modal(`<h2>Menu</h2>${howToPlay()}<div class="modal-actions"><button class="btn danger" id="restart">Restart campaign</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
+  const p = soundPrefs();
+  modal(`<h2>Menu</h2>
+  <h3>Sound</h3>
+  <label class="check"><input type="checkbox" id="opt-sfx" ${p.sfx ? "checked" : ""}> Sound effects (muskets, cannon, drums)</label>
+  <label class="check"><input type="checkbox" id="opt-music" ${p.music ? "checked" : ""}> Fife and drum music</label>
+  ${howToPlay()}<div class="modal-actions">${state && !state.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
     c.querySelector("#close").onclick = closeModal;
-    c.querySelector("#restart").onclick = () => { if (confirm("Abandon this campaign and start over?")) startNew(); };
+    c.querySelector("#restart").onclick = () => { if (confirm("Abandon this campaign and start over?")) startNew(false); };
+    c.querySelector("#opt-sfx").onchange = (e) => { setSfx(e.target.checked); if (e.target.checked) sfx.musket(); };
+    c.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
+    const g = c.querySelector("#guide");
+    if (g) g.onclick = () => { closeModal(); tutorial.start(); };
   });
 }
 
-function startNew() {
+function startNew(guide = false) {
   state = newGame();
   ui.army = null; ui.region = null; ui.target = null;
   save();
   $("#modal").hidden = true;
   fitView();
   render();
-  playScene("fleet", {}, () => showLetters());
+  music.march();
+  playScene("fleet", {}, () => showLetters(() => { closeModal(); if (guide) tutorial.start(); }));
 }
 
 buildMap();

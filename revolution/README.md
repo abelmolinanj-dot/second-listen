@@ -6,14 +6,14 @@ This is the first playable prototype: one scenario, **The Campaign of 1776** (Ju
 
 ## Play it
 
-The game is plain HTML, CSS and JavaScript modules with no build step. Browsers won't load modules from a `file://` page, so serve the folder:
+The game is plain HTML, CSS and JavaScript modules with no build step. Browsers won't load modules from a `file://` page, so serve the folder. With [Node.js](https://nodejs.org) installed:
 
 ```
 cd revolution
-python3 -m http.server 8000
+npm start
 ```
 
-Then open http://localhost:8000. On the same Wi-Fi, a phone can open `http://<your computer's IP>:8000`.
+Then open http://localhost:5180. (Any static server works too, for example `python3 -m http.server`. On some Windows machines port 8000 is reserved, which is why the default is 5180.) The server only listens on your own computer; to test on a phone on the same Wi-Fi, use a server that listens on your network address.
 
 Once this folder is on the repository's main branch, GitHub Pages also serves it at `/second-listen/revolution/`.
 
@@ -32,6 +32,10 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 - **Winter**: armies outside cities lose men, and attacks are harder.
 - **British AI** that scores its options and plays to its generals' personalities.
 - **Autosave** in the browser.
+- **Period paintings** for the cutscenes and portraits for most generals, all public domain (see `img/CREDITS.md`).
+- **Sound**: musket volleys, cannon, drums, letters and coins, plus fife-and-drum "Yankee Doodle". Everything is made in code with the Web Audio API, so there are no sound files to license. Both can be turned off in the menu.
+- **Did you know?** history notes in each monthly report and on each region, timed so they never give away events before they happen.
+- **A guided tutorial** for the first two months, given by your aide-de-camp. It's on by default for new players and can be replayed from the menu.
 
 ## Files
 
@@ -47,6 +51,10 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/terrain.js` | Map artwork: mountains, forests, roads, towns, waves, compass |
 | `js/soldiers.js` | Soldier figures, flags and general medallions |
 | `js/scenes.js` | Cutscenes and their drawn artwork |
+| `js/sound.js` | Sound effects and music, synthesized with the Web Audio API |
+| `js/tutorial.js` | The aide-de-camp's guided tutorial |
+| `js/data/facts.js` | The "Did you know?" history notes |
+| `tools/serve.mjs` | A tiny local web server (`npm start`) |
 | `js/data/assets.js` | Portraits and paintings to use when they're added |
 | `img/` | Image files, with sources recorded in `img/CREDITS.md` |
 | `js/data/regions.js` | Regions and which ones border each other |
@@ -70,9 +78,9 @@ The game draws its own art until real images are added. To add one:
 
 **Next**
 - Playtest and tune the balance by hand
-- Battle animations and sound
-- A short tutorial for the first two months
-- Better art for tokens and generals
+- The 7 remaining portraits (listed in `img/CREDITS.md`)
+- Voiced lines for key letters (see `docs/ROADMAP.md`)
+- Better art for tokens
 
 **More campaigns**
 - 1777: Saratoga in the north, Brandywine and Philadelphia in the south
