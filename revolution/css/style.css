@@ -466,3 +466,22 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .goal.failed .goal-mark { color: var(--bad); }
 .aide { padding: 9px 12px; font-family: var(--text); font-size: 14px; line-height: 1.5; background: #f4f6fb; }
 .aide b { font-family: var(--sans); font-size: 12.5px; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+
+/* --- Who's Who: a big painting on top of each card --- */
+.page:has(.pcards) { width: min(1100px, 100%); }
+.pcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-top: 14px; }
+.pcard { background: #ffffff; border: 1px solid rgba(31,53,102,.25); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 14px rgba(12,26,56,.08); display: flex; flex-direction: column; }
+.pcard.P { border-top: 5px solid var(--patriot); }
+.pcard.B { border-top: 5px solid var(--british); }
+.pcard.F { border-top: 5px solid #3a3a46; }
+.pc-img { position: relative; aspect-ratio: 4 / 5; max-height: 420px; background: #dfe4ee; overflow: hidden; }
+.pc-img img, .pc-img svg { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+.pc-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 16px 12px; background: linear-gradient(transparent, rgba(8,16,36,.88)); color: #ffffff; }
+.pc-name h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.1; text-transform: none; letter-spacing: 0; color: #ffffff; }
+.pc-name span { display: block; font-size: 13px; margin-top: 4px; color: #ffe1e5; }
+.pc-body { padding: 14px 16px 16px; }
+.pc-bio { font-family: var(--text); font-size: 15px; line-height: 1.6; margin: 0 0 10px; }
+.pc-stats { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-soft); margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid rgba(31,53,102,.15); }
+.pc-trait { font-size: 13.5px; line-height: 1.45; margin-bottom: 8px; }
+.pc-after { font-family: var(--text); font-size: 14px; line-height: 1.55; color: var(--ink-soft); margin: 8px 0 0; }
+.pc-after b { color: var(--ink); }

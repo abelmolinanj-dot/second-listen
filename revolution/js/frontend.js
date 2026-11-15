@@ -218,25 +218,26 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     const cards = ids.map((id) => {
       const f = FIGURES[id], g = GENERALS[id];
       const coat = side === "B" ? (g?.hessian ? "#26375f" : "#b3312a") : side === "F" ? "#3a3a46" : "#2e4a7d";
-      const pic = PORTRAITS[id] ? `<img src="${PORTRAITS[id]}" alt="">` : `<svg viewBox="-8 -8 16 16">${bust(coat)}</svg>`;
+      // The painting gets the top of the card. Everyone with a portrait has a large crop in img/portraits/large/.
+      const pic = PORTRAITS[id] ? `<img src="img/portraits/large/${id}.jpg" alt="Portrait of ${esc(f.name)}" loading="lazy">` : `<svg viewBox="-8 -8 16 16" preserveAspectRatio="xMidYMid slice">${bust(coat)}</svg>`;
       const [traitName, traitDesc] = g ? g.traitText.split(/:\s(.+)/) : [];
-      return `<button class="gcard ${side}" data-who="${id}"><div class="portrait ${side === "B" ? "B" : "P"}">${pic}</div><div class="gc-body">
-        <div class="gc-name">${esc(f.name)}</div>
-        <div class="gc-sub">${esc(f.role)}${f.life ? ` · ${esc(f.life)}` : ""}</div>
-        ${g ? `<div class="gc-stats"><span>Attack ${pips(g.atk)}</span><span>Defense ${pips(g.def)}</span>${g.loyalty !== undefined ? `<span>Loyalty <b>${g.loyalty}</b></span>` : ""}</div>
-        <div class="gc-trait"><b>${esc(traitName)}</b>${traitDesc ? ": " + esc(traitDesc) : ""}</div>` : ""}
-        ${recordHtml(id)}
-        <div class="gc-bio"><p>${esc(f.bio)}</p><p class="gc-after"><b>Afterward:</b> ${esc(f.after)}</p></div>
-        <div class="gc-more">Read more ›</div></div></button>`;
+      return `<article class="pcard ${side}">
+        <div class="pc-img">${pic}<div class="pc-name"><h3>${esc(f.name)}</h3><span>${esc(f.role)}${f.life ? ` · ${esc(f.life)}` : ""}</span></div></div>
+        <div class="pc-body">
+          <p class="pc-bio">${esc(f.bio)}</p>
+          ${g ? `<div class="pc-stats"><span>Attack ${pips(g.atk)}</span><span>Defense ${pips(g.def)}</span>${g.loyalty !== undefined ? `<span>Loyalty <b>${g.loyalty}</b></span>` : ""}</div>
+          <div class="pc-trait"><b>${esc(traitName)}</b>${traitDesc ? ": " + esc(traitDesc) : ""}</div>` : ""}
+          <p class="pc-after"><b>Afterward.</b> ${esc(f.after)}</p>
+          ${recordHtml(id)}
+        </div></article>`;
     }).join("");
     const lead = { P: "Your commanders. Their loyalty rises and falls with how you treat them, and some of them remember.", B: "The King's commanders. Each fights the way the real one did.", F: "The men in Congress and abroad who write to you, argue with you, and pay for the war." }[side];
     show("scr-page", `${backBar("Who's Who")}<div class="page">
       <div class="tabs">${FIGURE_GROUPS.map((t) => `<button class="tab ${side === t.id ? "on" : ""}" data-tab="${t.id}">${t.label}</button>`).join("")}</div>
-      <p class="page-lead">${lead} Tap anyone to read about them.</p>
-      <div class="gcards">${cards}</div></div>`);
+      <p class="page-lead">${lead}</p>
+      <div class="pcards">${cards}</div></div>`);
     on("#back", showMain);
     for (const t of root.querySelectorAll("[data-tab]")) t.onclick = () => { sfx.tap(); showGenerals(t.dataset.tab); };
-    for (const c of root.querySelectorAll("[data-who]")) c.onclick = () => { sfx.tap(); c.classList.toggle("open"); };
   }
 
   // ----- the History Book: everything you've found, across all your games -----
