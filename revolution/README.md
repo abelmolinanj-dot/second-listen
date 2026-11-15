@@ -86,7 +86,6 @@ The game draws its own art until real images are added. To add one:
 
 **Next**
 - Playtest and tune the balance by hand
-- The 7 remaining portraits (listed in `img/CREDITS.md`)
 - Voiced lines for key letters (see `docs/ROADMAP.md`)
 - Better art for tokens
 

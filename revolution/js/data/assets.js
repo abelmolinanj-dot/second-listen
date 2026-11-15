@@ -10,19 +10,17 @@
 // Record where each image came from in img/CREDITS.md.
 
 export const PORTRAITS = {
-  // Lines starting with // are paintings picked out but not downloaded yet (Wikimedia was rate-limiting);
-  // those generals use the drawn bust until the file is added and the line is uncommented.
   washington: "img/portraits/washington.jpg", // Charles Willson Peale, 1776
   greene:     "img/portraits/greene.jpg",     // Charles Willson Peale, 1783
-  // knox:       "img/portraits/knox.jpg",       // Gilbert Stuart, 1806
-  // putnam:     "img/portraits/putnam.jpg",     // after John Trumbull
-  // lee:        "img/portraits/lee.jpg",        // German engraving, 1778
+  knox:       "img/portraits/knox.jpg",       // Gilbert Stuart, 1806
+  putnam:     "img/portraits/putnam.jpg",     // after John Trumbull
+  lee:        "img/portraits/lee.jpg",        // German engraving, 1778
   arnold:     "img/portraits/arnold.jpg",     // H. B. Hall engraving after John Trumbull
   sullivan:   "img/portraits/sullivan.jpg",   // mezzotint after Thomas Hart, 1776
-  // stirling:   "img/portraits/stirling.jpg",   // 19th-century engraving
-  // howe:       "img/portraits/howe.jpg",       // Richard Purcell mezzotint, 1777
-  // cornwallis: "img/portraits/cornwallis.jpg", // Thomas Gainsborough
-  // clinton:    "img/portraits/clinton.jpg",    // engraving after John Smart, 1780
+  stirling:   "img/portraits/stirling.jpg",   // 19th-century engraving
+  howe:       "img/portraits/howe.jpg",       // Richard Purcell mezzotint, 1777
+  cornwallis: "img/portraits/cornwallis.jpg", // Thomas Gainsborough
+  clinton:    "img/portraits/clinton.jpg",    // engraving after John Smart, 1780
   carleton:   "img/portraits/carleton.jpg",   // unknown artist, about 1760
   rall:       "img/portraits/rall.jpg",       // detail of John Trumbull's study for the Battle of Trenton
   // heister: no public-domain portrait found yet; the drawn bust is used.
@@ -34,5 +32,6 @@ export const SCENES = {
   crossing:    "img/scenes/crossing.jpg",    // Emanuel Leutze, Washington Crossing the Delaware (1851)
   winter:      "img/scenes/winter.jpg",      // William B. T. Trego, The March to Valley Forge (1883)
   victory:     "img/scenes/victory.jpg",     // John Trumbull, The Capture of the Hessians at Trenton
+  saratoga:    "img/scenes/saratoga.jpg",    // John Trumbull, Surrender of General Burgoyne (1821)
   // defeat: no painting yet; the drawn art is used.
 };

@@ -18,6 +18,13 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `portraits/sullivan.jpg` | John Sullivan | Mezzotint after Thomas Hart, 22 August 1776 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Major_General_John_Sullivan_MET_MM2147.jpg) (Metropolitan Museum of Art) | CC0 |
 | `portraits/carleton.jpg` | Guy Carleton | Unknown artist, about 1760 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Guy_Carleton.jpg) | Public domain |
 | `portraits/rall.jpg` | Colonel Johann Rall | Detail from John Trumbull's study for *The Capture of the Hessians at Trenton* | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Col._Rahl_from_Trumbull%27s_Battle_of_Trenton_(NYPL_b12349149-em5598).jpg) (New York Public Library) | Public domain |
+| `portraits/knox.jpg` | Henry Knox | Gilbert Stuart, 1806 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Henry_Knox_by_Gilbert_Stuart_1806,_detail.jpg) | Public domain |
+| `portraits/putnam.jpg` | Israel Putnam | After John Trumbull | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Israel_Putnam_by_Trumbull_-_Project_Gutenberg_eText_17049.png) | Public domain |
+| `portraits/lee.jpg` | Charles Lee | Engraving in Christoph Hein, *Geschichte der Kriege in und ausser Europa*, Nuremberg, 1778 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Charles_Lee_Esq%27r._-_Americanischer_general-major_(cropped).jpg) (Library of Congress) | Public domain |
+| `portraits/stirling.jpg` | William Alexander, Lord Stirling | 19th-century engraving | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gen._William_Alexander,_Lord_Stirling.jpg) (New York Public Library) | Public domain |
+| `portraits/howe.jpg` | Sir William Howe | Richard Purcell (Charles Corbutt), color mezzotint, 1777 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:WilliamHowe1777ColorMezzotint_(crop).jpeg) | Public domain |
+| `portraits/cornwallis.jpg` | Charles Cornwallis | Thomas Gainsborough | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomas_Gainsborough_(1727-88)_-_Charles,_Second_Earl_and_First_Marquess_Cornwallis_(1738-1805)_-_RCIN_400748_-_Royal_Collection.jpg) (Royal Collection) | Public domain |
+| `portraits/clinton.jpg` | Sir Henry Clinton | Francesco Bartolozzi and William Dickinson after John Smart, 1780 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Sir_Henry_Clinton_MET_DP275867.jpg) (Metropolitan Museum of Art) | CC0 |
 
 ## Scenes
 
@@ -28,17 +35,4 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `scenes/crossing.jpg` | *Washington Crossing the Delaware* | Emanuel Leutze, 1851 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Washington_Crossing_the_Delaware_MET_DP215410.jpg) (Metropolitan Museum of Art) | CC0 |
 | `scenes/winter.jpg` | *The March to Valley Forge* | William B. T. Trego, 1883 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_March_to_Valley_Forge,_December_19,_1777,_by_William_B._T._Trego.jpg) (Museum of the American Revolution) | Public domain |
 | `scenes/victory.jpg` | *The Capture of the Hessians at Trenton* | John Trumbull, 1786–1828 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_Capture_of_the_Hessians_at_Trenton_December_26_1776.jpeg) (Yale University Art Gallery) | Public domain |
-
-## Picked but not added yet
-
-These paintings are chosen and their licenses checked, but the download was rate-limited. Add each file, then move its row up to Portraits and uncomment its line in `js/data/assets.js`.
-
-| File | Shows | Artist and date | Source | License |
-|---|---|---|---|---|
-| `portraits/knox.jpg` | Henry Knox | Gilbert Stuart, 1806 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Henry_Knox_by_Gilbert_Stuart_1806,_detail.jpg) | Public domain |
-| `portraits/putnam.jpg` | Israel Putnam | After John Trumbull | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Israel_Putnam_by_Trumbull_-_Project_Gutenberg_eText_17049.png) | Public domain |
-| `portraits/lee.jpg` | Charles Lee | Engraving in Christoph Hein, *Geschichte der Kriege in und ausser Europa*, Nuremberg, 1778 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Charles_Lee_Esq%27r._-_Americanischer_general-major_(cropped).jpg) (Library of Congress) | Public domain |
-| `portraits/stirling.jpg` | William Alexander, Lord Stirling | 19th-century engraving | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gen._William_Alexander,_Lord_Stirling.jpg) (New York Public Library) | Public domain |
-| `portraits/howe.jpg` | Sir William Howe | Richard Purcell (Charles Corbutt), color mezzotint, 1777 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:WilliamHowe1777ColorMezzotint_(crop).jpeg) | Public domain |
-| `portraits/cornwallis.jpg` | Charles Cornwallis | Thomas Gainsborough | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomas_Gainsborough_(1727-88)_-_Charles,_Second_Earl_and_First_Marquess_Cornwallis_(1738-1805)_-_RCIN_400748_-_Royal_Collection.jpg) (Royal Collection) | Public domain |
-| `portraits/clinton.jpg` | Sir Henry Clinton | Francesco Bartolozzi and William Dickinson after John Smart, 1780 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Sir_Henry_Clinton_MET_DP275867.jpg) (Metropolitan Museum of Art) | CC0 |
+| `scenes/saratoga.jpg` | *Surrender of General Burgoyne* | John Trumbull, 1821 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Surrender_of_General_Burgoyne.jpg) (U.S. Capitol) | Public domain |

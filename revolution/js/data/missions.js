@@ -32,8 +32,8 @@ export const MISSIONS = [
   {
     id: "saratoga", status: "ready", scenario: "saratoga",
     year: "1777", title: "Saratoga", place: "The Hudson Valley", at: [-73.65, 43.05],
-    image: null,
-    summary: "General Burgoyne is coming down Lake Champlain with 7,500 men to take Albany and cut New England off from the other states. You command the Northern Department. Stop him in the forests of the upper Hudson, and France may join the war.",
+    image: "img/scenes/saratoga.jpg",
+    summary: "General Burgoyne is coming down Lake Champlain with 8,000 men to take Albany and cut New England off from the other states. You command the Northern Department. Stop him in the forests of the upper Hudson, and France may join the war.",
     objectives: ["Stop Burgoyne before he reaches Albany", "Destroy his army or force him to surrender", "Hold Albany when November ends"],
     difficulty: 2,
     length: "6 months · about 20 to 30 minutes",

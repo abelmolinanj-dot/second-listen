@@ -16,7 +16,7 @@ const NORTH_WOODS = ["ticonderoga", "saratoga", "bennington", "albany", "mohawk"
 export const SCENARIO = {
   id: "saratoga",
   title: "Saratoga",
-  blurb: "General Burgoyne is coming down Lake Champlain with 7,500 men, cannon and a long line of baggage carts. He means to take Albany and cut New England off from the rest. Stop him in the forests of the upper Hudson.",
+  blurb: "General Burgoyne is coming down Lake Champlain with 8,000 men, cannon and a long line of baggage carts. He means to take Albany and cut New England off from the rest. Stop him in the forests of the upper Hudson.",
   startMonth: 5, // June
   startYear: 1777,
   turns: 6,
