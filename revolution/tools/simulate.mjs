@@ -1,14 +1,15 @@
-// Plays the 1776 campaign many times without a screen, to catch crashes and check balance.
-// Run from the revolution folder:  node tools/simulate.mjs [games] [strategy]
+// Plays a campaign many times without a screen, to catch crashes and check balance.
+// Run from the revolution folder:  node tools/simulate.mjs [games] [strategy] [--scenario=saratoga]
 // Strategies: passive (answer every letter with the first choice, never move), simple (a basic player).
 
-import { newGame, endTurn } from "../js/turn.js";
+import { newGame, endTurn, scenarioOf } from "../js/turn.js";
 import { answerLetter, unanswered } from "../js/letters.js";
 import {
   armyList, moveTargets, winChance, armyAt, moveArmy, recruit, canRecruit, printMoney, armyMen, digIn, findGeneralArmy, threatTo, power, distance,
 } from "../js/rules.js";
 
 const games = Number(process.argv[2] || 50);
+const scenarioId = (process.argv.find((a) => a.startsWith("--scenario=")) || "--scenario=1776").split("=")[1];
 const strategy = process.argv[3] || "simple";
 const verbose = process.argv.includes("-v");
 
@@ -33,16 +34,16 @@ function playSimple(state) {
 
 // Pull Washington back to defend Philadelphia, recruit there, and strike only at good odds.
 function playDefensive(state) {
-  const w = findGeneralArmy(state, "washington");
+  const w = findGeneralArmy(state, "washington") || findGeneralArmy(state, "gates") || findGeneralArmy(state, "schuyler");
   if (state.treasury < 25 && state.priceLevel < 1.8) printMoney(state);
-  for (const r of ["philadelphia", w && w.region]) if (r) { if (!canRecruit(state, r, "regulars")) recruit(state, r, "regulars"); }
+  for (const r of [scenarioOf(state).SCENARIO.defend, w && w.region]) if (r) { if (!canRecruit(state, r, "regulars")) recruit(state, r, "regulars"); }
   for (const a of armyList(state, "P")) {
     if (a.moved) continue;
     const opts = moveTargets(state, a);
     const atk = opts.filter((o) => o.kind === "attack").map((o) => ({ o, p: winChance(state, a, armyAt(state, o.region, "B"), o.region) })).sort((x, y) => y.p - x.p)[0];
     if (atk && atk.p > 0.75) { moveArmy(state, a.id, atk.o.region); continue; }
-    if (a.general === "washington" || a.general === "greene" || a.general === "knox") {
-      const goal = "philadelphia";
+    if (["washington", "greene", "knox", "schuyler", "gates"].includes(a.general)) {
+      const goal = scenarioOf(state).SCENARIO.defend;
       const step = opts.filter((o) => o.kind !== "attack").sort((x, y) => distance(x.region, goal) - distance(y.region, goal))[0];
       if (step && distance(step.region, goal) < distance(a.region, goal)) { moveArmy(state, a.id, step.region); continue; }
       digIn(state, a.id); continue;
@@ -59,7 +60,7 @@ function playDefensive(state) {
 const results = {};
 let totalScore = 0;
 for (let g = 0; g < games; g++) {
-  const state = newGame(1000 + g);
+  const state = newGame(1000 + g, scenarioId);
   let guard = 0;
   while (!state.gameOver && guard++ < 40) {
     for (const l of unanswered(state)) answerLetter(state, l.id, strategy === "passive" ? Math.min(1, l.choices.length - 1) : 0);
@@ -77,4 +78,4 @@ for (let g = 0; g < games; g++) {
     console.log("cause", Math.round(state.cause), "treasury", Math.round(state.treasury), "price", state.priceLevel.toFixed(2), "arrears", Math.round(state.arrears));
   }
 }
-console.log(strategy, results, "avg score", Math.round(totalScore / games));
+console.log(scenarioId, strategy, results, "avg score", Math.round(totalScore / games));

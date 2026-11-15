@@ -26,7 +26,34 @@ export const SCENARIO = {
     "Hold Philadelphia when June 1777 ends.",
     "Don't let the Cause fall to zero.",
   ],
+  // Losing this general loses the campaign.
+  mustSurvive: ["washington"],
+  // Where the camera starts, and the city a careful player defends (used by the simulator).
+  focus: ["highlands", "philadelphia", "longisland", "trenton", "newark", "westchester"],
+  defend: "philadelphia",
+  commander: "washington",
+  openingScene: "fleet",
+  victoryScene: "victory",
+  tutorial: true,
+  finish: finishScenario,
 };
+
+function finishScenario(state) {
+  const held = (id) => state.regions[id].owner === "P";
+  const cities = Object.keys(REGIONS).filter((id) => REGIONS[id].city && held(id)).length;
+  const wash = findGeneralArmy(state, "washington");
+  const score = Math.round(state.cause + cities * 5 + state.stats.won * 3 - state.stats.lost * 2 + (wash ? armyMen(wash) / 1000 : 0));
+  if (held("philadelphia") && state.cause >= 60 && (held("manhattan") || held("trenton") && state.stats.won >= 3)) {
+    return { result: "victory", stars: 3, title: "A glorious year", text: "You did better than history. The British end the year with less than they started with, and Paris is paying attention.", score };
+  }
+  if (held("philadelphia") && state.cause >= 35) {
+    return { result: "victory", stars: 2, title: "The Revolution lives", text: "Battered but unbroken, the army comes through its first terrible year. Philadelphia is still free. The war goes on.", score };
+  }
+  if (!held("philadelphia") && state.cause < 35) {
+    return { result: "defeat", stars: 0, title: "A ruinous year", text: "Philadelphia is lost and the country has stopped believing. Congress is talking about terms. The war may not last another summer.", score };
+  }
+  return { result: "survived", stars: 1, title: "Survived, barely", text: "Washington's army is still in the field, but the year went badly. Congress worries. The King's ministers are confident.", score };
+}
 
 const LOYALIST = {
   stjohns: 70, ticonderoga: 20, bennington: 15, newhampshire: 15, mohawk: 45, albany: 35, springfield: 15, boston: 10,
@@ -44,6 +71,8 @@ export function setupScenario(state) {
     state.generals[id] = { ...g, status: "reserve" };
   }
   state.generals.lee.status = "away";
+  // Commanders who belong to later campaigns.
+  for (const id of ["gates", "schuyler", "stclair", "stark", "morgan", "burgoyne", "fraser", "riedesel", "stleger"]) state.generals[id].status = "away";
 
   const P = (region, regulars, militia, general) => {
     const a = newArmy(state, { side: "P", region, regulars, general });

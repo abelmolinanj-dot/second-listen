@@ -26,15 +26,17 @@ export const MISSIONS = [
     summary: "The largest fleet Britain has ever sent across the ocean is anchoring off Staten Island. Keep Washington's army alive, keep Philadelphia, and keep the Cause burning until summer.",
     objectives: ["Washington must not be captured", "Hold Philadelphia when June 1777 ends", "Don't let the Cause fall to zero"],
     difficulty: 2,
-    length: "12 months · about 30–45 minutes",
+    length: "12 months · about 30 to 45 minutes",
+    guide: true,
   },
   {
-    id: "saratoga", status: "soon", eta: "Coming December 2026",
+    id: "saratoga", status: "ready", scenario: "saratoga",
     year: "1777", title: "Saratoga", place: "The Hudson Valley", at: [-73.65, 43.05],
     image: null,
-    summary: "General Burgoyne marches south from Canada to cut New England off from the other states. Stop him in the forests of the upper Hudson, and France may join the war.",
-    objectives: ["Stop Burgoyne before he reaches Albany", "Keep Ticonderoga's loss from breaking the army", "Win a victory France can't ignore"],
+    summary: "General Burgoyne is coming down Lake Champlain with 7,500 men to take Albany and cut New England off from the other states. You command the Northern Department. Stop him in the forests of the upper Hudson, and France may join the war.",
+    objectives: ["Stop Burgoyne before he reaches Albany", "Destroy his army or force him to surrender", "Hold Albany when November ends"],
     difficulty: 2,
+    length: "6 months · about 20 to 30 minutes",
   },
   {
     id: "philadelphia", status: "soon", eta: "Coming in 2027",
@@ -73,6 +75,7 @@ export const MISSIONS = [
 // Stars for a finished campaign, from how it ended.
 export function starsFor(gameOver) {
   if (!gameOver) return 0;
+  if (typeof gameOver.stars === "number") return gameOver.stars;
   if (gameOver.title === "A glorious year") return 3;
   if (gameOver.result === "victory") return 2;
   if (gameOver.result === "survived") return 1;

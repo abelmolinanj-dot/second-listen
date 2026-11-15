@@ -7,7 +7,7 @@ import {
   regularsCost, militiaCost, printMoney, monthlyIncome, monthlyUpkeep, regionIncome, assignGeneral, reserveGenerals,
   dateLabel, isWinter, money, fmtMen, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES,
 } from "./rules.js";
-import { newGame, endTurn, SCENARIO, SAVE_VERSION } from "./turn.js";
+import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
 import { answerLetter, unanswered } from "./letters.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
@@ -121,7 +121,7 @@ function fitView(focus) {
   setView();
 }
 function corridorBox() {
-  const ids = ["highlands", "philadelphia", "longisland", "trenton", "newark", "westchester"];
+  const ids = scenarioOf(state).SCENARIO.focus;
   const pts = ids.map((id) => seeds[id]);
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
   return [Math.min(...xs) - 30, Math.min(...ys) - 40, Math.max(...xs) + 30, Math.max(...ys) + 40];
@@ -377,7 +377,7 @@ function renderPanel() {
     h += factHtml(regionFact(ui.region));
     h += recruitButtons(ui.region);
   } else {
-    h += `<h2>${esc(SCENARIO.title)}</h2><p class="sub">You are the Board of War: you run the army and pay for it.</p>`;
+    h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">You are the Board of War: you run the army and pay for it.</p>`;
     h += `<p>Tap one of your <b style="color:var(--patriot)">blue</b> armies to give it orders, or any region to learn about it. When you're done, end the month and the British move.</p>`;
   }
   const open = unanswered(state).length;
@@ -476,8 +476,10 @@ function showLetters(after) {
         const outcome = answerLetter(state, l.id, Number(b.dataset.choice));
         save();
         const lost = state.lastSurprise; state.lastSurprise = null;
-        const showOutcome = () => modal(`<h2>${esc(l.title)}</h2><p class="outcome">${esc(outcome || "Your answer was sent.")}</p>${lost && typeof lost === "object" ? battleHtml(lost) : ""}<div class="modal-actions"><button class="btn primary" id="next">${unanswered(state).length ? "Next letter" : "Continue"}</button></div>`, (c) => {
-          c.querySelector("#next").onclick = () => (unanswered(state).length ? showLetters(after) : after ? after() : closeModal());
+        // A letter can end the campaign (an enemy army surrendering, for example).
+        const over = !!state.gameOver;
+        const showOutcome = () => modal(`<h2>${esc(l.title)}</h2><p class="outcome">${esc(outcome || "Your answer was sent.")}</p>${lost && typeof lost === "object" ? battleHtml(lost) : ""}<div class="modal-actions"><button class="btn primary" id="next">${over ? "Continue" : unanswered(state).length ? "Next letter" : "Continue"}</button></div>`, (c) => {
+          c.querySelector("#next").onclick = () => (over ? showGameOver(null) : unanswered(state).length ? showLetters(after) : after ? after() : closeModal());
         });
         renderTop();
         if (l.event === "declaration") { $("#modal").hidden = true; playScene("declaration", {}, showOutcome); }
@@ -532,7 +534,7 @@ function showBattle(b) {
 }
 
 function ledgerHtml() {
-  const names = { taxes: "Taxes from the states", printed: "Money printed", loans: "Loans received", "foreign aid": "Foreign aid", recruiting: "Recruiting", upkeep: "Army pay", "back pay": "Back pay settled", fortifications: "Fortifications", printing: "Printing", bounties: "Enlistment bounties", letters: "Other orders", "loan repayment": "Loan repayments" };
+  const names = { taxes: "Taxes from the states", printed: "Money printed", loans: "Loans received", "foreign aid": "Foreign aid", recruiting: "Recruiting", upkeep: "Army pay", "back pay": "Back pay settled", fortifications: "Fortifications", printing: "Printing", bounties: "Enlistment bounties", letters: "Other orders", "loan repayment": "Loan repayments", "main army": "Washington's main army" };
   const row = (label, v) => `<tr><td>${esc(label)}</td><td class="n ${v < 0 ? "neg" : ""}">${v < 0 ? "(" + money(-v).slice(1) + ")" : money(v)}</td></tr>`;
   const table = (lines) => {
     const entries = Object.entries(lines).filter(([, v]) => Math.abs(v) >= 0.5);
@@ -614,7 +616,7 @@ function showGameOver(summary) {
     $("#modal").hidden = true;
     markPlayed();
     if (g.result === "defeat") music.dirge(); else music.victory();
-    playScene(g.result === "defeat" ? "defeat" : "victory", { title: esc(g.title), extra: [g.text] }, () => showGameOver(summary));
+    playScene(g.result === "defeat" ? "defeat" : scenarioOf(state).SCENARIO.victoryScene || "victory", { title: esc(g.title), extra: [g.text] }, () => showGameOver(summary));
     return;
   }
   showGameOver.played = false;
@@ -632,7 +634,7 @@ function showGameOver(summary) {
   clearSave();
   modal(h, (c) => {
     c.querySelector("#view").onclick = () => { $("#modal").hidden = true; };
-    c.querySelector("#again").onclick = () => startNew(false);
+    c.querySelector("#again").onclick = () => startNew(state.scenario, false);
     c.querySelector("#tocamp").onclick = () => { $("#modal").hidden = true; frontend.showCampaign(); };
   });
 }
@@ -652,7 +654,7 @@ function howToPlay() {
 // The main menu, campaign map and other full-screen pages live in frontend.js.
 const frontend = createFrontend({
   savedGame: () => { const s = loadSave(); return s && !s.gameOver ? { label: dateLabel(s), mission: s.mission || "1776" } : null; },
-  onBegin: (scenario, guide) => startNew(guide),
+  onBegin: (scenario, guide) => startNew(scenario, guide),
   onContinue: continueGame,
   hasPlayed,
 });
@@ -674,10 +676,10 @@ function showMenu() {
   <h3>Sound</h3>
   <label class="check"><input type="checkbox" id="opt-sfx" ${p.sfx ? "checked" : ""}> Sound effects (muskets, cannon, drums)</label>
   <label class="check"><input type="checkbox" id="opt-music" ${p.music ? "checked" : ""}> Fife and drum music</label>
-  ${howToPlay()}<div class="modal-actions">${state && !state.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn" id="tomain">Main menu</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
+  ${howToPlay()}<div class="modal-actions">${state && !state.tutorial && scenarioOf(state).SCENARIO.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn" id="tomain">Main menu</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
     c.querySelector("#close").onclick = closeModal;
     c.querySelector("#tomain").onclick = () => { save(); $("#modal").hidden = true; frontend.showMain(); };
-    c.querySelector("#restart").onclick = () => { if (confirm("Abandon this campaign and start over?")) startNew(false); };
+    c.querySelector("#restart").onclick = () => { if (confirm("Abandon this campaign and start over?")) startNew(state.scenario, false); };
     c.querySelector("#opt-sfx").onchange = (e) => { setSfx(e.target.checked); if (e.target.checked) sfx.musket(); };
     c.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
     const g = c.querySelector("#guide");
@@ -685,16 +687,18 @@ function showMenu() {
   });
 }
 
-function startNew(guide = false) {
-  state = newGame();
-  state.mission = "1776";
+function startNew(scenarioId = "1776", guide = false) {
+  state = newGame(undefined, scenarioId);
+  state.mission = scenarioId;
+  const S = scenarioOf(state).SCENARIO;
   ui.army = null; ui.region = null; ui.target = null;
   save();
   $("#modal").hidden = true;
   fitView();
   render();
   music.march();
-  playScene("fleet", {}, () => showLetters(() => { closeModal(); if (guide) tutorial.start(); }));
+  // The guided tutorial is written for the 1776 campaign.
+  playScene(S.openingScene, {}, () => showLetters(() => { closeModal(); if (guide && S.tutorial) tutorial.start(); }));
 }
 
 buildMap();

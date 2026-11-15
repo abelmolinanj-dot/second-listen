@@ -250,6 +250,10 @@ function battleFactors(state, att, def, regionId, { surprise = false, sea = fals
   else if (r.city) D *= 1.1;
   if ((r.fort || r.city) && dg && dg.trait === "artillery") D *= 1.25;
   if (def.dugIn) D *= 1.25;
+  if (def.dugIn && dg && dg.trait === "entrenched") D *= 1.15;
+  // Riflemen pick off officers from cover: deadly in forest and hills, ordinary in the open.
+  if (r.terrain && ag && ag.trait === "riflemen") A *= 1.2;
+  if (r.terrain && dg && dg.trait === "riflemen") D *= 1.15;
   if (state.regions[regionId].works && def.side === "P") D *= 1.15;
   if (surprise && dg && dg.trait === "complacent") D *= 0.55;
   return { A, D };

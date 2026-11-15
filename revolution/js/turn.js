@@ -5,7 +5,7 @@
 //   4. The next month opens: taxes come in, reinforcements land, new letters arrive.
 
 import { REGIONS } from "./data/regions.js";
-import { SCENARIO, setupScenario, REINFORCEMENTS, SCENARIO_EVENTS } from "./data/scenario1776.js";
+import { SCENARIOS, DEFAULT_SCENARIO, scenarioOf } from "./data/scenarios.js";
 import {
   armyList, armyAt, armyMen, militiaMen, newArmy, monthlyIncome, armyUpkeep, earn, spend, changeCause, log,
   isWinter, dateLabel, money, fmtMen, COST, generalOf, findGeneralArmy, enemy,
@@ -13,14 +13,17 @@ import {
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, unanswered } from "./letters.js";
 
-registerEvents(SCENARIO_EVENTS);
+// Each scenario's scripted letters only fire in that scenario.
+for (const [id, s] of Object.entries(SCENARIOS)) registerEvents(s.SCENARIO_EVENTS, id);
 
 export const SAVE_VERSION = 1;
 
-export function newGame(seed = Date.now() % 2147483647) {
+export function newGame(seed = Date.now() % 2147483647, scenarioId = DEFAULT_SCENARIO) {
+  const { SCENARIO, setupScenario } = SCENARIOS[scenarioId];
   const state = {
     version: SAVE_VERSION,
     scenario: SCENARIO.id,
+    aiArea: SCENARIO.aiArea || null,
     seed,
     turn: 0,
     startMonth: SCENARIO.startMonth,
@@ -34,12 +37,12 @@ export function newGame(seed = Date.now() % 2147483647) {
     generals: {},
     nextArmyId: 1,
     nextLetterId: 1,
-    treasury: 80,
-    priceLevel: 1,
+    treasury: SCENARIO.treasury ?? 80,
+    priceLevel: SCENARIO.priceLevel ?? 1,
     pressRuns: 0,
     arrears: 0,
     loans: [],
-    cause: 55,
+    cause: SCENARIO.cause ?? 55,
     philadelphiaLoss: 10,
     ledger: { current: {}, history: [] },
     letters: [],
@@ -167,6 +170,9 @@ function closeMonth(state) {
     if (loy >= 45) a.regulars += Math.round(loy * 5);
   }
 
+  // Anything special this scenario does at the end of a month (supply lines, for example).
+  scenarioOf(state).SCENARIO.onCloseMonth?.(state);
+
   // Remove armies that have melted away.
   for (const a of Object.values(state.armies)) {
     if (armyMen(a) < 100) {
@@ -209,7 +215,8 @@ function openMonth(state, { first }) {
   }
 
   // Reinforcements land.
-  for (const r of REINFORCEMENTS.filter((x) => x.turn === state.turn)) landReinforcement(state, r);
+  for (const r of scenarioOf(state).REINFORCEMENTS.filter((x) => x.turn === state.turn)) landReinforcement(state, r);
+  scenarioOf(state).SCENARIO.onOpenMonth?.(state);
 
   deliverMail(state);
   log(state, `— ${dateLabel(state)} —`, "date");
@@ -233,27 +240,21 @@ function landReinforcement(state, r) {
 
 function checkDefeat(state) {
   if (state.gameOver) return;
-  if (state.generals.washington.status === "captured") {
-    state.gameOver = { result: "defeat", title: "Washington is captured", text: "With its commander in a British prison, the Continental Army fell apart. Congress sued for peace on the King's terms." };
+  const S = scenarioOf(state).SCENARIO;
+  const lost = (S.mustSurvive || []).find((g) => state.generals[g] && state.generals[g].status === "captured");
+  if (lost) {
+    const name = state.generals[lost].name;
+    state.gameOver = { result: "defeat", stars: 0, title: `${name.split(" ").pop()} is captured`, text: `With ${name} in a British prison, the army fell apart. Congress sued for peace on the King's terms.` };
   } else if (state.cause <= 0) {
-    state.gameOver = { result: "defeat", title: "The Cause is lost", text: "Nobody believed anymore. Militia stayed home, Congress dissolved, and the rebellion faded away." };
+    state.gameOver = { result: "defeat", stars: 0, title: "The Cause is lost", text: "Nobody believed anymore. Militia stayed home, Congress dissolved, and the rebellion faded away." };
+  } else if (S.checkEnd) {
+    const end = S.checkEnd(state);
+    if (end) state.gameOver = end;
   }
 }
 
 function finishScenario(state) {
-  const held = (id) => state.regions[id].owner === "P";
-  const cities = Object.keys(REGIONS).filter((id) => REGIONS[id].city && held(id)).length;
-  const wash = findGeneralArmy(state, "washington");
-  const score = Math.round(state.cause + cities * 5 + state.stats.won * 3 - state.stats.lost * 2 + (wash ? armyMen(wash) / 1000 : 0));
-  if (held("philadelphia") && state.cause >= 60 && (held("manhattan") || held("trenton") && state.stats.won >= 3)) {
-    state.gameOver = { result: "victory", title: "A glorious year", text: "You did better than history. The British end the year with less than they started with, and Paris is paying attention.", score };
-  } else if (held("philadelphia") && state.cause >= 35) {
-    state.gameOver = { result: "victory", title: "The Revolution lives", text: "Battered but unbroken, the army comes through its first terrible year. Philadelphia is still free. The war goes on.", score };
-  } else if (!held("philadelphia") && state.cause < 35) {
-    state.gameOver = { result: "defeat", title: "A ruinous year", text: "Philadelphia is lost and the country has stopped believing. Congress is talking about terms. The war may not last another summer.", score };
-  } else {
-    state.gameOver = { result: "survived", title: "Survived, barely", text: "Washington's army is still in the field, but the year went badly. Congress worries. The King's ministers are confident.", score };
-  }
+  state.gameOver = scenarioOf(state).SCENARIO.finish(state);
 }
 
 export function summaryOfMonth(state) {
@@ -261,4 +262,6 @@ export function summaryOfMonth(state) {
   return last;
 }
 
-export { SCENARIO, dateLabel, militiaMen, generalOf };
+// Lets the letters and the interface end a campaign early (for example, when an enemy army surrenders).
+export { checkDefeat };
+export { scenarioOf, dateLabel, militiaMen, generalOf };

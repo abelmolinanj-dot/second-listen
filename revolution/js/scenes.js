@@ -126,6 +126,32 @@ const ART = {
       ${figure(330, 462, 1.6)}${figure(470, 462, 1.6)}${figure(300, 470, 1.4, "#2b2a2e")}
       <g class="snow">${snow(110, 8)}</g>`;
   },
+  // Lake Champlain in June: Burgoyne's army comes down the lake in boats between forested mountains.
+  lake() {
+    const r = rng(21);
+    let pines = "";
+    for (let i = 0; i < 46; i++) {
+      const x = r() * W, y = 250 + r() * 40, h = 18 + r() * 26;
+      pines += `<path d="M${x.toFixed(0)},${y.toFixed(0)} l${(h / 3).toFixed(1)},-${h.toFixed(0)} l${(h / 3).toFixed(1)},${h.toFixed(0)} Z" fill="${r() < 0.5 ? "#23402c" : "#2d4d33"}"/>`;
+    }
+    let boats = "";
+    for (let i = 0; i < 16; i++) {
+      const d = r(), x = 40 + r() * 720, y = 310 + d * 150, s = 0.4 + d * 0.9;
+      let men = "";
+      for (let k = -2; k <= 2; k++) men += `<rect x="${k * 7 - 2}" y="-14" width="4" height="10" fill="#a8342b"/><circle cx="${k * 7}" cy="-16" r="2.2" fill="#e8c39e"/>`;
+      boats += `<g transform="translate(${x.toFixed(0)},${y.toFixed(0)}) scale(${s.toFixed(2)})"><path d="M-24,-4 L24,-4 L18,4 L-18,4 Z" fill="#3a2a1c"/>${men}<path d="M-30,2 L-40,10 M30,2 L40,10" stroke="#3a2a1c" stroke-width="1.5"/></g>`;
+    }
+    return `<defs>${sky("sk6", [[0, "#6f9ec9"], [0.55, "#cfe0e8"], [1, "#f1e9cf"]])}</defs>
+      <rect width="${W}" height="${H}" fill="url(#sk6)"/>
+      <path d="M0,230 Q120,120 260,200 Q360,110 470,190 Q600,90 800,200 L800,300 L0,300 Z" fill="#5b7184" opacity=".7"/>
+      ${hills(265, "#3f5a45", 14, 40)}
+      ${pines}
+      <rect y="292" width="${W}" height="208" fill="#5f88a6"/>
+      <rect y="292" width="${W}" height="208" fill="#ffffff" opacity=".08"/>
+      ${Array.from({ length: 14 }, (_, i) => `<path d="M${(i * 61) % 780},${330 + (i * 37) % 160} h${30 + (i % 4) * 12}" stroke="#d6e4ec" stroke-width="1.5" opacity=".5"/>`).join("")}
+      ${boats}
+      <g transform="translate(640,300)"><path d="M0,-80 V0" stroke="#3a2a1c" stroke-width="2"/><path d="M0,-78 l26,5 l-26,5" fill="#a8342b"/></g>`;
+  },
   victory() {
     return `<defs>${sky("sk4", [[0, "#3d5a86"], [0.55, "#e7a66b"], [1, "#fbe3a8"]])}</defs>
       <rect width="${W}" height="${H}" fill="url(#sk4)"/>
@@ -190,6 +216,17 @@ export const SCENE_TEXT = {
       "Every month in the cold, men sicken, desert or go home. Shelter your armies in towns, and keep them paid.",
     ],
   },
+  burgoyne: {
+    art: "lake",
+    lines: [
+      "June, 1777.",
+      "General John Burgoyne has promised London he will be in Albany by autumn.",
+      "His plan: march down Lake Champlain and the Hudson, meet the British army coming up from New York, and cut New England off from the other states.",
+      "His army comes down the lake in hundreds of boats: British regulars, German troops from Brunswick, Canadians, Loyalists and Iroquois allies.",
+      "You command the Northern Department. Washington and the main army are far away in Pennsylvania. The north is yours to save.",
+    ],
+  },
+  saratoga: { art: "victory", lines: ["Saratoga, October 1777."] },
   victory: { art: "victory", lines: [] },
   defeat: { art: "defeat", lines: [] },
 };

@@ -11,7 +11,8 @@ import {
 import { makeRng, pick } from "./rng.js";
 
 export const EVENTS = {};
-export function registerEvents(list) { for (const e of list) EVENTS[e.id] = e; }
+// scenarioId ties scripted letters to one scenario; letters registered without it can appear in any scenario.
+export function registerEvents(list, scenarioId) { for (const e of list) EVENTS[e.id] = scenarioId ? { ...e, scenario: scenarioId } : e; }
 
 const COURIER_RANGE = 3; // regions from Washington before a letter takes an extra month
 
@@ -85,6 +86,7 @@ export function deliverMail(state) {
   // Scheduled and conditional events from the scenario.
   for (const e of Object.values(EVENTS)) {
     if (!e.scripted || state.fired[e.id]) continue;
+    if (e.scenario && e.scenario !== (state.scenario || "1776")) continue;
     if (e.turn !== undefined && e.turn !== state.turn) continue;
     if (e.fromTurn !== undefined && state.turn < e.fromTurn) continue;
     if (e.untilTurn !== undefined && state.turn > e.untilTurn) continue;
@@ -121,6 +123,11 @@ const DANGER_VOICE = {
   arnold: (r, x) => `The enemy before ${r} is ${x} to one. I would attack them tomorrow if I had the men, and I am told I do not. Send me men or send me orders. I will not sit idle.`,
   sullivan: (r, x) => `The enemy is massing near ${r}, perhaps ${x} times our force. The men are steady for now. I request the Board's orders.`,
   stirling: (r, x) => `My lords, the enemy is before ${r} in great force, ${x} to one by my count. My regiments will do their duty, whatever the Board decides.`,
+  gates: (r, x) => `The enemy is advancing on ${r} with ${x} times our number. I have chosen strong ground and the engineers are at work. I am confident, provided the Board sends what I have asked for, which it has not.`,
+  schuyler: (r, x) => `I must report the enemy before ${r} in force, ${x} to one. The militia promised to me have not come. I do not say this to excuse myself, but so the Board will know where the fault lies if we fail.`,
+  stclair: (r, x) => `The enemy is ${x} to one before ${r}. I will hold if ordered. I would rather save this army than my reputation, but I know which one the newspapers will judge me by.`,
+  stark: (r, x) => `They are coming at ${r}, ${x} to one. My boys can fight from behind a stone wall as well as any regulars in the world. Tell me plain what you want.`,
+  morgan: (r, x) => `Enemy at ${r}, ${x} to one. Put us in the trees and we'll make them pay for every yard.`,
 };
 
 registerEvents([

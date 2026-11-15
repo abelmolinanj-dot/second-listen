@@ -20,6 +20,17 @@ export const GENERALS = {
     trait: null, traitText: "A steady brigade commander." },
   stirling:   { side: "P", name: "Lord Stirling", short: "Stirling", rank: 4, atk: 1, def: 2, loyalty: 75,
     trait: "rearguard", traitText: "Rearguard: his army loses fewer men when it is beaten." },
+  // The Northern Department, 1777
+  gates:      { side: "P", name: "Horatio Gates", short: "Gates", rank: 8, atk: 1, def: 3, loyalty: 60,
+    trait: "entrenched", traitText: "Entrenched: when dug in, his lines are even harder to break. Popular with New England, and ambitious." },
+  schuyler:   { side: "P", name: "Philip Schuyler", short: "Schuyler", rank: 7, atk: 1, def: 2, loyalty: 80,
+    trait: "quartermaster", traitText: "Quartermaster: his army costs half as much to keep in the field. A New York grandee New Englanders distrust." },
+  stclair:    { side: "P", name: "Arthur St. Clair", short: "St. Clair", rank: 5, atk: 1, def: 2, loyalty: 75,
+    trait: "rearguard", traitText: "Rearguard: his army loses fewer men when it is beaten." },
+  stark:      { side: "P", name: "John Stark", short: "Stark", rank: 5, atk: 2, def: 2, loyalty: 50,
+    trait: "oldwolf", traitText: "Granite: New Hampshire militia under him fight almost like regulars. Quit the army over a slight and answers to New Hampshire, not Congress." },
+  morgan:     { side: "P", name: "Daniel Morgan", short: "Morgan", rank: 4, atk: 3, def: 2, loyalty: 80,
+    trait: "riflemen", traitText: "Riflemen: deadly in forest and hills, attacking or defending." },
 
   // British and Hessian
   howe:       { side: "B", name: "William Howe", short: "Howe", rank: 10, atk: 3, def: 2,
@@ -34,4 +45,13 @@ export const GENERALS = {
     trait: null, traitText: "Commander of the Hessian corps." },
   rall:       { side: "B", name: "Johann Rall", short: "Rall", rank: 5, atk: 2, def: 1, hessian: true,
     trait: "complacent", traitText: "Complacent: badly surprised if attacked in winter quarters." },
+  // Burgoyne's army from Canada, 1777. north: they march south from Canada.
+  burgoyne:   { side: "B", name: "John Burgoyne", short: "Burgoyne", rank: 9, atk: 2, def: 2, north: true,
+    trait: "gambler", traitText: "Gambler: a playwright and card player who attacks even when the odds are against him, and travels with thirty carts of baggage." },
+  fraser:     { side: "B", name: "Simon Fraser", short: "Fraser", rank: 6, atk: 3, def: 1, north: true,
+    trait: "aggressive", traitText: "Aggressive: leads the advance guard and attacks at worse odds." },
+  riedesel:   { side: "B", name: "Baron von Riedesel", short: "Riedesel", rank: 7, atk: 1, def: 3, hessian: true, north: true,
+    trait: null, traitText: "Commands the German troops from Brunswick. Steady and careful." },
+  stleger:    { side: "B", name: "Barry St. Leger", short: "St. Leger", rank: 5, atk: 1, def: 1, north: true,
+    trait: null, traitText: "Leads a column of British, Loyalists and Iroquois allies down the Mohawk Valley." },
 };

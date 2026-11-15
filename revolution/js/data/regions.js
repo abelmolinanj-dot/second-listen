@@ -7,6 +7,7 @@ export const REGIONS = {
   stjohns:      { name: "St. Johns", terrain: "forest",       seed: [-73.6, 44.95], income: 2, coastal: false, note: "Gateway to Canada" },
   ticonderoga:  { name: "Ticonderoga", terrain: "forest",     seed: [-73.6, 43.95], income: 2, fort: true },
   bennington:   { name: "Bennington", terrain: "hills",      seed: [-73.0, 43.0],  income: 4 },
+  saratoga:     { name: "Saratoga", terrain: "hills",       seed: [-73.62, 43.4], income: 2, note: "Bemis Heights, above the Hudson" },
   newhampshire: { name: "New Hampshire", terrain: "hills",   seed: [-71.6, 43.6],  income: 5, coastal: true },
   mohawk:       { name: "Mohawk Valley", terrain: "forest",   seed: [-75.2, 43.1],  income: 3 },
   albany:       { name: "Albany",          seed: [-74.0, 42.6],  income: 6, city: true },
@@ -43,7 +44,8 @@ export const REGIONS = {
 // Which regions border each other. `water` marks a crossing over a river or harbor, which slows an attack.
 const LINKS = [
   ["stjohns", "ticonderoga"],
-  ["ticonderoga", "bennington"], ["ticonderoga", "albany"], ["ticonderoga", "mohawk"], ["ticonderoga", "newhampshire"],
+  ["ticonderoga", "bennington"], ["ticonderoga", "saratoga"], ["ticonderoga", "mohawk"], ["ticonderoga", "newhampshire"],
+  ["ticonderoga", "albany"], ["saratoga", "albany"], ["saratoga", "bennington"], ["saratoga", "mohawk"],
   ["bennington", "albany"], ["bennington", "springfield"], ["bennington", "newhampshire"],
   ["newhampshire", "boston"], ["newhampshire", "springfield"],
   ["mohawk", "albany"], ["mohawk", "kingston"], ["mohawk", "wyoming"],

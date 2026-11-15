@@ -7,7 +7,7 @@ import {
   reserveGenerals, assignGeneral, threatTo, distance, log,
 } from "./rules.js";
 
-const NORTH = new Set(["stjohns", "ticonderoga", "bennington", "albany", "mohawk", "newhampshire", "springfield", "kingston"]);
+const NORTH = new Set(["stjohns", "ticonderoga", "saratoga", "bennington", "albany", "mohawk", "newhampshire", "springfield", "kingston"]);
 
 function value(state, id) {
   const r = REGIONS[id];
@@ -18,14 +18,19 @@ function attackThreshold(g, defender, winter) {
   let t = 0.65;
   if (g && g.trait === "cautious") t = defender.dugIn ? 0.88 : 0.75;
   if (g && g.trait === "aggressive") t = 0.55;
+  if (g && g.trait === "gambler") t = 0.5;
   if (winter) t = Math.max(t, 0.85);
   return t;
 }
 
 function scoreOption(state, army, opt, winter) {
   const g = generalOf(state, army);
+  // Some scenarios keep the British inside one theater of the war.
+  if (state.aiArea && !state.aiArea.includes(opt.region)) return null;
+  // Carleton guards Canada and won't leave the north. Burgoyne's generals (north: true) march south from it.
   if (g && g.trait === "northern" && !NORTH.has(opt.region)) return null;
-  if (!g || g.trait !== "northern") if (NORTH.has(opt.region) && opt.region !== "albany" && opt.region !== "kingston") return null;
+  const northerner = g && (g.trait === "northern" || g.north);
+  if (!northerner && !state.aiArea) if (NORTH.has(opt.region) && opt.region !== "albany" && opt.region !== "kingston") return null;
   if (opt.sea && winter) return null;
   const mine = power(state, army);
   let score;

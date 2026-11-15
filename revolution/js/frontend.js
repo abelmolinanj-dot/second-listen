@@ -166,7 +166,8 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       <h3>Your orders</h3><ul class="brief-goals">${m.objectives.map((o) => `<li>${esc(o)}</li>`).join("")}</ul>
       <div class="brief-meta"><span>Difficulty: <b>${diff}</b></span>${m.length ? `<span>${esc(m.length)}</span>` : ""}${m.status === "ready" ? `<span>Best: ${starRow(p?.stars || 0)}</span>` : ""}</div>`;
     if (m.status === "ready") {
-      h += `<label class="check"><input type="checkbox" id="guide" ${hasPlayed() ? "" : "checked"}> Guide me through the first two months</label>
+      h += m.guide ? `<label class="check"><input type="checkbox" id="guide" ${hasPlayed() ? "" : "checked"}> Guide me through the first two months</label>` : "";
+      h += `
         <div class="brief-actions">${savedHere ? `<button class="btn" id="b-continue">Continue · ${esc(saved.label)}</button>` : ""}<button class="btn primary" id="b-begin">${savedHere ? "Start over" : "Begin the campaign"}</button></div>`;
     } else {
       h += `<div class="brief-soon">⌛ ${esc(m.eta)}</div>`;
@@ -178,8 +179,8 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     brief.scrollTop = 0;
     const b = brief.querySelector("#b-begin");
     if (b) b.onclick = () => {
-      if (savedHere && !confirm("Start this campaign over? Your saved game will be lost.")) return;
-      const guide = brief.querySelector("#guide").checked;
+      if (saved && !confirm(savedHere ? "Start this campaign over? Your saved game will be lost." : `This replaces your saved game (${saved.label}). Start anyway?`)) return;
+      const guide = !!brief.querySelector("#guide")?.checked;
       hide();
       onBegin(m.scenario, guide);
     };
