@@ -1,11 +1,57 @@
 # Roadmap and design notes
 
-Written November 2026. Target: a public release around January–February 2027. Ship, find errors, fix them.
+Written November 2026. Target: a public release around January to February 2027. Ship, find errors, fix them.
 
-## Where things stand
+## Where things stand (updated November 15, 2026)
 
-Playable now: **The Campaign of 1776** (12 months), with period paintings, sound and music, a guided tutorial,
-"Did you know?" history notes, letters, generals with loyalty, and a real treasury with a balance sheet.
+Playable now: **The Campaign of 1776** and **Saratoga, 1777**, from a main menu and campaign map. Period paintings
+and portraits for every general and Founder, sound and music, a guided tutorial, letters with alternate wordings,
+chance events and councils of war, spy reports, a monthly newspaper, Who's Who with biographies, and a real
+treasury with a balance sheet.
+
+## The build list (approved November 15, 2026)
+
+All sixteen ideas below were approved. They are built in phases, small and visible first, so each phase can be
+played and judged before the next. Anything that turns out too complicated gets cut or moved to a simpler spinoff.
+
+**Phase 1: atmosphere and learning (quick wins)**
+1. Loading tips and quotes: real quotes from the era between screens, with who said them and when.
+2. Dark night turns: the map dims to night while the British move, with lantern light on your camps.
+3. Weather and seasons: the map changes with the season (snow in winter, autumn color); rain slows marches, fog hides moves.
+4. Animated map: ships sailing the coast, battle smoke, campfires in winter.
+5. What really happened: after each campaign, your result beside the real one, with real numbers.
+6. History book: every note, letter and painting you've seen, collected and browsable from the menu.
+7. Achievements with history: goals like "Win Saratoga without abandoning Ticonderoga", each with a note.
+8. Voiced first lines: the browser reads the opening of key letters aloud until real voices are recorded. Off by default.
+
+**Phase 2: people who remember**
+9. Generals who remember: loyalty, wounds, victories and grudges carry between campaigns (Arnold's road to 1780).
+10. Honors of the era: the Thanks of Congress, swords of honor, gold medals, earned by your generals.
+11. Foreign volunteers: Lafayette, Steuben (drills militia into regulars), Kosciuszko (fortifies faster), Pulaski.
+12. Camp life: Martha Washington at winter quarters, soldiers' families, camp doctors, letters from home.
+
+**Phase 3: deeper war**
+13. Supply wagons and forage: supply lines on the map; cut the enemy's, protect yours.
+14. Battle close-ups: for big battles, a short illustrated scene with one decision in the middle.
+15. Naval moments: Lake Champlain, the West Point chain, the French fleet off Yorktown.
+16. Daily dispatch challenge: one short scenario a day, the same for everyone, with a shareable score.
+
+**Phase 4: "An Officer's Road" (inspired by Mount & Blade: Warband)**
+
+A free mode where you are one person, not the Board of War. You start in 1775 as a young officer from a colony you
+choose, with a background that matters (farmer, merchant's son, frontiersman, lawyer, a free Black volunteer, a
+recent immigrant). You raise a company, march it between towns on the map, recruit, buy supplies, take orders and
+quests from real generals and Founders, and win or lose renown with Congress, the states, the army and Native
+nations. Rank comes with renown: captain, colonel, general. Along the way you choose loyalties, and you can be
+tempted the way Arnold was. Battles use the same engine at a smaller scale. This is the long-term heart of the game
+and the main thing that makes it more than a scenario pack.
+
+**Later ideas worth keeping**
+- Spy ring: build the Culper Ring in occupied New York, with invisible ink and code names.
+- Privateers: buy letters of marque and send ships after British merchantmen, a second economy.
+- Native nations as real diplomacy, not just events.
+- Play the British side of each campaign.
+- A casual spinoff: a one-screen, ten-minute version of the war for people who want something quick.
 
 ## Release plan
 
