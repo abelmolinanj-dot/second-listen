@@ -43,6 +43,11 @@ export const PORTRAITS = {
   morris:     "img/portraits/morris.jpg",     // Charles Willson Peale, about 1782
   jay:        "img/portraits/jay.jpg",        // Gilbert Stuart, 1794
   paine:      "img/portraits/paine.jpg",      // Laurent Dabos, about 1792
+  // Foreign volunteers and camp
+  kosciuszko:  "img/portraits/kosciuszko.jpg",  // Josef Grassi, 1792
+  steuben:     "img/portraits/steuben.jpg",     // Charles Willson Peale, 1780
+  pulaski:     "img/portraits/pulaski.jpg",     // engraving, 1859
+  mwashington: "img/portraits/mwashington.jpg", // Charles Willson Peale, print, after 1776
   // heister: no public-domain portrait found yet; the drawn bust is used.
 };
 

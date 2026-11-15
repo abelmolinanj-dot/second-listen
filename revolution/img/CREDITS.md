@@ -64,3 +64,12 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `portraits/morris.jpg` | Robert Morris | Charles Willson Peale, about 1782 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Robert_Morris_by_Charles_Willson_Peale,_c._1782_(New_Orleans_Mus_of_Art_78.2)_-_crop.jpg) (New Orleans Museum of Art) | Public domain |
 | `portraits/jay.jpg` | John Jay | Gilbert Stuart, 1794 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gilbert_Stuart,_John_Jay,_1794,_NGA_75023.jpg) (National Gallery of Art) | CC0 |
 | `portraits/paine.jpg` | Thomas Paine | Laurent Dabos, about 1792 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Laurent_Dabos_%E2%80%93_Thomas_Paine_%E2%80%93_Google_Art_Project.jpg) (National Portrait Gallery) | Public domain |
+
+## Portraits of the volunteers and Martha Washington
+
+| File | Shows | Artist and date | Source | License |
+|---|---|---|---|---|
+| `portraits/kosciuszko.jpg` | Thaddeus Kosciuszko | Josef Grassi, 1792 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Josef_Grassi_-_Portrait_of_Tadeusz_Ko%C5%9Bciuszko_-_MNK_II-a-554_-_National_Museum_Krak%C3%B3w.jpg) (National Museum, Kraków) | Public domain |
+| `portraits/steuben.jpg` | Baron von Steuben | Charles Willson Peale, 1780 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Baron_Steuben_by_Peale,_1780.jpg) | Public domain |
+| `portraits/pulaski.jpg` | Casimir Pulaski | Engraving in Benson Lossing's Pictorial Field-Book of the Revolution, 1859 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pulaski.jpg) | Public domain |
+| `portraits/mwashington.jpg` | Martha Washington | Charles Willson Peale, "Lady Washington," print, after 1776 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Lady_Washington_MET_DT2081.jpg) (Metropolitan Museum of Art) | CC0 |
