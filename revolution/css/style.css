@@ -485,3 +485,17 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .pc-trait { font-size: 13.5px; line-height: 1.45; margin-bottom: 8px; }
 .pc-after { font-family: var(--text); font-size: 14px; line-height: 1.55; color: var(--ink-soft); margin: 8px 0 0; }
 .pc-after b { color: var(--ink); }
+
+/* --- real rivers, lakes and colony borders --- */
+.river { fill: none; stroke: var(--river); stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.river.major { stroke-width: 2.4; opacity: .95; }
+.river.mid { stroke-width: 1.4; opacity: .85; }
+.river.minor { stroke-width: .8; opacity: .7; }
+.lake { fill: var(--sea); stroke: rgba(40,70,100,.55); stroke-width: .8; pointer-events: none; }
+.coast { fill: none; stroke: rgba(30,55,80,.7); stroke-width: 1.1; stroke-linejoin: round; pointer-events: none; }
+.border { fill: none; stroke: rgba(155,12,35,.55); stroke-width: 2; stroke-dasharray: .5 4; stroke-linecap: round; pointer-events: none; }
+.river-name { font-family: var(--serif); font-style: italic; font-size: 9.5px; fill: #2c5a82; text-anchor: middle; paint-order: stroke; stroke: rgba(255,255,255,.75); stroke-width: 2.5px; pointer-events: none; }
+.colony-name { font-family: var(--caps); font-size: 15px; letter-spacing: 5px; fill: rgba(155,12,35,.42); text-anchor: middle; pointer-events: none; }
+.town circle { fill: #2a2118; }
+.town text { font-family: var(--serif); font-size: 8.5px; fill: #2a2118; paint-order: stroke; stroke: rgba(255,255,255,.8); stroke-width: 2px; pointer-events: none; }
+.town { pointer-events: none; }

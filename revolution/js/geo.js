@@ -1,4 +1,5 @@
 // Map geometry: projects longitude/latitude to map units and builds region shapes.
+import * as GEO from "./data/geodata.js";
 // Mainland regions are Voronoi cells around each region's seed point, clipped to the coastline.
 // Islands (Manhattan, Long Island, Staten Island) use their own outlines.
 // Coordinates are hand-drawn and a little exaggerated around New York so small places stay tappable.
@@ -49,8 +50,9 @@ function densify(pts, closed) {
 }
 const P = (pts, closed = true) => densify(pts, closed).map(project);
 
-// Mainland coastline, clockwise from the north-west corner of the map.
-export const MAINLAND = P([
+// The hand-drawn coastline. The game now uses real coastline data (data/geodata.js) everywhere except
+// New York harbor, where these points keep Manhattan and Staten Island apart from the mainland.
+const HANDDRAWN = ([
   [-78.0, 45.3], [-70.6, 45.3], [-70.2, 43.75], [-70.75, 42.95], [-70.6, 42.62],
   [-71.0, 42.36], [-70.65, 42.15], [-70.55, 41.8], [-70.0, 41.8], [-70.1, 42.07],
   [-69.93, 41.95], [-69.95, 41.68], [-70.6, 41.52], [-71.1, 41.45], [-71.45, 41.4],
@@ -69,37 +71,50 @@ export const MAINLAND = P([
   [-76.3, 36.85], [-78.0, 36.85],
 ]);
 
+// New York harbor, from Throgs Neck round the Hudson's west bank to Sandy Hook.
+const HARBOR = HANDDRAWN.slice(18, 29);
+const HARBOR_BOX = { w: -74.4, e: -73.72, s: 40.38, n: 40.97 };
+const inHarbor = ([x, y]) => x > HARBOR_BOX.w && x < HARBOR_BOX.e && y > HARBOR_BOX.s && y < HARBOR_BOX.n;
+
+// Splice the hand-drawn harbor into the real coastline: replace the stretch of real coast between
+// the harbor's two ends (the short way round) with the hand-drawn one.
+function spliceHarbor(ring) {
+  const near = (p) => ring.reduce((best, q, i) => (Math.hypot(q[0] - p[0], q[1] - p[1]) < Math.hypot(ring[best][0] - p[0], ring[best][1] - p[1]) ? i : best), 0);
+  const ia = near(HARBOR[0]), n = ring.length;
+  const rot = [...ring.slice(ia), ...ring.slice(0, ia)];
+  const ib = (near(HARBOR[HARBOR.length - 1]) - ia + n) % n;
+  if (ib < n / 2) return [...HARBOR, ...rot.slice(ib + 1)];
+  return [...rot.slice(0, ib + 1), ...HARBOR.slice(1, -1).reverse()];
+}
+
+export const MAINLAND = spliceHarbor(GEO.LAND[0]).map(project);
+
 export const ISLANDS = {
   manhattan: P([
     [-74.06, 40.69], [-73.95, 40.7], [-73.9, 40.8], [-73.87, 40.88],
     [-73.93, 40.9], [-74.0, 40.82], [-74.04, 40.75],
   ]),
-  longisland: P([
-    [-74.06, 40.63], [-73.95, 40.56], [-73.4, 40.6], [-72.5, 40.83], [-71.86, 41.07],
-    [-72.3, 41.02], [-72.6, 40.99], [-73.4, 40.92], [-73.72, 40.82], [-73.92, 40.68],
-  ]),
+  // Long Island from the real coastline data: both forks, the bays and the Brooklyn shore.
+  longisland: GEO.LAND[1].map(project),
   statenisland: P([
     [-74.24, 40.55], [-74.08, 40.48], [-74.02, 40.53], [-74.06, 40.63],
     [-74.16, 40.64], [-74.22, 40.6],
   ]),
 };
 
-export const LAKES = [
-  // Lake Champlain
-  P([[-73.38, 45.25], [-73.25, 44.9], [-73.25, 44.4], [-73.3, 44.0], [-73.42, 43.62],
-    [-73.45, 43.65], [-73.4, 44.05], [-73.38, 44.45], [-73.37, 44.9], [-73.45, 45.25]]),
-];
+// Every other island on the real coast: Martha's Vineyard, Nantucket, Block Island, Aquidneck, and the rest.
+// They are land on the map but not regions of their own.
+export const EXTRA_ISLANDS = GEO.LAND.slice(2).map((r) => r.map(project));
 
-const L = (pts) => P(pts, false);
+// Real lakes: Champlain, George, the Finger Lakes, Oneida, Winnipesaukee, the edge of Lake Ontario...
+export const LAKES = GEO.LAKES.map((l) => l.pts.map(project));
+export const LAKE_NAMES = GEO.LAKES.filter((l) => /Champlain|George|Oneida|Winnipesaukee|Seneca|Cayuga|Ontario/.test(l.name)).map((l) => ({ name: l.name, pts: l.pts }));
 
-export const RIVERS = [
-  { name: "Hudson", pts: L([[-73.7, 43.3], [-73.68, 42.9], [-73.75, 42.65], [-73.85, 42.2], [-73.95, 41.75], [-73.96, 41.35], [-73.93, 41.0], [-73.97, 40.92]]) },
-  { name: "Delaware", pts: L([[-75.1, 42.0], [-75.05, 41.5], [-75.1, 41.0], [-75.05, 40.6], [-74.85, 40.32], [-74.76, 40.21], [-74.95, 40.05], [-75.15, 39.93], [-75.4, 39.8], [-75.5, 39.6]]) },
-  { name: "Mohawk", pts: L([[-75.5, 43.2], [-74.9, 42.98], [-74.2, 42.92], [-73.7, 42.78]]) },
-  { name: "Connecticut", pts: L([[-71.6, 45.2], [-72.0, 44.4], [-72.45, 43.6], [-72.55, 42.7], [-72.6, 42.1], [-72.65, 41.7], [-72.35, 41.28]]) },
-  { name: "Susquehanna", pts: L([[-75.9, 42.0], [-76.4, 41.7], [-76.85, 41.2], [-76.9, 40.6], [-76.5, 40.0], [-76.1, 39.55]]) },
-  { name: "Potomac", pts: L([[-78.0, 39.5], [-77.45, 39.3], [-77.05, 38.9], [-77.0, 38.6], [-76.5, 38.15], [-76.35, 38.0]]) },
-];
+// Real rivers, with a rank: lower ranks are bigger rivers. The stretch inside New York harbor is left to the hand-drawn coast.
+export const RIVERS = GEO.RIVERS.map((r) => ({ name: r.name, rank: r.rank, pts: r.pts.filter((p) => !inHarbor(p)).map(project) })).filter((r) => r.pts.length > 1);
+
+// Borders between the colonies (modern state lines that already existed in 1776).
+export const BORDERS = GEO.BORDERS.filter((b) => b.name).map((b) => b.pts.map(project));
 
 // --- polygon helpers ---
 
@@ -194,5 +209,10 @@ export function seaPath() {
   let d = `M${-m},${-m}H${WIDTH + m}V${HEIGHT + m}H${-m}Z`;
   d += polygonPath(MAINLAND);
   for (const poly of Object.values(ISLANDS)) d += polygonPath(poly);
+  for (const poly of EXTRA_ISLANDS) d += polygonPath(poly);
   return d;
 }
+
+// All land: the mainland, the island regions, and every other island.
+export const ALL_LAND = [MAINLAND, ...Object.values(ISLANDS), ...EXTRA_ISLANDS];
+export const landPath = () => ALL_LAND.map(polygonPath).join("");

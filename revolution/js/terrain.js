@@ -1,7 +1,7 @@
 // Map decoration: mountains, forests, farmland, roads, towns, forts, waves and water names.
 // Everything is placed from real geography (longitude/latitude) and drawn once when the game starts.
 
-import { project, WIDTH, HEIGHT, MAINLAND, ISLANDS, pointInPolygon, linePath, polygonPath, seaPath } from "./geo.js";
+import { project, WIDTH, HEIGHT, MAINLAND, ISLANDS, pointInPolygon, linePath, polygonPath, seaPath, ALL_LAND, landPath, LAKES, RIVERS, BORDERS, EXTRA_ISLANDS } from "./geo.js";
 import { REGIONS } from "./data/regions.js";
 
 // Deterministic randomness so the map looks the same every time.
@@ -66,7 +66,7 @@ const WATER_NAMES = [
   { text: "New York Bay", at: [-73.95, 40.47], size: 9, spacing: 1 },
 ];
 
-const onLand = (p) => pointInPolygon(p, MAINLAND) || Object.values(ISLANDS).some((poly) => pointInPolygon(p, poly));
+const onLand = (p) => ALL_LAND.some((poly) => pointInPolygon(p, poly));
 
 // Walk along a line in map space, yielding evenly spaced points.
 function along(pts, step) {
@@ -101,7 +101,7 @@ function clearOfMarkers(p, seeds, r = 34) {
 export const TERRAIN_DEFS = `
 <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
 <filter id="softer" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
-<clipPath id="landclip"><path d="${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}"/></clipPath>
+<clipPath id="landclip"><path d="${landPath()}"/></clipPath>
 <clipPath id="seaclip"><path clip-rule="evenodd" d="${seaPath()}"/></clipPath>
 <linearGradient id="seadepth" x1="0" y1="0" x2="1" y2="1">
   <stop offset="0" stop-color="#bcd7e6" stop-opacity="0"/><stop offset=".55" stop-color="#2f6491" stop-opacity=".18"/><stop offset="1" stop-color="#1c4a75" stop-opacity=".45"/>
@@ -159,7 +159,7 @@ export function terrainLayer(shapes, seeds) {
 
   // The land itself, colored like a relief map: a pale sandy coastal plain, greener rolling country inland,
   // and brown uplands along the real mountain ranges. Each layer is one blurred group, so it stays fast.
-  const coast = `${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}`;
+  const coast = `${landPath()}`;
   s += `<g clip-path="url(#landclip)">`;
   s += `<g filter="url(#soft)"><path d="${coast}" fill="none" stroke="#ece2bd" stroke-width="44" stroke-linejoin="round"/></g>`;
   s += `<g filter="url(#soft)" opacity=".55">`;
@@ -252,7 +252,7 @@ export function overlayLayer(seeds) {
   // Water: deeper toward the open ocean, and pale shallows along every shore.
   s += `<g clip-path="url(#seaclip)" pointer-events="none">
     <rect x="-60" y="-60" width="${WIDTH + 120}" height="${HEIGHT + 120}" fill="url(#seadepth)"/>
-    <g filter="url(#softer)"><path d="${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}" fill="none" stroke="#d4e7f1" stroke-width="16" stroke-linejoin="round" opacity=".8"/></g>
+    <g filter="url(#softer)"><path d="${landPath()}" fill="none" stroke="#d4e7f1" stroke-width="16" stroke-linejoin="round" opacity=".8"/></g>
   </g>`;
   for (const road of ROADS) s += `<path class="road" d="${linePath(densifyMap(road))}"/>`;
 
@@ -309,6 +309,88 @@ export function placeIcons(seeds) {
       const w = big ? 30 : 22, h = big ? 18 : 13;
       s += `<use href="#town" x="${x - w / 2}" y="${y + 13}" width="${w}" height="${h}"/>`;
     }
+  }
+  return s;
+}
+
+// ---------- water and borders, from the real map data ----------
+// The coast, every lake and river, the colony borders, and the names of the great rivers.
+const RIVER_LABELS = { Hudson: "Hudson R.", Delaware: "Delaware R.", Susquehanna: "Susquehanna R.", Connecticut: "Connecticut R.", Mohawk: "Mohawk R.", Potomac: "Potomac R.", Merrimack: "Merrimack R.", Housatonic: "Housatonic R.", Passaic: "Passaic R.", Lehigh: "Lehigh R.", Schuylkill: "Schuylkill R." };
+
+export function waterLayer() {
+  let s = `<path class="coast" d="${landPath()}"/>`;
+  for (const b of BORDERS) s += `<path class="border" d="${linePath(b)}"/>`;
+  for (const l of LAKES) s += `<path class="lake" d="${polygonPath(l)}"/>`;
+  for (const r of RIVERS) s += `<path class="river ${r.rank <= 4 ? "major" : r.rank <= 7 ? "mid" : "minor"}" d="${linePath(r.pts)}"/>`;
+  // Name each great river once, along the middle of its longest stretch.
+  const best = {};
+  for (const r of RIVERS) {
+    if (!RIVER_LABELS[r.name]) continue;
+    const len = r.pts.reduce((n, p, i) => (i ? n + Math.hypot(p[0] - r.pts[i - 1][0], p[1] - r.pts[i - 1][1]) : 0), 0);
+    if (!best[r.name] || len > best[r.name].len) best[r.name] = { len, pts: r.pts };
+  }
+  for (const [name, { len, pts }] of Object.entries(best)) {
+    if (len < 40) continue;
+    const i = Math.floor(pts.length / 2), a = pts[Math.max(0, i - 2)], b = pts[Math.min(pts.length - 1, i + 2)];
+    let ang = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+    if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+    const [x, y] = pts[i];
+    s += `<text class="river-name" x="${x.toFixed(0)}" y="${(y - 3).toFixed(0)}" transform="rotate(${ang.toFixed(0)} ${x.toFixed(0)} ${(y - 3).toFixed(0)})">${RIVER_LABELS[name]}</text>`;
+  }
+  return s;
+}
+
+// Every other island, as plain land (drawn with the regions' land).
+export function extraLand() {
+  return EXTRA_ISLANDS.map((p) => `<path class="land" d="${polygonPath(p)}"/>`).join("");
+}
+
+// ---------- colony names and the towns of 1776 ----------
+// Colony names in spaced capitals, the way period maps lettered them. Names are what they were called in 1776.
+const COLONIES = [
+  { text: "PROVINCE OF QUEBEC", at: [-73.4, 45.12], rot: 0 },
+  { text: "NEW HAMPSHIRE GRANTS", at: [-72.78, 44.15], rot: -78 },
+  { text: "NEW HAMPSHIRE", at: [-71.5, 43.95], rot: -80 },
+  { text: "MASSACHUSETTS BAY", at: [-71.95, 42.62], rot: 0 },
+  { text: "CONNECTICUT", at: [-72.65, 41.62], rot: 0 },
+  { text: "NEW YORK", at: [-75.4, 42.35], rot: -8 },
+  { text: "NEW JERSEY", at: [-74.85, 39.85], rot: -62 },
+  { text: "PENNSYLVANIA", at: [-77.2, 40.62], rot: -4 },
+  { text: "DELAWARE", at: [-75.48, 38.95], rot: -76 },
+  { text: "MARYLAND", at: [-77.15, 39.4], rot: -4 },
+  { text: "VIRGINIA", at: [-77.6, 37.75], rot: -10 },
+];
+
+// Towns of 1776 that aren't regions of their own. [name, longitude, latitude]
+const TOWNS = [
+  ["Falmouth", -70.26, 43.66], ["Portsmouth", -70.76, 43.07], ["Salem", -70.9, 42.52], ["Marblehead", -70.86, 42.5],
+  ["Lexington", -71.23, 42.45], ["Concord", -71.35, 42.46], ["Cambridge", -71.11, 42.37], ["Worcester", -71.8, 42.26],
+  ["Providence", -71.41, 41.82], ["Newport", -71.31, 41.49], ["New London", -72.1, 41.36], ["New Haven", -72.93, 41.31],
+  ["Hartford", -72.68, 41.76], ["Danbury", -73.45, 41.39], ["Northampton", -72.64, 42.32],
+  ["Schenectady", -73.94, 42.81], ["Johnstown", -74.37, 43.0], ["Fort Stanwix", -75.46, 43.21], ["Oriskany", -75.34, 43.16],
+  ["Fort Edward", -73.58, 43.27], ["Fort George", -73.71, 43.42], ["Crown Point", -73.43, 44.03], ["Skenesborough", -73.4, 43.55],
+  ["Stillwater", -73.65, 42.94], ["Poughkeepsie", -73.93, 41.7], ["Newburgh", -74.01, 41.5], ["West Point", -73.96, 41.39],
+  ["White Plains", -73.76, 41.03], ["Tarrytown", -73.86, 41.08], ["Elizabethtown", -74.21, 40.66], ["Perth Amboy", -74.27, 40.51],
+  ["Monmouth", -74.27, 40.26], ["Burlington", -74.86, 40.07], ["Bordentown", -74.69, 40.15], ["Basking Ridge", -74.55, 40.71],
+  ["Germantown", -75.17, 40.04], ["Valley Forge", -75.45, 40.1], ["Reading", -75.93, 40.34], ["Bethlehem", -75.38, 40.62],
+  ["York", -76.73, 39.96], ["Carlisle", -77.19, 40.2], ["Chester", -75.36, 39.85], ["Chadds Ford", -75.59, 39.87],
+  ["New Castle", -75.56, 39.66], ["Dover", -75.52, 39.16], ["Head of Elk", -75.83, 39.61], ["Annapolis", -76.49, 38.98],
+  ["Alexandria", -77.05, 38.8], ["Mount Vernon", -77.09, 38.71], ["Fredericksburg", -77.46, 38.3],
+  ["Williamsburg", -76.71, 37.27], ["Yorktown", -76.51, 37.24],
+];
+
+export function mapLettering(seeds, { towns = true } = {}) {
+  const seedPts = Object.values(seeds);
+  let s = "";
+  for (const c of COLONIES) {
+    const [x, y] = project(c.at);
+    s += `<text class="colony-name" x="${x.toFixed(0)}" y="${y.toFixed(0)}"${c.rot ? ` transform="rotate(${c.rot} ${x.toFixed(0)} ${y.toFixed(0)})"` : ""}>${c.text}</text>`;
+  }
+  for (const [name, lon, lat] of towns ? TOWNS : []) {
+    const p = project([lon, lat]);
+    // Skip a town where it would sit on an army or a region's name.
+    if (!clearOfMarkers(p, seedPts, 24) || seedPts.some(([x, y]) => Math.abs(p[0] - x) < 34 && Math.abs(p[1] - (y + 33)) < 9)) continue;
+    s += `<g class="town"><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="1.6"/><text x="${(p[0] + 3).toFixed(1)}" y="${(p[1] + 2.6).toFixed(1)}">${name}</text></g>`;
   }
   return s;
 }

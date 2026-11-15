@@ -66,6 +66,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/tutorial.js` | The aide-de-camp's guided tutorial |
 | `js/data/facts.js` | The "Did you know?" history notes |
 | `tools/serve.mjs` | A tiny local web server (`npm start`) |
+| `js/data/geodata.js` | Real coastline, lakes, rivers and colony borders (generated from Natural Earth by `tools/build-geodata.mjs`) |
 | `js/data/assets.js` | Portraits and paintings to use when they're added |
 | `img/` | Image files, with sources recorded in `img/CREDITS.md` |
 | `js/data/regions.js` | Regions and which ones border each other |

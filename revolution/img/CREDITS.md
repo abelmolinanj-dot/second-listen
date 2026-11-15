@@ -73,3 +73,10 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `portraits/steuben.jpg` | Baron von Steuben | Charles Willson Peale, 1780 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Baron_Steuben_by_Peale,_1780.jpg) | Public domain |
 | `portraits/pulaski.jpg` | Casimir Pulaski | Engraving in Benson Lossing's Pictorial Field-Book of the Revolution, 1859 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pulaski.jpg) | Public domain |
 | `portraits/mwashington.jpg` | Martha Washington | Charles Willson Peale, "Lady Washington," print, after 1776 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Lady_Washington_MET_DT2081.jpg) (Metropolitan Museum of Art) | CC0 |
+
+## Map data
+
+The coastline, islands, lakes, rivers and colony borders come from **Natural Earth** 1:10m data
+(naturalearthdata.com), which is in the public domain. `tools/build-geodata.mjs` cuts it to the colonies and writes
+`js/data/geodata.js`. Modern reservoirs, canals and borders drawn after 1776 (West Virginia, Washington D.C., the
+Canadian provinces) are left out. New York harbor keeps a hand-drawn coast so Manhattan and Staten Island stay islands.

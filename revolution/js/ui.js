@@ -13,7 +13,7 @@ import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { randomQuote } from "./data/quotes.js";
 import { awardHonors, noteFact, noteLetter } from "./book.js";
 import { applyLegacy, recordLegacy, getLegacy } from "./legacy.js";
-import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
+import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extraLand, mapLettering } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
@@ -95,14 +95,12 @@ function buildMap() {
   const regionPaths = (cls) => Object.entries(shapes).map(([id, poly]) => `<path class="${cls}" data-region="${id}" d="${polygonPath(poly)}"/>`).join("");
   let s = `<defs>${TERRAIN_DEFS}${SOLDIER_DEFS}</defs>`;
   s += `<rect x="-2000" y="-2000" width="${WIDTH + 4000}" height="${HEIGHT + 4000}" fill="var(--sea)"/>`;
-  s += `<g id="land">${regionPaths("land")}</g>`;
+  s += `<g id="land">${regionPaths("land")}${extraLand()}</g>`;
   s += `<g class="deco">${terrainLayer(shapes, seeds)}</g>`;
   s += `<g id="regions">${regionPaths("region")}</g>`;
   s += `<path class="sea" fill-rule="evenodd" d="${seaPath()}"/>`;
-  s += `<path class="coast" d="${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}"/>`;
-  for (const l of LAKES) s += `<path class="lake" d="${polygonPath(l)}"/>`;
-  for (const r of RIVERS) s += `<path class="river" d="${linePath(r.pts)}"/>`;
-  s += `<g class="deco">${overlayLayer(seeds)}${placeIcons(seeds)}</g>`;
+  s += waterLayer(); // the real coast, lakes, rivers and colony borders
+  s += `<g class="deco">${overlayLayer(seeds)}${mapLettering(seeds)}${placeIcons(seeds)}</g>`;
   s += `<g id="marks">`;
   for (const [id, r] of Object.entries(REGIONS)) {
     const [x, y] = seeds[id];

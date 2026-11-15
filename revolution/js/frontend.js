@@ -7,7 +7,7 @@ import { MISSIONS, starsFor } from "./data/missions.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { PORTRAITS, SCENES } from "./data/assets.js";
 import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPath, MAINLAND, ISLANDS, LAKES, RIVERS } from "./geo.js";
-import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
+import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extraLand, mapLettering } from "./terrain.js";
 import { bust } from "./soldiers.js";
 import { sfx, music, soundPrefs, setSfx, setMusic, setVolume, setVoice, speak, stopSpeaking } from "./sound.js";
 import { askConfirm } from "./confirm.js";
@@ -42,13 +42,11 @@ function campaignMapSvg() {
   const seeds = Object.fromEntries(Object.entries(REGIONS).map(([id, r]) => [id, project(r.seed)]));
   let s = `<defs>${TERRAIN_DEFS}</defs>`;
   s += `<rect x="-2000" y="-2000" width="${WIDTH + 4000}" height="${HEIGHT + 4000}" fill="var(--sea)"/>`;
-  s += Object.values(shapes).map((poly) => `<path class="land" d="${polygonPath(poly)}"/>`).join("");
+  s += Object.values(shapes).map((poly) => `<path class="land" d="${polygonPath(poly)}"/>`).join("") + extraLand();
   s += `<g class="deco">${terrainLayer(shapes, seeds)}</g>`;
   s += `<path class="sea" fill-rule="evenodd" d="${seaPath()}"/>`;
-  s += `<path class="coast" d="${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}"/>`;
-  for (const l of LAKES) s += `<path class="lake" d="${polygonPath(l)}"/>`;
-  for (const r of RIVERS) s += `<path class="river" d="${linePath(r.pts)}"/>`;
-  s += `<g class="deco">${overlayLayer(seeds)}${placeIcons(seeds)}</g>`;
+  s += waterLayer(); // the real coast, lakes, rivers and colony borders
+  s += `<g class="deco">${overlayLayer(seeds)}${mapLettering(seeds, { towns: false })}${placeIcons(seeds)}</g>`;
   mapArt = s;
   return s;
 }
