@@ -5,17 +5,19 @@ import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPa
 import {
   armyList, armyAt, armyMen, militiaMen, generalOf, moveTargets, winChance, oddsLabel, moveArmy, digIn, recruit, canRecruit,
   regularsCost, militiaCost, printMoney, monthlyIncome, monthlyUpkeep, regionIncome, assignGeneral, reserveGenerals,
-  dateLabel, isWinter, money, fmtMen, menWords, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES,
+  dateLabel, isWinter, money, fmtMen, menWords, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES, WEATHER, season,
 } from "./rules.js";
 import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
 import { answerLetter, unanswered, senderName, senderRole } from "./letters.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
+import { randomQuote } from "./data/quotes.js";
+import { awardHonors, noteFact, noteLetter } from "./book.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
-import { sfx, music, soundPrefs, setSfx, setMusic, setVolume } from "./sound.js";
+import { sfx, music, soundPrefs, setSfx, setMusic, setVolume, setVoice, speak, stopSpeaking } from "./sound.js";
 import { askConfirm } from "./confirm.js";
 import { createTutorial } from "./tutorial.js";
 import { createFrontend, recordResult } from "./frontend.js";
@@ -59,6 +61,7 @@ function takeFact(match) {
   const i = FACTS.findIndex((f, idx) => !state.factsSeen.includes(idx) && match(f));
   if (i < 0) return null;
   state.factsSeen.push(i);
+  noteFact(i);
   return FACTS[i];
 }
 function monthlyFact(regions = []) {
@@ -78,6 +81,7 @@ function regionFact(id) {
   const idx = FACTS.indexOf(f);
   state.factsSeen ||= [];
   if (!state.factsSeen.includes(idx)) state.factsSeen.push(idx);
+  noteFact(idx);
   return f;
 }
 const factHtml = (f) => (f ? `<div class="didyouknow"><b>Did you know?</b> ${esc(f.text)}</div>` : "");
@@ -103,7 +107,13 @@ function buildMap() {
     const [x, y] = seeds[id];
     s += `<text class="label${r.city ? " city" : ""}" x="${x}" y="${y + 33}">${esc(r.name)}</text>`;
   }
-  s += `</g><g id="highlights"></g><g id="booms"></g><g id="tokens"></g>`;
+  // The season's tint over the land (snow in winter, autumn color), and ships sailing offshore.
+  s += `</g><rect id="season-tint" clip-path="url(#landclip)" x="0" y="0" width="${WIDTH}" height="${HEIGHT}"/>`;
+  s += `<g id="ships">${[[-72.4, 40.35, 70], [-73.55, 39.55, 55], [-70.6, 41.95, 80], [-74.6, 38.9, 64]].map(([lon, lat, dur], i) => {
+    const [x, y] = project([lon, lat]);
+    return `<g class="ship" style="--dur:${dur}s;--delay:-${i * 13}s" transform="translate(${x.toFixed(0)},${y.toFixed(0)})"><g class="ship-bob"><path d="M-9,0 L9,0 L6,4 L-6,4 Z" fill="#3a2a1c"/><path d="M-1,-1 V-15 M5,-1 V-11 M-6,-1 V-10" stroke="#3a2a1c" stroke-width=".9"/><path d="M-1,-14 Q4,-11 -1,-6 Z M5,-10 Q9,-8 5,-4 Z M-6,-9 Q-2,-7 -6,-3 Z" fill="#fbf7ee" stroke="#8a7a60" stroke-width=".4"/><path d="M-1,-15 l4,1 l-4,1" fill="#c8102e"/></g></g>`;
+  }).join("")}</g>`;
+  s += `<g id="highlights"></g><g id="booms"></g><g id="tokens"></g>`;
   svg.innerHTML = s;
   fitView();
 }
@@ -287,7 +297,7 @@ function markBattles(battles) {
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "boom");
     g.style.transform = `translate(${x}px, ${y - 20}px)`;
-    g.innerHTML = battleMarker();
+    g.innerHTML = battleMarker() + [0, 1, 2, 3, 4].map((i) => `<circle class="smoke" style="--i:${i}" cx="${(i - 2) * 7}" cy="-4" r="${6 + (i % 2) * 3}"/>`).join("");
     layer.appendChild(g);
     setTimeout(() => g.remove(), 3200);
   }
@@ -295,7 +305,12 @@ function markBattles(battles) {
 
 // ---------- top bar ----------
 function renderTop() {
-  $("#date").textContent = dateLabel(state) + (isWinter(state) ? " ❄" : "");
+  const wx = WEATHER[state.weather || "clear"];
+  $("#date").textContent = `${dateLabel(state)} ${wx.icon}`;
+  $("#date").title = wx.label;
+  // The map shows the season and the weather.
+  $("#mapwrap").dataset.season = season(state);
+  $("#mapwrap").dataset.weather = state.weather || "clear";
   $("#turnof").textContent = `Month ${state.turn + 1} of ${state.lastTurn + 1}`;
   $("#treasury").textContent = money(state.treasury);
   $("#cause-bar").style.width = Math.round(state.cause) + "%";
@@ -360,7 +375,7 @@ function renderPanel() {
       const fg = generalOf(state, foe);
       h += `<p><b>Attack ${esc(REGIONS[ui.target].name)}</b>: ${fmtMen(armyMen(foe))} ${foe.hessian ? "Hessians" : "British"}${fg ? ` under ${esc(fg.short)}` : ""}${foe.dugIn ? ", dug in" : ""}.</p>`;
       h += `<p class="odds ${pWin >= 0.6 ? "good" : pWin < 0.4 ? "bad" : ""}">${oddsLabel(pWin)}: about ${Math.round(pWin * 100)}% chance to win</p>`;
-      h += `<p class="hint">${REGIONS[ui.target].fort ? "Fort: defenders much stronger. " : REGIONS[ui.target].city ? "City: defenders a bit stronger. " : ""}${REGIONS[ui.target].terrain === "hills" ? "Hills favor the defender. " : REGIONS[ui.target].terrain === "forest" ? "Forest favors the defender. " : ""}${isWinter(state) ? "Winter: attacking is harder. " : ""}</p>`;
+      h += `<p class="hint">${REGIONS[ui.target].fort ? "Fort: defenders much stronger. " : REGIONS[ui.target].city ? "City: defenders a bit stronger. " : ""}${REGIONS[ui.target].terrain === "hills" ? "Hills favor the defender. " : REGIONS[ui.target].terrain === "forest" ? "Forest favors the defender. " : ""}${isWinter(state) ? "Winter: attacking is harder. " : ""}${WEATHER[state.weather || "clear"].hint}</p>`;
       h += `<div class="row"><button class="btn danger" id="do-attack">${ui.split ? "Attack with half" : "Attack"}</button><button class="btn" id="cancel-attack">Cancel</button></div>`;
     } else if (!a.moved) {
       h += `<p class="hint">Tap a highlighted region to move there. Red outlines are attacks.</p>`;
@@ -385,7 +400,8 @@ function renderPanel() {
     h += `<h3 class="panel-h">Your armies</h3><div class="army-list">${mine.map((a) => `<button class="army-chip${a.moved ? " moved" : ""}" data-pick="${a.id}">${a.general ? portraitOf(a.general, "tiny") : `<span class="chip-flag"></span>`}<span><b>${esc(describeArmy(state, a))}</b><small>${esc(REGIONS[a.region].name)} · ${fmtMen(armyMen(a))}${a.moved ? " · done this month" : ""}</small></span></button>`).join("")}</div>`;
   }
   const open = unanswered(state).length;
-  h += `<div class="end-row">${open ? `<button class="btn gold" id="open-letters">Answer ${open} letter${open > 1 ? "s" : ""}</button>` : ""}<button class="btn primary" id="end-turn">End ${esc(dateLabel(state).split(" ")[0])} ›</button></div>`;
+  if (state.gameOver) h += `<div class="end-row"><button class="btn primary" id="tocamp2">Back to the campaign map ›</button></div>`;
+  else h += `<div class="end-row">${open ? `<button class="btn gold" id="open-letters">Answer ${open} letter${open > 1 ? "s" : ""}</button>` : ""}<button class="btn primary" id="end-turn">End ${esc(dateLabel(state).split(" ")[0])} ›</button></div>`;
   p.innerHTML = h;
 
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
@@ -395,6 +411,7 @@ function renderPanel() {
   on("dig", () => { const e = digIn(state, ui.army); if (e) toast(e); else { sfx.tap(); tutorial.event("act"); } save(); render(); });
   on("end-turn", onEndTurn);
   on("open-letters", () => showLetters());
+  on("tocamp2", () => frontend.showCampaign());
   // The army list: select an army and bring it into view.
   for (const chip of p.querySelectorAll("[data-pick]")) chip.onclick = () => {
     const a = state.armies[chip.dataset.pick];
@@ -516,8 +533,11 @@ function showLetters(after) {
     const l = open[open.length - 1];
     l.read = true;
     sfx.letter();
+    noteLetter(l.event);
+    speakLetter(l);
     modal(letterHtml(l) + `<p class="meta" style="margin-top:12px">${open.length > 1 ? `${open.length - 1} more letter${open.length > 2 ? "s" : ""} waiting.` : ""}</p>`, (card) => {
       for (const b of card.querySelectorAll("[data-choice]")) b.onclick = () => {
+        stopSpeaking();
         const outcome = answerLetter(state, l.id, Number(b.dataset.choice));
         renderPanel(); // keeps the "Answer N letters" button honest while the next letter is open
         save();
@@ -623,6 +643,7 @@ function onEndTurn() {
   ui.army = null; ui.target = null; ui.split = false;
   const wasWinter = isWinter(state);
   sfx.drumroll();
+  nightFalls();
   tutorial.event("endTurn");
   const summary = endTurn(state);
   save();
@@ -633,11 +654,12 @@ function onEndTurn() {
   const voices = state.letters.filter((l) => l.voice && l.written === startTurn);
   // Let the British moves play out on the map before the report covers it.
   setTimeout(() => {
+    dawn();
     if (state.gameOver) { showGameOver(summary); return; }
     const next = () => showReport(summary, fresh, voices);
     if (isWinter(state) && !wasWinter && !state.seenScenes?.winter) { (state.seenScenes ||= {}).winter = true; save(); music.dirge(); playScene("winter", {}, next); }
     else next();
-  }, summary && (summary.battles.length || summary.moves.length) ? 1300 : 300);
+  }, 2600); // long enough to watch the British move by night and read the quote
 }
 
 // The month's news, set as the front page of a period newspaper.
@@ -672,6 +694,7 @@ function showReport(summary, lines, voices = []) {
   if (voices.length) h += `<section><h3>Letters from the Army</h3>${voices.map((v) => `<blockquote class="gz-voice">${esc(v.body)}<cite>${esc(v.title)}</cite></blockquote>`).join("")}</section>`;
   h += `</div>`;
   if (isWinter(state)) h += `<p class="hint">❄ Winter: armies outside cities lose men each month, and attacks are harder.</p>`;
+  if (WEATHER[state.weather || "clear"].hint) h += `<p class="hint">${WEATHER[state.weather].icon} ${WEATHER[state.weather].hint}</p>`;
   h += factHtml(monthlyFact([...battles.map((b) => b.region), ...moves.map((m) => m.to)]));
   h += `</div>`;
   save();
@@ -701,6 +724,12 @@ function showGameOver(summary) {
     <div class="stat"><b>${Math.round(state.cause)}</b><span>Cause</span></div>
     <div class="stat"><b>${(1 / state.priceLevel).toFixed(2)}</b><span>Dollar's value</span></div>
     ${g.score !== undefined ? `<div class="stat"><b>${g.score}</b><span>Score</span></div>` : ""}</div>`;
+  // What really happened, beside what you did.
+  const H = scenarioOf(state).SCENARIO.history;
+  if (H) h += `<div class="history-box"><h3>What really happened</h3><p>${esc(H.summary)}</p><p>${esc(H.outcome)}</p><ul>${H.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></div>`;
+  // Honors earned for the first time.
+  const fresh = awardHonors(state, g);
+  if (fresh.length) h += `<h3>Honors earned</h3>` + fresh.map((a) => `<div class="honor"><div class="honor-medal">★</div><div><b>${esc(a.title)}</b><span>${esc(a.goal)}</span><p>${esc(a.note)}</p></div></div>`).join("");
   h += `<div class="modal-actions"><button class="btn" id="view">Look at the map</button><button class="btn" id="again">Play again</button><button class="btn primary" id="tocamp">Campaign map</button></div>`;
   clearSave();
   modal(h, (c) => {
@@ -748,6 +777,7 @@ function showMenu() {
   <label class="check"><input type="checkbox" id="opt-sfx" ${p.sfx ? "checked" : ""}> Sound effects (muskets, cannon, drums)</label>
   <label class="check"><input type="checkbox" id="opt-music" ${p.music ? "checked" : ""}> Fife and drum music</label>
   <label class="slider">Volume <input type="range" id="opt-vol" min="0" max="100" value="${Math.round((p.volume ?? 0.4) * 100)}"></label>
+  <label class="check"><input type="checkbox" id="opt-voice" ${p.voice ? "checked" : ""}> Read letters aloud (computer voice, until real actors record them)</label>
   ${howToPlay()}<div class="modal-actions">${state && !state.tutorial && scenarioOf(state).SCENARIO.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn" id="tomain">Main menu</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
     c.querySelector("#close").onclick = closeModal;
     c.querySelector("#tomain").onclick = () => { save(); $("#modal").hidden = true; frontend.showMain(); };
@@ -756,6 +786,7 @@ function showMenu() {
     c.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
     c.querySelector("#opt-vol").oninput = (e) => setVolume(e.target.value / 100);
     c.querySelector("#opt-vol").onchange = () => sfx.musket();
+    c.querySelector("#opt-voice").onchange = (e) => { setVoice(e.target.checked); if (e.target.checked) speak("Your obedient servant, G. Washington."); };
     const g = c.querySelector("#guide");
     if (g) g.onclick = () => { closeModal(); tutorial.start(); };
   });
@@ -777,3 +808,21 @@ function startNew(scenarioId = "1776", guide = false) {
 
 buildMap();
 frontend.showMain();
+
+// ---------- night falls while the British move ----------
+let lastQuote = null;
+function nightFalls() {
+  lastQuote = randomQuote(lastQuote);
+  const q = $("#nightfx .night-quote");
+  q.innerHTML = `<p>“${esc(lastQuote.text)}”</p><cite>${esc(lastQuote.who)}<span>${esc(lastQuote.when)}</span></cite>`;
+  $("#mapwrap").classList.add("night");
+}
+function dawn() { $("#mapwrap").classList.remove("night"); }
+
+// Read the opening of a letter aloud (when the player has turned this on): skip the greeting, read two sentences.
+function speakLetter(l) {
+  if (!l || !l.body) return;
+  const paras = l.body.split(/\n\n+/).filter((p) => !(p.length < 30 && /,$/.test(p)));
+  const sentences = (paras[0] || "").match(/[^.!?]+[.!?]+/g) || [paras[0] || ""];
+  speak(`${l.fromName}. ${sentences.slice(0, 2).join(" ")}`);
+}

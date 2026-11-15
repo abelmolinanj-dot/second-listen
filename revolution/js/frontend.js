@@ -9,8 +9,12 @@ import { PORTRAITS, SCENES } from "./data/assets.js";
 import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPath, MAINLAND, ISLANDS, LAKES, RIVERS } from "./geo.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
 import { bust } from "./soldiers.js";
-import { sfx, music, soundPrefs, setSfx, setMusic, setVolume } from "./sound.js";
+import { sfx, music, soundPrefs, setSfx, setMusic, setVolume, setVoice, speak, stopSpeaking } from "./sound.js";
 import { askConfirm } from "./confirm.js";
+import { getBook } from "./book.js";
+import { ACHIEVEMENTS } from "./data/achievements.js";
+import { FACTS } from "./data/facts.js";
+import { EVENTS } from "./letters.js";
 
 const PROGRESS_KEY = "dispatches76-progress";
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -89,6 +93,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
           <button class="mm-btn ${saved ? "" : "primary"}" id="mm-campaign"><b>Campaign</b><span>The War for Independence · ${stars} ★</span></button>
           <button class="mm-btn locked" id="mm-conquest"><b>Conquest</b><span>Take the continent, then the world · Coming 2027</span></button>
           <button class="mm-btn" id="mm-generals"><b>Who's Who</b><span>Generals, Founders and the King's men</span></button>
+          <button class="mm-btn" id="mm-book"><b>History Book</b><span>Honors, paintings and notes you've found</span></button>
           <div class="mm-row">
             <button class="mm-btn small" id="mm-settings">Settings</button>
             <button class="mm-btn small" id="mm-credits">Credits</button>
@@ -99,6 +104,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     on("#mm-campaign", showCampaign);
     on("#mm-conquest", showConquest);
     on("#mm-generals", () => showGenerals("P"));
+    on("#mm-book", () => showBook());
     on("#mm-settings", showSettings);
     on("#mm-credits", showCredits);
   }
@@ -231,6 +237,45 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     for (const c of root.querySelectorAll("[data-who]")) c.onclick = () => { sfx.tap(); c.classList.toggle("open"); };
   }
 
+  // ----- the History Book: everything you've found, across all your games -----
+  const SCENE_CAPTIONS = {
+    fleet: ["The fleet at the Narrows", "Archibald Robertson, 1776"],
+    declaration: ["Declaration of Independence", "John Trumbull, 1819"],
+    crossing: ["Washington Crossing the Delaware", "Emanuel Leutze, 1851"],
+    winter: ["The March to Valley Forge", "William B. T. Trego, 1883"],
+    victory: ["The Capture of the Hessians at Trenton", "John Trumbull"],
+    saratoga: ["Surrender of General Burgoyne", "John Trumbull, 1821"],
+  };
+  function showBook(tab = "honors") {
+    const b = getBook();
+    const letterIds = Object.values(EVENTS).filter((e) => e.scenario && (e.scripted || e.random)).map((e) => e.id);
+    const counts = {
+      honors: [Object.keys(b.honors).length, ACHIEVEMENTS.length],
+      paintings: [Object.keys(SCENE_CAPTIONS).filter((k) => b.scenes.includes(k)).length, Object.keys(SCENE_CAPTIONS).length],
+      notes: [b.facts.length, FACTS.length],
+      letters: [letterIds.filter((id) => b.letters.includes(id)).length, letterIds.length],
+    };
+    let body = "";
+    if (tab === "honors") {
+      body = ACHIEVEMENTS.map((a) => { const got = b.honors[a.id]; return `<div class="honor ${got ? "" : "locked"}"><div class="honor-medal">${got ? "★" : "?"}</div><div><b>${esc(a.title)}</b><span>${esc(a.goal)}</span>${got ? `<p>${esc(a.note)}</p><small>Earned ${esc(got)}</small>` : ""}</div></div>`; }).join("");
+    } else if (tab === "paintings") {
+      body = `<div class="book-gallery">${Object.entries(SCENE_CAPTIONS).map(([id, [t, who]]) => b.scenes.includes(id) && SCENES[id]
+        ? `<figure><div class="bg-img" style="background-image:url('${SCENES[id]}')"></div><figcaption><b>${esc(t)}</b><span>${esc(who)}</span></figcaption></figure>`
+        : `<figure class="locked"><div class="bg-img"></div><figcaption><b>Not yet found</b><span>Keep playing</span></figcaption></figure>`).join("")}</div>`;
+    } else if (tab === "notes") {
+      body = b.facts.length ? b.facts.slice().sort((x, y) => x - y).map((i) => FACTS[i] ? `<div class="didyouknow"><b>Did you know?</b> ${esc(FACTS[i].text)}</div>` : "").join("") : `<p class="page-lead">Notes you read in the monthly newspaper and on the map will be collected here.</p>`;
+    } else {
+      const seen = letterIds.filter((id) => b.letters.includes(id));
+      body = seen.length ? `<ul class="book-letters">${seen.map((id) => { const e = EVENTS[id]; const t = Array.isArray(e.title) ? e.title[0] : typeof e.title === "function" ? id : e.title; return `<li><b>${esc(t)}</b><span>${esc(e.fromName || FIGURES[typeof e.from === "string" ? e.from : ""]?.name || "")}</span></li>`; }).join("")}</ul>` : `<p class="page-lead">Every different letter you receive is listed here.</p>`;
+    }
+    const tabs = [["honors", "Honors"], ["paintings", "Paintings"], ["notes", "Notes"], ["letters", "Letters"]];
+    show("scr-page", `${backBar("History Book")}<div class="page">
+      <div class="tabs">${tabs.map(([id, label]) => `<button class="tab ${tab === id ? "on" : ""}" data-tab="${id}">${label} <small>${counts[id][0]}/${counts[id][1]}</small></button>`).join("")}</div>
+      <div class="book-body">${body}</div></div>`);
+    on("#back", showMain);
+    for (const t of root.querySelectorAll("[data-tab]")) t.onclick = () => { sfx.tap(); showBook(t.dataset.tab); };
+  }
+
   // ----- settings -----
   function showSettings() {
     const p = soundPrefs();
@@ -239,6 +284,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       <label class="check"><input type="checkbox" id="opt-sfx" ${p.sfx ? "checked" : ""}> Sound effects (muskets, cannon, drums)</label>
       <label class="check"><input type="checkbox" id="opt-music" ${p.music ? "checked" : ""}> Fife and drum music</label>
   <label class="slider">Volume <input type="range" id="opt-vol" min="0" max="100" value="${Math.round((p.volume ?? 0.4) * 100)}"></label>
+  <label class="check"><input type="checkbox" id="opt-voice" ${p.voice ? "checked" : ""}> Read letters aloud (computer voice, until real actors record them)</label>
       <h3>Progress</h3>
       <p class="page-lead">Stars and settings are saved in this browser.</p>
       <button class="btn danger" id="reset">Erase stars and saved game</button></div>`);
@@ -247,6 +293,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     root.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
     root.querySelector("#opt-vol").oninput = (e) => setVolume(e.target.value / 100);
     root.querySelector("#opt-vol").onchange = () => sfx.musket();
+    root.querySelector("#opt-voice").onchange = (e) => { setVoice(e.target.checked); if (e.target.checked) speak("Your obedient servant, G. Washington."); };
     on("#reset", async () => {
       if (!(await askConfirm("Erase all stars and your saved game? This can't be undone.", { ok: "Erase", danger: true }))) return;
       try { for (const k of Object.keys(localStorage)) if (k.startsWith("dispatches76-") && k !== "dispatches76-sound") localStorage.removeItem(k); } catch { /* ignore */ }

@@ -2,6 +2,7 @@
 // Each scene has drawn artwork. If a painting for it is listed in data/assets.js, the painting is shown instead.
 
 import { SCENES } from "./data/assets.js";
+import { noteScene } from "./book.js";
 
 const W = 800, H = 500;
 
@@ -234,6 +235,7 @@ export const SCENE_TEXT = {
 // Play a scene. `extra` adds lines at the end (for example, how a battle turned out). Calls `done` when finished.
 export function playScene(id, { extra = [], title } = {}, done = () => {}) {
   const def = SCENE_TEXT[id];
+  noteScene(id);
   const lines = [...def.lines, ...extra];
   const el = document.createElement("div");
   el.className = "cutscene";

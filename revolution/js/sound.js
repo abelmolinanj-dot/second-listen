@@ -3,7 +3,7 @@
 // Browsers only allow sound after the player taps something, so the first tap calls unlock().
 
 const PREFS_KEY = "dispatches76-sound";
-let prefs = { sfx: true, music: true, volume: 0.4 };
+let prefs = { sfx: true, music: true, volume: 0.4, voice: false };
 const MUSIC_LEVEL = 0.22;
 const masterLevel = () => Math.max(0, Math.min(1, prefs.volume)) * 0.5;
 try { prefs = { ...prefs, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") }; } catch { /* storage unavailable */ }
@@ -225,3 +225,19 @@ export const music = {
   victory() { playTune(YANKEE, { eighth: 0.17, loops: 1 }); },
   dirge() { playTune(DIRGE, { eighth: 0.32, drum: true }); },
 };
+
+// ---------- reading letters aloud ----------
+// The browser's built-in voice reads the opening of each letter, as a stand-in until real voice actors record them.
+// Off by default; turned on in Settings.
+export function setVoice(on) { prefs.voice = on; savePrefs(); if (!on) stopSpeaking(); }
+export function stopSpeaking() { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }
+export function speak(text) {
+  if (!prefs.voice || !window.speechSynthesis || !text) return;
+  stopSpeaking();
+  const u = new SpeechSynthesisUtterance(text);
+  const voices = speechSynthesis.getVoices();
+  u.voice = voices.find((v) => /en-GB/i.test(v.lang)) || voices.find((v) => /^en/i.test(v.lang)) || null;
+  u.rate = 0.93;
+  u.volume = Math.min(1, (prefs.volume ?? 0.4) * 2);
+  speechSynthesis.speak(u);
+}

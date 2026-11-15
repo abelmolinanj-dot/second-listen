@@ -33,6 +33,23 @@ export function year(state) { return state.startYear + Math.floor((state.startMo
 export function dateLabel(state) { return MONTHS[monthIndex(state)] + " " + year(state); }
 export function isWinter(state) { const m = monthIndex(state); return m === 11 || m === 0 || m === 1; }
 
+// Weather, rolled each month. Rain wets the powder (attacks weaker); fog hides an approach (attacks stronger).
+export const WEATHER = {
+  clear: { icon: "☀", label: "Clear", hint: "" },
+  rain: { icon: "☂", label: "Rain", hint: "Rain: wet powder makes every attack weaker this month." },
+  fog: { icon: "≈", label: "Fog", hint: "Fog: attackers can get close unseen, so attacks are stronger this month." },
+  snow: { icon: "❄", label: "Snow", hint: "" },
+};
+export function season(state) { const m = monthIndex(state); return m === 11 || m <= 1 ? "winter" : m <= 4 ? "spring" : m <= 7 ? "summer" : "autumn"; }
+export function rollWeather(state) {
+  const r = rng(state)();
+  const s = season(state);
+  if (s === "winter") return r < 0.4 ? "snow" : r < 0.5 ? "fog" : "clear";
+  if (s === "spring") return r < 0.35 ? "rain" : r < 0.45 ? "fog" : "clear";
+  if (s === "autumn") return r < 0.25 ? "rain" : r < 0.4 ? "fog" : "clear";
+  return r < 0.15 ? "rain" : "clear";
+}
+
 // --- lookups ---
 export const region = (id) => REGIONS[id];
 export const armyList = (state, side) => Object.values(state.armies).filter((a) => !side || a.side === side);
@@ -246,6 +263,8 @@ function battleFactors(state, att, def, regionId, { surprise = false, sea = fals
   else if (r.terrain === "forest") D *= 1.1;
   if (ag && ag.trait === "bold") A *= 1.15;
   if (isWinter(state) && !surprise) A *= 0.8;
+  if (state.weather === "rain") A *= 0.88;
+  if (state.weather === "fog") A *= 1.1;
   if (surprise) A *= 1.4;
   if (sea || isWaterCrossing(att.region, regionId)) A *= att.side === "B" ? 0.95 : 0.8;
   if (r.fort) D *= 1.3;

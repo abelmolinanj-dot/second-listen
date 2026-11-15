@@ -40,6 +40,11 @@ export const SCENARIO = {
   openingScene: "burgoyne",
   victoryScene: "saratoga",
   newspaper: "The Connecticut Courant",
+  history: {
+    summary: "Burgoyne took Ticonderoga without a fight in July 1777, then spent three weeks cutting through Schuyler's felled trees. His Germans were destroyed at Bennington, St. Leger turned back from Fort Stanwix, and Clinton came up the Hudson too late and too weakly.",
+    outcome: "After losing at Freeman's Farm and Bemis Heights, Burgoyne was surrounded at Saratoga and surrendered about 5,900 men on October 17, 1777. Gates granted him a convention, and France joined the war four months later.",
+    facts: ["Ticonderoga: abandoned by St. Clair", "Bennington: won by Stark's militia", "Burgoyne's army: surrendered at Saratoga", "Albany in November 1777: held"],
+  },
   tutorial: false,
   finish,
   checkEnd,

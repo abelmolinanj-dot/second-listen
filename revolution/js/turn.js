@@ -8,7 +8,7 @@ import { REGIONS } from "./data/regions.js";
 import { SCENARIOS, DEFAULT_SCENARIO, scenarioOf } from "./data/scenarios.js";
 import {
   armyList, armyAt, armyMen, militiaMen, newArmy, monthlyIncome, armyUpkeep, earn, spend, changeCause, log,
-  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy,
+  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather,
 } from "./rules.js";
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, unanswered } from "./letters.js";
@@ -190,6 +190,7 @@ function closeMonth(state) {
 
 function openMonth(state, { first }) {
   state.winterNow = isWinter(state);
+  state.weather = rollWeather(state);
   state.recruited = {};
   for (const a of Object.values(state.armies)) {
     a.moved = false;

@@ -389,3 +389,61 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .confirm-card { width: min(380px, 100%); background: var(--paper); color: var(--ink); border-radius: 12px; border-top: 5px solid var(--accent); padding: 18px 18px 14px; box-shadow: 0 14px 40px rgba(0,0,0,.45); animation: linein .25s ease; }
 .confirm-card p { margin: 0 0 14px; font-size: 16px; line-height: 1.5; }
 .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* --- seasons and weather on the map --- */
+#season-tint { pointer-events: none; fill: transparent; transition: fill 1.2s, opacity 1.2s; }
+#mapwrap[data-season="winter"] #season-tint { fill: #ffffff; opacity: .42; }
+#mapwrap[data-season="autumn"] #season-tint { fill: #d9762b; opacity: .13; }
+#mapwrap[data-season="spring"] #season-tint { fill: #9fdc6e; opacity: .09; }
+#weatherfx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1s; }
+#mapwrap[data-weather="rain"] #weatherfx { opacity: 1; background: repeating-linear-gradient(105deg, transparent 0 9px, rgba(40,70,110,.22) 9px 10px); background-size: 40px 40px; animation: rain .5s linear infinite; }
+@keyframes rain { from { background-position: 0 0; } to { background-position: -10px 40px; } }
+#mapwrap[data-weather="fog"] #weatherfx { opacity: 1; background: radial-gradient(ellipse at 30% 40%, rgba(255,255,255,.55), transparent 60%), radial-gradient(ellipse at 75% 65%, rgba(255,255,255,.5), transparent 55%); animation: fog 18s ease-in-out infinite alternate; }
+@keyframes fog { from { transform: translateX(-4%); } to { transform: translateX(4%); } }
+#mapwrap[data-weather="snow"] #weatherfx { opacity: 1; background-image: radial-gradient(circle, rgba(255,255,255,.95) 1.4px, transparent 2px), radial-gradient(circle, rgba(255,255,255,.8) 1px, transparent 1.6px); background-size: 46px 46px, 31px 31px; animation: snowfall 6s linear infinite; }
+@keyframes snowfall { from { background-position: 0 0, 10px 0; } to { background-position: 20px 46px, -6px 62px; } }
+
+/* --- night, while the British move --- */
+#nightfx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .8s; background: radial-gradient(ellipse at 50% 40%, rgba(8,16,40,.35), rgba(4,8,22,.78)); display: flex; align-items: flex-end; justify-content: center; padding: 0 16px 28px; }
+#mapwrap.night #nightfx { opacity: 1; }
+#mapwrap.night .token.P { filter: drop-shadow(0 0 7px rgba(255,170,70,.95)); }
+.night-quote { max-width: 520px; text-align: center; color: #ffffff; transform: translateY(10px); transition: transform .8s; }
+#mapwrap.night .night-quote { transform: none; }
+.night-quote p { font-family: var(--text); font-style: italic; font-size: clamp(17px, 4.4vw, 22px); line-height: 1.45; margin: 0 0 8px; text-shadow: 0 2px 10px #000; }
+.night-quote cite { font-style: normal; font-family: var(--caps); font-size: 15px; color: #ffd9de; }
+.night-quote cite span { display: block; font-family: var(--sans); font-size: 12px; color: #ffffff; opacity: .85; margin-top: 2px; }
+
+/* --- ships at sea and smoke after battle --- */
+#ships { pointer-events: none; }
+.ship-bob { animation: sail var(--dur, 60s) ease-in-out var(--delay, 0s) infinite alternate; }
+@keyframes sail { 0% { transform: translate(-46px, 0); } 25% { transform: translate(-20px, -2px); } 50% { transform: translate(4px, 0); } 75% { transform: translate(26px, -2px); } 100% { transform: translate(48px, 1px); } }
+.smoke { fill: #e9e4d8; opacity: 0; animation: smoke 3s ease-out forwards; animation-delay: calc(var(--i) * .18s); transform-box: fill-box; transform-origin: center; }
+@keyframes smoke { 0% { opacity: 0; transform: translate(0, 0) scale(.4); } 20% { opacity: .85; } 100% { opacity: 0; transform: translate(6px, -34px) scale(2.2); } }
+@media (prefers-reduced-motion: reduce) { .ship-bob, .smoke, #weatherfx { animation: none !important; } }
+
+/* --- what really happened, honors, and the History Book --- */
+.history-box { margin: 14px 0; padding: 12px 14px; background: #ffffff; border: 1px solid rgba(31,53,102,.3); border-top: 4px solid var(--chrome); border-radius: 8px; font-family: var(--text); }
+.history-box h3 { margin-top: 0 !important; }
+.history-box p { font-size: 15px; }
+.history-box ul { margin: 6px 0 0; padding-left: 18px !important; font-size: 14px; }
+.honor { display: flex; gap: 12px; align-items: flex-start; background: #ffffff; border: 1px solid rgba(31,53,102,.25); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+.honor-medal { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; color: #ffffff; background: radial-gradient(circle at 35% 30%, #e0344f, #9b0c23); border: 3px double #ffffff; box-shadow: 0 0 0 2px var(--accent); }
+.honor b { display: block; font-family: var(--serif); font-size: 18px; font-weight: 400; }
+.honor span { display: block; font-size: 13px; color: var(--ink-soft); }
+.honor p { margin: 6px 0 2px; font-family: var(--text); font-size: 14px; line-height: 1.5; }
+.honor small { font-size: 11.5px; color: var(--ink-soft); }
+.honor.locked { border-left-color: rgba(31,53,102,.3); }
+.honor.locked .honor-medal { background: #dfe4ee; color: var(--ink-soft); box-shadow: 0 0 0 2px rgba(31,53,102,.25); }
+.tab small { font-size: 11px; opacity: .8; margin-left: 2px; }
+.book-body { margin-top: 12px; }
+.book-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.book-gallery figure { margin: 0; background: #ffffff; border: 1px solid rgba(31,53,102,.25); border-radius: 8px; overflow: hidden; }
+.book-gallery .bg-img { height: 130px; background: #dfe4ee center / cover; }
+.book-gallery figure.locked .bg-img { background: repeating-linear-gradient(45deg, #e8ecf4 0 10px, #dfe4ee 10px 20px); }
+.book-gallery figcaption { padding: 8px 10px; }
+.book-gallery b { display: block; font-family: var(--serif); font-size: 16px; font-weight: 400; }
+.book-gallery span { font-size: 12.5px; color: var(--ink-soft); }
+.book-letters { list-style: none; padding: 0 !important; margin: 0; }
+.book-letters li { padding: 8px 2px; border-bottom: 1px solid rgba(31,53,102,.2); }
+.book-letters b { display: block; font-family: var(--serif); font-size: 17px; font-weight: 400; }
+.book-letters span { font-size: 12.5px; color: var(--ink-soft); }

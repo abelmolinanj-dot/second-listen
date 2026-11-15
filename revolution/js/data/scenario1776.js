@@ -35,6 +35,12 @@ export const SCENARIO = {
   openingScene: "fleet",
   victoryScene: "victory",
   newspaper: "The Pennsylvania Evening Post",
+  // What really happened, shown beside your result at the end.
+  history: {
+    summary: "Washington lost almost every battle of 1776. He was beaten on Long Island, driven off Manhattan and out of Fort Washington, and chased across New Jersey with an army that shrank to a few thousand men. Then, between Christmas night and January 3, he crossed the Delaware and won at Trenton and Princeton.",
+    outcome: "By June 1777 Philadelphia was still free, the Cause was alive, and the army was rebuilding with men enlisted for three years. Howe took Philadelphia that September.",
+    facts: ["Major battles won: 2 (Trenton, Princeton)", "Major battles lost: 4 (Long Island, Kip's Bay, White Plains, Fort Washington)", "Americans captured at Fort Washington alone: about 2,800", "Philadelphia in June 1777: held"],
+  },
   tutorial: true,
   finish: finishScenario,
 };
