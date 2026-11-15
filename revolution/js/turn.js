@@ -8,7 +8,7 @@ import { REGIONS } from "./data/regions.js";
 import { SCENARIOS, DEFAULT_SCENARIO, scenarioOf } from "./data/scenarios.js";
 import {
   armyList, armyAt, armyMen, militiaMen, newArmy, monthlyIncome, armyUpkeep, earn, spend, changeCause, log,
-  isWinter, dateLabel, money, fmtMen, COST, generalOf, findGeneralArmy, enemy,
+  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy,
 } from "./rules.js";
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, unanswered } from "./letters.js";
@@ -25,6 +25,7 @@ export function newGame(seed = Date.now() % 2147483647, scenarioId = DEFAULT_SCE
     scenario: SCENARIO.id,
     aiArea: SCENARIO.aiArea || null,
     seed,
+    gameSeed: seed,
     turn: 0,
     startMonth: SCENARIO.startMonth,
     startYear: SCENARIO.startYear,
@@ -136,7 +137,7 @@ function closeMonth(state) {
   if (state.arrears > 0 && state.flags.requisitioned !== state.turn) {
     let gone = 0;
     for (const a of armyList(state, "P")) { const d = Math.round(a.regulars * 0.05); a.regulars -= d; gone += d; }
-    if (gone) log(state, `${fmtMen(gone)} unpaid regulars deserted.`, "bad");
+    if (gone) log(state, `${menWords(gone)} unpaid regulars deserted.`, "bad");
     changeCause(state, -2, "Soldiers are going unpaid.");
   }
 
@@ -155,7 +156,7 @@ function closeMonth(state) {
     let home = 0;
     for (const b of a.militia) { b.left -= 1; if (b.left <= 0) home += b.men; }
     a.militia = a.militia.filter((b) => b.left > 0);
-    if (home) log(state, `${fmtMen(home)} militia went home from ${REGIONS[a.region].name} when their time was up.`);
+    if (home) log(state, `${menWords(home)} militia went home from ${REGIONS[a.region].name} when their time was up.`);
   }
 
   // Occupation changes minds. British troops win Loyalists; Hessian plundering loses them.
@@ -211,7 +212,7 @@ function openMonth(state, { first }) {
     let gone = 0;
     for (const a of armyList(state, "P")) { const d = Math.round(a.regulars * 0.33); a.regulars -= d; gone += d; }
     state.flags.enlistmentsLapse = false;
-    log(state, `Enlistments ran out. ${fmtMen(gone)} regulars went home.`, "bad");
+    log(state, `Enlistments ran out. ${menWords(gone)} regulars went home.`, "bad");
   }
 
   // Reinforcements land.

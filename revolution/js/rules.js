@@ -44,6 +44,8 @@ export const enemy = (side) => (side === "P" ? "B" : "P");
 
 export function militiaMen(army) { return army.militia.reduce((s, b) => s + b.men, 0); }
 export function armyMen(army) { return army.regulars + militiaMen(army); }
+// Numbers of men as a letter writer would put them: "8,000", "750".
+export function menWords(n) { const r = n >= 1000 ? Math.round(n / 100) * 100 : Math.round(n / 10) * 10; return r.toLocaleString("en-US"); }
 export function fmtMen(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)); }
 export function money(n) { return "$" + Math.round(n) + "k"; }
 
@@ -144,11 +146,11 @@ export function recruit(state, regionId, kind) {
   if (kind === "regulars") {
     spend(state, regularsCost(state), "recruiting");
     joinOrCreate(state, regionId, RECRUIT_BATCH, 0);
-    log(state, `Enlisted ${fmtMen(RECRUIT_BATCH)} Continental regulars at ${REGIONS[regionId].name}.`, "money");
+    log(state, `Enlisted ${menWords(RECRUIT_BATCH)} Continental regulars at ${REGIONS[regionId].name}.`, "money");
   } else {
     spend(state, militiaCost(state), "recruiting");
     joinOrCreate(state, regionId, 0, RECRUIT_BATCH);
-    log(state, `Called out ${fmtMen(RECRUIT_BATCH)} militia at ${REGIONS[regionId].name} for ${MILITIA_MONTHS} months.`, "money");
+    log(state, `Called out ${menWords(RECRUIT_BATCH)} militia at ${REGIONS[regionId].name} for ${MILITIA_MONTHS} months.`, "money");
   }
   state.recruited[regionId] = true;
   return null;
@@ -405,8 +407,8 @@ function surrender(state, army, report) {
     state.generals[army.general].status = "captured";
     report.generalCaptured = state.generals[army.general].short;
   }
-  if (army.side === "P") changeCause(state, -8, `An army of ${fmtMen(report.captured)} surrendered.`);
-  else changeCause(state, 6, `An enemy army of ${fmtMen(report.captured)} surrendered.`);
+  if (army.side === "P") changeCause(state, -8, `An army of ${menWords(report.captured)} surrendered.`);
+  else changeCause(state, 6, `An enemy army of ${menWords(report.captured)} surrendered.`);
   removeArmy(state, army);
 }
 

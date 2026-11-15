@@ -5,7 +5,7 @@
 import { REGIONS } from "./regions.js";
 import { GENERALS } from "./generals.js";
 import {
-  newArmy, armyAt, armyList, armyMen, findGeneralArmy, changeCause, changeLoyalty, spend, earn, money, fmtMen,
+  newArmy, armyAt, armyList, armyMen, findGeneralArmy, changeCause, changeLoyalty, spend, earn, money, fmtMen, menWords,
   moveArmy, distance,
 } from "../rules.js";
 import { makeRng } from "../rng.js";
@@ -34,6 +34,7 @@ export const SCENARIO = {
   commander: "washington",
   openingScene: "fleet",
   victoryScene: "victory",
+  newspaper: "The Pennsylvania Evening Post",
   tutorial: true,
   finish: finishScenario,
 };
@@ -167,7 +168,7 @@ John Hancock, President`,
     ],
   },
   {
-    id: "spy", scripted: true, turn: 1, from: "spy",
+    id: "spy", scripted: true, turn: 1, from: "spy", fromName: "A friend on Staten Island",
     title: "Hessians",
     body: () => `Sir,
 
@@ -345,7 +346,7 @@ Charles Lee`,
       const who = foe && foe.hessian ? "Hessians" : "British";
       return `Gentlemen,
 
-The enemy has gone into winter quarters. He believes this army is finished and that the war will end in the spring. He has left ${fmtMen(foe ? armyMen(foe) : 0)} ${who} at ${REGIONS[ctx.target].name}, where they will be celebrating Christmas.
+The enemy has gone into winter quarters. He believes this army is finished and that the war will end in the spring. He has left ${menWords(foe ? armyMen(foe) : 0)} ${who} at ${REGIONS[ctx.target].name}, where they will be celebrating Christmas.
 
 I propose to cross the river on Christmas night, in the dark and the cold, and fall on them at dawn. If it fails, I may lose everything. If it succeeds, the country will know we are still in the field.
 
@@ -427,7 +428,7 @@ B. Franklin`,
         },
       },
       {
-        label: (state) => (frenchFriendly(state) ? `Ask for muskets and powder (+${fmtMen(2000)} regulars)` : "Keep trying"),
+        label: (state) => (frenchFriendly(state) ? `Ask for muskets and powder (+${menWords(2000)} regulars)` : "Keep trying"),
         hint: (state) => (frenchFriendly(state) ? "Arms are landed at Portsmouth, New Hampshire, enough to equip new regiments." : ""),
         apply(state) {
           if (!frenchFriendly(state)) return "";
@@ -503,7 +504,62 @@ N. Greene, Major General`,
 Congress has at last agreed that men should enlist for three years or the length of the war, not for a few months at a time. The first of the new regiments are arriving in camp. They are raw, but they are ours for the duration.
 
 G. Washington`,
-    choices: [{ label: "Welcome them", hint: `+${fmtMen(2500)} regulars join Washington.`, apply(state) { const w = washArmy(state); if (w) w.regulars += 2500; return "New regiments marched into Washington's camp."; } }],
+    choices: [{ label: "Welcome them", hint: `+${menWords(2500)} regulars join Washington.`, apply(state) { const w = washArmy(state); if (w) w.regulars += 2500; return "New regiments marched into Washington's camp."; } }],
+  },
+  // ---------- chance letters: a few turn up in each game ----------
+  {
+    id: "r76_paine", random: true, weight: 3, fromTurn: 4, untilTurn: 6, from: "paine", place: "With the army in New Jersey",
+    title: "A pamphlet for the dark days",
+    body: () => `Gentlemen,
+
+I have been marching with General Greene's division all the way across New Jersey, and I have watched this army shrink to a shadow. I have been writing at night by the campfire, on a drumhead.
+
+What I have written begins: "These are the times that try men's souls." I think it can put heart back into the country, and into the army. I need a printer in Philadelphia, and money to print it by the thousand.
+
+Thomas Paine`,
+    choices: [
+      { label: `Print it by the thousand (${money(5)})`, hint: "Cause +5.", apply(state) { if (state.treasury >= 5) spend(state, 5, "printing"); changeCause(state, 5, "Paine's American Crisis was read across the country."); return "The American Crisis came off the press in December. Washington had it read aloud to every regiment."; } },
+      { label: "Words won't win this", hint: "Nothing changes.", apply: () => "Paine found a printer anyway, and paid for it himself. Fewer people read it." },
+    ],
+  },
+  {
+    id: "r76_adams", random: true, weight: 2, fromTurn: 2, untilTurn: 4, from: "jadams", place: "Philadelphia",
+    title: "An army for the whole war",
+    body: [
+      () => `Gentlemen,
+
+I am sick to death of short enlistments. We raise an army, train it for a year, and watch it walk home the day its time is up. Congress is debating a bounty of twenty dollars and a hundred acres of land for every man who enlists for the whole war.
+
+If the Board will put money behind it, I believe I can carry the vote.
+
+John Adams`,
+      () => `Dear Sirs,
+
+We cannot fight the best army in Europe with men who sign on for six months. I am pressing Congress to offer land and a cash bounty for enlistment for the duration. The southern members say it is too dear; I say losing is dearer.
+
+Will the Board stand with me?
+
+J. Adams`,
+    ],
+    choices: [
+      { label: `Back the bounty (${money(15)})`, hint: "1,500 long-service regulars join Washington's army.", apply(state) { if (state.treasury < 15) return "The Board could not find the money. The vote failed."; spend(state, 15, "bounties"); const w = washArmy(state); if (w) w.regulars += 1500; return "Congress voted the bounty. New recruits, signed for the war, began marching into camp."; } },
+      { label: "Leave it to Congress", hint: "Nothing changes.", apply: () => "Adams wrote back that he would fight on alone, as usual." },
+    ],
+  },
+  {
+    id: "r76_samadams", random: true, weight: 2, fromTurn: 1, untilTurn: 5, from: "samadams", place: "Boston",
+    title: "Massachusetts will send men",
+    body: () => `Gentlemen,
+
+The people of Massachusetts have not forgotten who stood by them when Boston was besieged. The towns can raise two thousand militia to march for New York, if the Board will pay for their march and their provisions.
+
+They will not stay long. They never do. But they will come.
+
+Samuel Adams`,
+    choices: [
+      { label: `Pay for their march (${money(8)})`, hint: "2,000 militia join Washington's army for 3 months.", apply(state) { if (state.treasury < 8) return "There was no money for the march."; spend(state, 8, "letters"); const w = washArmy(state); if (w) w.militia.push({ men: 2000, left: 3 }); return "Massachusetts companies set out for New York, fifes playing."; } },
+      { label: "Thank them, but no", hint: "Nothing changes.", apply: () => "Adams replied that Massachusetts would be ready when called." },
+    ],
   },
 ];
 

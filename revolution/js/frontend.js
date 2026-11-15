@@ -4,6 +4,7 @@
 import { REGIONS } from "./data/regions.js";
 import { GENERALS } from "./data/generals.js";
 import { MISSIONS, starsFor } from "./data/missions.js";
+import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { PORTRAITS, SCENES } from "./data/assets.js";
 import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPath, MAINLAND, ISLANDS, LAKES, RIVERS } from "./geo.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
@@ -86,7 +87,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
           ${saved ? `<button class="mm-btn primary" id="mm-continue"><b>Continue</b><span>${esc(saved.label)}</span></button>` : ""}
           <button class="mm-btn ${saved ? "" : "primary"}" id="mm-campaign"><b>Campaign</b><span>The War for Independence · ${stars} ★</span></button>
           <button class="mm-btn locked" id="mm-conquest"><b>Conquest</b><span>Take the continent, then the world · Coming 2027</span></button>
-          <button class="mm-btn" id="mm-generals"><b>Generals</b><span>The commanders of both armies</span></button>
+          <button class="mm-btn" id="mm-generals"><b>Who's Who</b><span>Generals, Founders and the King's men</span></button>
           <div class="mm-row">
             <button class="mm-btn small" id="mm-settings">Settings</button>
             <button class="mm-btn small" id="mm-credits">Credits</button>
@@ -201,26 +202,32 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     on("#back", showMain);
   }
 
-  // ----- generals roster -----
+  // ----- who's who: generals, the King's commanders, and the Founders -----
   function showGenerals(side) {
     const pips = (n) => `<span class="pip-row">${"●".repeat(n)}<i>${"●".repeat(3 - n)}</i></span>`;
-    const list = Object.entries(GENERALS).filter(([, g]) => g.side === side).sort((a, b) => b[1].rank - a[1].rank);
-    const cards = list.map(([id, g]) => {
-      const pic = PORTRAITS[id] ? `<img src="${PORTRAITS[id]}" alt="">` : `<svg viewBox="-8 -8 16 16">${bust(g.side === "P" ? "#2e4a7d" : g.hessian ? "#26375f" : "#b3312a")}</svg>`;
-      const [traitName, traitDesc] = g.traitText.split(/:\s(.+)/);
-      return `<div class="gcard ${g.side}"><div class="portrait ${g.side}">${pic}</div><div class="gc-body">
-        <div class="gc-name">${esc(g.name)}</div>
-        <div class="gc-sub">${g.side === "P" ? "Continental Army" : g.hessian ? "Hessian, in British pay" : "British Army"}</div>
-        <div class="gc-stats"><span>Attack ${pips(g.atk)}</span><span>Defense ${pips(g.def)}</span>${g.loyalty !== undefined ? `<span>Loyalty <b>${g.loyalty}</b></span>` : ""}</div>
-        <div class="gc-trait"><b>${esc(traitName)}</b>${traitDesc ? ": " + esc(traitDesc) : ""}</div></div></div>`;
+    const ids = Object.entries(FIGURES).filter(([, f]) => f.group === side)
+      .sort((a, b) => (GENERALS[b[0]]?.rank || 0) - (GENERALS[a[0]]?.rank || 0)).map(([id]) => id);
+    const cards = ids.map((id) => {
+      const f = FIGURES[id], g = GENERALS[id];
+      const coat = side === "B" ? (g?.hessian ? "#26375f" : "#b3312a") : side === "F" ? "#3a3a46" : "#2e4a7d";
+      const pic = PORTRAITS[id] ? `<img src="${PORTRAITS[id]}" alt="">` : `<svg viewBox="-8 -8 16 16">${bust(coat)}</svg>`;
+      const [traitName, traitDesc] = g ? g.traitText.split(/:\s(.+)/) : [];
+      return `<button class="gcard ${side}" data-who="${id}"><div class="portrait ${side === "B" ? "B" : "P"}">${pic}</div><div class="gc-body">
+        <div class="gc-name">${esc(f.name)}</div>
+        <div class="gc-sub">${esc(f.role)}${f.life ? ` · ${esc(f.life)}` : ""}</div>
+        ${g ? `<div class="gc-stats"><span>Attack ${pips(g.atk)}</span><span>Defense ${pips(g.def)}</span>${g.loyalty !== undefined ? `<span>Loyalty <b>${g.loyalty}</b></span>` : ""}</div>
+        <div class="gc-trait"><b>${esc(traitName)}</b>${traitDesc ? ": " + esc(traitDesc) : ""}</div>` : ""}
+        <div class="gc-bio"><p>${esc(f.bio)}</p><p class="gc-after"><b>Afterward:</b> ${esc(f.after)}</p></div>
+        <div class="gc-more">Read more ›</div></div></button>`;
     }).join("");
-    show("scr-page", `${backBar("Generals")}<div class="page">
-      <div class="tabs"><button class="tab ${side === "P" ? "on" : ""}" id="t-p">Continental Army</button><button class="tab ${side === "B" ? "on" : ""}" id="t-b">The Crown</button></div>
-      <p class="page-lead">${side === "P" ? "Your commanders. Their loyalty rises and falls with how you treat them, and some of them remember." : "The King's commanders. Each fights the way the real one did."}</p>
+    const lead = { P: "Your commanders. Their loyalty rises and falls with how you treat them, and some of them remember.", B: "The King's commanders. Each fights the way the real one did.", F: "The men in Congress and abroad who write to you, argue with you, and pay for the war." }[side];
+    show("scr-page", `${backBar("Who's Who")}<div class="page">
+      <div class="tabs">${FIGURE_GROUPS.map((t) => `<button class="tab ${side === t.id ? "on" : ""}" data-tab="${t.id}">${t.label}</button>`).join("")}</div>
+      <p class="page-lead">${lead} Tap anyone to read about them.</p>
       <div class="gcards">${cards}</div></div>`);
     on("#back", showMain);
-    on("#t-p", () => showGenerals("P"));
-    on("#t-b", () => showGenerals("B"));
+    for (const t of root.querySelectorAll("[data-tab]")) t.onclick = () => { sfx.tap(); showGenerals(t.dataset.tab); };
+    for (const c of root.querySelectorAll("[data-who]")) c.onclick = () => { sfx.tap(); c.classList.toggle("open"); };
   }
 
   // ----- settings -----

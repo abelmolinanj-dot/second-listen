@@ -6,9 +6,10 @@
 import { REGIONS } from "./data/regions.js";
 import {
   armyList, armyAt, armyMen, power, generalOf, findGeneralArmy, threatTo, distance, digIn, withdraw,
-  militiaCost, spend, changeLoyalty, log, fmtMen, money, MILITIA_MONTHS, enemy,
+  militiaCost, spend, changeLoyalty, log, fmtMen, menWords, money, MILITIA_MONTHS, enemy,
 } from "./rules.js";
 import { makeRng, pick } from "./rng.js";
+import { FIGURES } from "./data/figures.js";
 
 export const EVENTS = {};
 // scenarioId ties scripted letters to one scenario; letters registered without it can appear in any scenario.
@@ -16,20 +17,37 @@ export function registerEvents(list, scenarioId) { for (const e of list) EVENTS[
 
 const COURIER_RANGE = 3; // regions from Washington before a letter takes an extra month
 
+// The same campaign should not read the same way twice. When an event offers several wordings (body as an array),
+// each game picks one, steadily: the same game always shows the same version.
+export function variantOf(state, key, n) {
+  let h = (state.gameSeed ?? state.seed ?? 1) >>> 0;
+  for (const ch of key) h = (Math.imul(h ^ ch.charCodeAt(0), 2654435761) >>> 0);
+  return h % n;
+}
+const pickText = (state, e, field, ctx) => {
+  const v = e[field];
+  if (Array.isArray(v)) { const f = v[variantOf(state, e.id + field, v.length)]; return typeof f === "function" ? f(state, ctx) : f; }
+  return typeof v === "function" ? v(state, ctx) : v;
+};
+
 // Create a letter from an event. `ctx` carries anything the choices need later (it is saved with the game).
+// kind: "letter" (the default), "council" (several officers give their advice) or "intel" (a spy's report, maybe wrong).
 export function sendLetter(state, eventId, ctx = {}, { delayed = false } = {}) {
   const e = EVENTS[eventId];
   const from = typeof e.from === "function" ? e.from(state, ctx) : e.from;
   const letter = {
     id: "L" + state.nextLetterId++,
     event: eventId,
+    kind: e.kind || "letter",
     ctx,
     written: state.turn,
     turn: delayed ? state.turn + 1 : state.turn,
     from,
-    fromName: senderName(state, from),
-    title: typeof e.title === "function" ? e.title(state, ctx) : e.title,
-    body: e.body(state, ctx),
+    fromName: e.fromName || senderName(state, from),
+    place: e.place ? (typeof e.place === "function" ? e.place(state, ctx) : e.place) : null,
+    title: pickText(state, e, "title", ctx),
+    body: pickText(state, e, "body", ctx),
+    council: e.council ? e.council(state, ctx) : null,
     choices: (e.choices || []).map((c) => ({ label: typeof c.label === "function" ? c.label(state, ctx) : c.label, hint: typeof c.hint === "function" ? c.hint(state, ctx) : c.hint || "" })),
     resolved: !(e.choices && e.choices.length),
     read: false,
@@ -42,14 +60,10 @@ export function sendLetter(state, eventId, ctx = {}, { delayed = false } = {}) {
 
 export function senderName(state, from) {
   if (state.generals[from]) return state.generals[from].name;
-  return {
-    congress: "John Hancock, President of Congress",
-    spy: "A friend on Staten Island",
-    morris: "Robert Morris, Philadelphia merchant",
-    franklin: "Benjamin Franklin, Paris",
-    soldier: "A soldier in the ranks",
-    colonel: "The colonel commanding",
-  }[from] || from;
+  return (FIGURES[from] && FIGURES[from].name) || from;
+}
+export function senderRole(state, from) {
+  return (FIGURES[from] && FIGURES[from].role) || "";
 }
 
 export function answerLetter(state, letterId, choiceIndex) {
@@ -92,6 +106,19 @@ export function deliverMail(state) {
     if (e.untilTurn !== undefined && state.turn > e.untilTurn) continue;
     if (e.when && !e.when(state)) continue;
     if (!e.repeat) state.fired[e.id] = true;
+    sendLetter(state, e.id, e.ctx ? e.ctx(state) : {});
+  }
+
+  // A chance event from the scenario's pool, so no two games run alike. At most one a month, never the same one twice.
+  const pool = Object.values(EVENTS).filter((e) => e.random && e.scenario === (state.scenario || "1776") && !state.fired[e.id]
+    && (e.fromTurn === undefined || state.turn >= e.fromTurn) && (e.untilTurn === undefined || state.turn <= e.untilTurn)
+    && (!e.when || e.when(state)));
+  const roll = makeRng({ seed: ((state.gameSeed ?? state.seed ?? 1) + state.turn * 7919) >>> 0 });
+  if (pool.length && roll() < 0.7) {
+    let total = pool.reduce((s, e) => s + (e.weight || 1), 0);
+    let r = roll() * total;
+    const e = pool.find((x) => (r -= x.weight || 1) < 0) || pool[0];
+    state.fired[e.id] = true;
     sendLetter(state, e.id, e.ctx ? e.ctx(state) : {});
   }
 
@@ -172,7 +199,7 @@ registerEvents([
       },
       {
         label: (state) => `Send money for militia (${money(militiaCost(state) * 1.5)})`,
-        hint: `Adds ${fmtMen(1500)} militia for ${MILITIA_MONTHS} months, if there's money and Cause is high enough.`,
+        hint: `Adds ${menWords(1500)} militia for ${MILITIA_MONTHS} months, if there's money and Cause is high enough.`,
         apply(state, ctx) {
           const a = state.armies[ctx.armyId];
           if (!a) return "The army was no longer there.";
@@ -184,7 +211,7 @@ registerEvents([
           spend(state, cost, "letters");
           a.militia.push({ men: 1500, left: MILITIA_MONTHS });
           changeLoyalty(state, ctx.general, 3);
-          return `${fmtMen(1500)} militia marched to ${REGIONS[a.region].name}.`;
+          return `${menWords(1500)} militia marched to ${REGIONS[a.region].name}.`;
         },
       },
       {

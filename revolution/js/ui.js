@@ -5,10 +5,11 @@ import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPa
 import {
   armyList, armyAt, armyMen, militiaMen, generalOf, moveTargets, winChance, oddsLabel, moveArmy, digIn, recruit, canRecruit,
   regularsCost, militiaCost, printMoney, monthlyIncome, monthlyUpkeep, regionIncome, assignGeneral, reserveGenerals,
-  dateLabel, isWinter, money, fmtMen, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES,
+  dateLabel, isWinter, money, fmtMen, menWords, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES,
 } from "./rules.js";
 import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
-import { answerLetter, unanswered } from "./letters.js";
+import { answerLetter, unanswered, senderName, senderRole } from "./letters.js";
+import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
 import { playScene } from "./scenes.js";
@@ -378,7 +379,9 @@ function renderPanel() {
     h += recruitButtons(ui.region);
   } else {
     h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">You are the Board of War: you run the army and pay for it.</p>`;
-    h += `<p>Tap one of your <b style="color:var(--patriot)">blue</b> armies to give it orders, or any region to learn about it. When you're done, end the month and the British move.</p>`;
+    h += `<p>Tap an army below or on the map to give it orders, or tap any region to learn about it. When you're done, end the month and the British move.</p>`;
+    const mine = armyList(state, "P").sort((x, y) => armyMen(y) - armyMen(x));
+    h += `<h3 class="panel-h">Your armies</h3><div class="army-list">${mine.map((a) => `<button class="army-chip${a.moved ? " moved" : ""}" data-pick="${a.id}">${a.general ? portraitOf(a.general, "tiny") : `<span class="chip-flag"></span>`}<span><b>${esc(describeArmy(state, a))}</b><small>${esc(REGIONS[a.region].name)} · ${fmtMen(armyMen(a))}${a.moved ? " · done this month" : ""}</small></span></button>`).join("")}</div>`;
   }
   const open = unanswered(state).length;
   h += `<div class="end-row">${open ? `<button class="btn gold" id="open-letters">Answer ${open} letter${open > 1 ? "s" : ""}</button>` : ""}<button class="btn primary" id="end-turn">End ${esc(dateLabel(state).split(" ")[0])} ›</button></div>`;
@@ -391,6 +394,17 @@ function renderPanel() {
   on("dig", () => { const e = digIn(state, ui.army); if (e) toast(e); else { sfx.tap(); tutorial.event("act"); } save(); render(); });
   on("end-turn", onEndTurn);
   on("open-letters", () => showLetters());
+  // The army list: select an army and bring it into view.
+  for (const chip of p.querySelectorAll("[data-pick]")) chip.onclick = () => {
+    const a = state.armies[chip.dataset.pick];
+    if (!a) return;
+    ui.army = a.id; ui.region = a.region; ui.target = null; ui.split = false;
+    const [x, y] = seeds[a.region];
+    view.x = x - view.w / 2; view.y = y - view.h / 2; setView();
+    sfx.tap();
+    render();
+    if (a.general === "washington") tutorial.event("select");
+  };
   on("rec-reg", () => doRecruit("regulars"));
   on("rec-mil", () => doRecruit("militia"));
   const sel = document.getElementById("assign");
@@ -450,12 +464,42 @@ $("#modal").addEventListener("click", (e) => { if (e.target.id === "modal" && st
 
 const paras = (text) => text.split(/\n\n+/).map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
 
+// A portrait for anyone who writes to you: a painting if we have one, otherwise a drawn bust in their colors.
+function portraitOf(id, size = "") {
+  const side = state.generals[id]?.side || (FIGURES[id]?.group === "B" ? "B" : "P");
+  const coat = side === "B" ? (state.generals[id]?.hessian ? "#26375f" : "#b3312a") : FIGURES[id]?.group === "F" ? "#3a3a46" : "#2e4a7d";
+  const inner = PORTRAITS[id] ? `<img src="${PORTRAITS[id]}" alt="">` : `<svg viewBox="-8 -8 16 16">${bust(coat)}</svg>`;
+  return `<div class="portrait ${side} ${size}">${inner}</div>`;
+}
+
+// The letter's text: the greeting, the body, and the signature in a hand-written style.
+function letterBody(text) {
+  const ps = text.split(/\n\n+/);
+  return ps.map((p, i) => {
+    const html = esc(p).replace(/\n/g, "<br>");
+    if (i === 0 && p.length < 30 && /,$/.test(p)) return `<p class="salute">${html}</p>`;
+    if (i === ps.length - 1 && ps.length > 1 && p.length < 70 && !/[?.!"]$/.test(p.split("\n")[0])) return `<p class="sig">${html}</p>`;
+    return `<p>${html}</p>`;
+  }).join("");
+}
+
+const SEAL = `<svg class="seal" viewBox="-20 -20 40 40" aria-hidden="true"><path d="M0,-18 C6,-19 10,-14 15,-12 C19,-8 17,-3 19,1 C20,7 15,10 12,15 C7,19 3,17 -1,19 C-7,20 -10,15 -15,12 C-19,7 -17,3 -19,-2 C-20,-8 -15,-11 -12,-15 C-7,-19 -4,-17 0,-18 Z" fill="#9b0c23"/><circle r="11" fill="none" stroke="#c8102e" stroke-width="1.5"/><path d="M0,-7 L2,-2 L7,-2 L3,1 L4.5,6.5 L0,3.2 L-4.5,6.5 L-3,1 L-7,-2 L-2,-2 Z" fill="#e8a0a8"/></svg>`;
+
 function letterHtml(l) {
   const late = l.turn > l.written;
-  const g = state.generals[l.from];
-  const pic = g ? `<div class="portrait ${g.side}">${PORTRAITS[l.from] ? `<img src="${PORTRAITS[l.from]}" alt="">` : `<svg viewBox="-8 -8 16 16">${bust(g.side === "P" ? "#2e4a7d" : "#b3312a")}</svg>`}</div>` : "";
-  let h = `<div class="letter-head">${pic}<div><div class="meta">${esc(l.fromName)}${late ? ` · <span class="delayed">Written a month ago. The courier was delayed.</span>` : ""}</div>`;
-  h += `<h2>${esc(l.title)}</h2></div></div><div class="letter">${paras(l.body)}</div>`;
+  const role = senderRole(state, l.from);
+  const when = monthOf(l.written);
+  let h = `<div class="lt-banner kind-${l.kind}">${portraitOf(l.from, "big")}<div class="lt-who"><div class="lt-name">${esc(l.fromName)}</div>${role ? `<div class="lt-role">${esc(role)}</div>` : ""}<div class="lt-place">${l.place ? esc(l.place) + " · " : ""}${when}</div></div>${l.kind === "intel" ? "" : SEAL}</div>`;
+  if (late) h += `<p class="delayed">This letter was a month on the road. The courier was delayed.</p>`;
+  h += `<h2 class="lt-title">${esc(l.title)}</h2>`;
+  if (l.kind === "intel") {
+    const src = l.ctx.reliable === true && l.ctx.truth === true && l.from !== "spy" ? "Certain" : l.ctx.reliable ? "Probably reliable" : "Doubtful";
+    h += `<div class="intel-note"><div class="intel-stamp">Intelligence · Source: ${src}</div>${letterBody(l.body)}</div>`;
+  } else if (l.kind === "council" && l.council) {
+    h += `<p class="council-intro">${esc(l.body)}</p><div class="council-voices">${l.council.map((v) => `<div class="voice">${portraitOf(v.from)}<div><div class="voice-name">${esc(senderName(state, v.from))}</div><p>“${esc(v.says)}”</p></div></div>`).join("")}</div>`;
+  } else {
+    h += `<div class="letter">${letterBody(l.body)}</div>`;
+  }
   if (!l.resolved && l.choices.length) {
     h += `<div class="choices">${l.choices.map((c, i) => `<button class="choice" data-choice="${i}"><b>${esc(c.label)}</b>${c.hint ? `<span>${esc(c.hint)}</span>` : ""}</button>`).join("")}</div>`;
   } else if (l.outcome) {
@@ -474,6 +518,7 @@ function showLetters(after) {
     modal(letterHtml(l) + `<p class="meta" style="margin-top:12px">${open.length > 1 ? `${open.length - 1} more letter${open.length > 2 ? "s" : ""} waiting.` : ""}</p>`, (card) => {
       for (const b of card.querySelectorAll("[data-choice]")) b.onclick = () => {
         const outcome = answerLetter(state, l.id, Number(b.dataset.choice));
+        renderPanel(); // keeps the "Answer N letters" button honest while the next letter is open
         save();
         const lost = state.lastSurprise; state.lastSurprise = null;
         // A letter can end the campaign (an enemy army surrendering, for example).
@@ -487,7 +532,9 @@ function showLetters(after) {
           $("#modal").hidden = true;
           render();
           markBattles([lost]);
-          playScene("crossing", { extra: [lost.attackerWins ? `${REGIONS[lost.region].name} is taken. The country takes heart.` : `The attack on ${REGIONS[lost.region].name} fails.`] }, showOutcome);
+          // Washington's Christmas crossing gets its cutscene; other battles ordered by letter just play on the map.
+          if (l.event === "crossing") playScene("crossing", { extra: [lost.attackerWins ? `${REGIONS[lost.region].name} is taken. The country takes heart.` : `The attack on ${REGIONS[lost.region].name} fails.`] }, showOutcome);
+          else setTimeout(showOutcome, 900);
         } else showOutcome();
       };
     });
@@ -519,11 +566,11 @@ function battleHtml(b) {
   const att = b.attacker, def = b.defender;
   const winner = b.attackerWins ? att : def;
   const cls = winner.side === "P" ? "won" : "lost";
-  const who = (x) => `${x.general ? esc(x.general) + "'s " : ""}${sideName(x.side)} force (${fmtMen(x.men)})`;
+  const who = (x) => `${x.general ? esc(x.general) + "'s " : ""}${sideName(x.side)} force (${menWords(x.men)})`;
   let s = `<div class="battle ${cls}"><b>${esc(REGIONS[b.region].name)}${b.surprise ? ": surprise attack" : ""}</b><br>`;
   s += `${who(att)} attacked ${who(def)}. `;
   s += b.attackerWins ? `The attackers won. ` : `The attack was beaten off. `;
-  s += `Losses: ${fmtMen(b.attackerWins ? b.winnerLoss : b.loserLoss)} attackers, ${fmtMen(b.attackerWins ? b.loserLoss : b.winnerLoss)} defenders.`;
+  s += `Losses: ${menWords(b.attackerWins ? b.winnerLoss : b.loserLoss)} attackers, ${menWords(b.attackerWins ? b.loserLoss : b.winnerLoss)} defenders.`;
   if (b.surrendered) s += ` The defenders were trapped and surrendered${b.generalCaptured ? `, and ${esc(b.generalCaptured)} was taken prisoner` : ""}.`;
   else if (b.retreatTo) s += ` The defenders ${b.brokeOut ? "broke out" : "fell back"} to ${esc(REGIONS[b.retreatTo].name)}.`;
   return s + `</div>`;
@@ -592,17 +639,40 @@ function onEndTurn() {
   }, summary && (summary.battles.length || summary.moves.length) ? 1300 : 300);
 }
 
+// The month's news, set as the front page of a period newspaper.
+function headlineFor(battles, notes) {
+  const big = battles.slice().sort((a, b) => (b.attacker.men + b.defender.men) - (a.attacker.men + a.defender.men))[0];
+  if (big) {
+    const ours = (big.attackerWins ? big.attacker : big.defender).side === "P";
+    const place = REGIONS[big.region].name;
+    if (big.surrendered) return ours ? [`An Enemy Army Surrenders at ${place}`, "The whole force laid down its arms"] : [`Disaster at ${place}`, "An American army has surrendered"];
+    return ours ? [`Victory at ${place}`, "The King's troops driven from the field"] : [`Defeat at ${place}`, "The army falls back in good order, its officers say"];
+  }
+  const fell = notes.find((n) => /fell to the British/.test(n.text));
+  if (fell) return [fell.text.replace(/\.$/, ""), "The enemy advances"];
+  const retaken = notes.find((n) => /was retaken/.test(n.text));
+  if (retaken) return [retaken.text.replace(/\.$/, ""), "Good news from the army"];
+  return ["News from the Army", "A quiet month, as quiet months go in wartime"];
+}
+
 function showReport(summary, lines, voices = []) {
-  let h = `<h2>${esc(dateLabel(state))}</h2>`;
+  const S = scenarioOf(state).SCENARIO;
   const battles = summary ? summary.battles : [];
-  if (battles.length) h += `<h3>Battles</h3>` + battles.map(battleHtml).join("");
   const moves = summary ? summary.moves.filter((m) => m.type === "move") : [];
-  if (moves.length) h += `<h3>Enemy movements</h3>` + moves.map((m) => `<div class="logline">${m.side === "B" ? "British troops" : "Your troops"} moved from ${esc(REGIONS[m.from].name)} to ${esc(REGIONS[m.to].name)}.</div>`).join("");
   const notes = lines.filter((l) => l.kind !== "date").reverse();
-  if (notes.length) h += `<h3>Reports</h3>` + notes.map((l) => `<div class="logline ${l.kind}">${esc(l.text)}</div>`).join("");
-  if (voices.length) h += `<h3>Voices from the ranks</h3>` + voices.map((v) => `<div class="letter" style="font-size:15px;padding:10px 14px"><p>${esc(v.body)}</p><p class="from">${esc(v.title)}</p></div>`).join("");
+  const [head, deck] = headlineFor(battles, notes);
+  const issue = 100 + state.turn * 4 + (state.startMonth || 0);
+  let h = `<div class="gazette"><div class="gz-mast"><div class="gz-rule"></div><div class="gz-name">${esc(S.newspaper || "The Pennsylvania Evening Post")}</div><div class="gz-meta"><span>Price Four Coppers</span><span>${esc(dateLabel(state))}</span><span>No. ${issue}</span></div><div class="gz-rule"></div></div>`;
+  h += `<h2 class="gz-head">${esc(head)}</h2><p class="gz-deck">${esc(deck)}</p>`;
+  h += `<div class="gz-cols">`;
+  if (battles.length) h += `<section><h3>From the Seat of War</h3>${battles.map(battleHtml).join("")}</section>`;
+  if (moves.length) h += `<section><h3>Movements of the Enemy</h3>${moves.map((m) => `<div class="logline">${m.side === "B" ? "British troops" : "Our troops"} moved from ${esc(REGIONS[m.from].name)} to ${esc(REGIONS[m.to].name)}.</div>`).join("")}</section>`;
+  if (notes.length) h += `<section><h3>Intelligence &amp; Reports</h3>${notes.map((l) => `<div class="logline ${l.kind}">${esc(l.text)}</div>`).join("")}</section>`;
+  if (voices.length) h += `<section><h3>Letters from the Army</h3>${voices.map((v) => `<blockquote class="gz-voice">${esc(v.body)}<cite>${esc(v.title)}</cite></blockquote>`).join("")}</section>`;
+  h += `</div>`;
   if (isWinter(state)) h += `<p class="hint">❄ Winter: armies outside cities lose men each month, and attacks are harder.</p>`;
   h += factHtml(monthlyFact([...battles.map((b) => b.region), ...moves.map((m) => m.to)]));
+  h += `</div>`;
   save();
   const open = unanswered(state).length;
   h += `<div class="modal-actions"><button class="btn primary" id="go">${open ? `Read ${open} letter${open > 1 ? "s" : ""}` : "Continue"}</button></div>`;

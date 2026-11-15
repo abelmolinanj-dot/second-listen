@@ -21,7 +21,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 
 - **A main menu** with Continue, Campaign, Conquest (coming), Generals, Settings and Credits.
 - **A campaign map**: the war as a trail of eight missions from Boston in 1775 to Yorktown in 1781. Tap a mission for its briefing: a painting, the situation, your orders, difficulty, and your best result in stars (1–3). The Campaign of 1776 is playable; the rest show when they're coming. Missions are listed in `js/data/missions.js`.
-- **A generals roster** showing every commander's ratings, trait and loyalty.
+- **Who's Who**: every general and Founding Father, with ratings, traits and a short biography of who they were and what became of them (`js/data/figures.js`).
 
 - **Map** of the northern colonies, Virginia to Canada, with 34 regions, drawn like a period map: mountain ranges, forests, farmland, the main post roads, towns, forts, rivers and named waters. The New York–Philadelphia corridor is magnified so it's playable on a phone.
 - **Terrain that matters**: hills (defenders +20%) and forest (+10%); in either, militia fight nearly as well as regulars.
@@ -29,7 +29,9 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 - **Cutscenes** for the British fleet arriving, the Declaration, crossing the Delaware, the first winter, and the end of the campaign.
 - **Armies** of regulars and militia. Militia are cheap but weaker, and go home after 3 months.
 - **Generals** with attack and defense ratings, traits (Howe is cautious, Arnold is bold, Rall is complacent in winter) and, on your side, **loyalty**.
-- **Letters** from generals, Congress, a spy, Robert Morris and Benjamin Franklin. Your answers have consequences. Commanders who are badly outnumbered write to you for orders, and letters from far away arrive a month late.
+- **Letters** from generals and Founders (Franklin, both Adamses, Hamilton, Lafayette, Hancock, Morris, Jay, Paine), each opening with the writer's portrait and seal. Your answers have consequences, and later letters remember them. Councils of war let several officers argue their plans; spy reports may be wrong. Letters from far away arrive a month late.
+- **No two games alike**: key letters come in several wordings, each campaign has a pool of chance events (about one a month), and history shifts a little each game (in Saratoga: Burgoyne's strength, when Fort Stanwix is besieged, and whether Clinton comes up the Hudson early, late or on time).
+- **A newspaper each month**: the monthly report is the front page of a period paper, with a headline for the month's biggest news.
 - **Historical moments as decisions**: the Declaration, Lee's arrival and capture, Arnold's fleet on Lake Champlain, the enlistment crisis, crossing the Delaware, Arnold being passed over for promotion.
 - **Money**: taxes, army pay, back pay owed, a loan with interest, and a printing press that causes inflation. The Treasury screen shows a monthly statement and a balance sheet.
 - **The Royal Navy**: British armies can land anywhere along nearby coasts.
@@ -70,7 +72,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/data/scenarioSaratoga.js` | The same for Saratoga, 1777 |
 | `tools/simulate.mjs` | Plays the campaign many times without a screen, for testing balance |
 
-Balance test, from this folder: `node tools/simulate.mjs 100 defensive --scenario=saratoga` (strategies: `passive`, `simple`, `defensive`; scenarios: `1776`, `saratoga`). In 1776 a careful player wins about one game in five and survives about one in four. Saratoga is easier, as it was historically: careful play usually wins, but three stars take cutting Burgoyne off or forcing his surrender. Doing nothing loses both.
+Balance test, from this folder: `node tools/simulate.mjs 100 defensive --scenario=saratoga` (strategies: `passive`, `simple`, `defensive`; scenarios: `1776`, `saratoga`). In 1776 a careful player wins a little under half the time (more if they spend on the Founders' offers). Saratoga is easier, as it was historically: careful play usually wins, but three stars take cutting Burgoyne off or forcing his surrender. Doing nothing loses both.
 
 ## Adding portraits and paintings
 
