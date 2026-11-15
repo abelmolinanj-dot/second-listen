@@ -2,7 +2,7 @@
 
 A turn-based strategy game of the American Revolution, built for phones first. You are the **Board of War**: you move the Continental Army, pay for it, and answer letters from your generals.
 
-This is the first playable prototype: one scenario, **The Campaign of 1776** (July 1776 to June 1777).
+Two campaigns are playable: **The Campaign of 1776** (July 1776 to June 1777, around New York and New Jersey) and **Saratoga** (June to November 1777, against Burgoyne's invasion from Canada).
 
 ## Play it
 
@@ -65,10 +65,12 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `img/` | Image files, with sources recorded in `img/CREDITS.md` |
 | `js/data/regions.js` | Regions and which ones border each other |
 | `js/data/generals.js` | Generals and their traits |
-| `js/data/scenario1776.js` | Starting setup, reinforcements and scripted letters for 1776 |
+| `js/data/scenarios.js` | The list of playable scenarios |
+| `js/data/scenario1776.js` | Starting setup, reinforcements, scripted letters and endings for 1776 |
+| `js/data/scenarioSaratoga.js` | The same for Saratoga, 1777 |
 | `tools/simulate.mjs` | Plays the campaign many times without a screen, for testing balance |
 
-Balance test, from this folder: `node tools/simulate.mjs 60 defensive` (strategies: `passive`, `simple`, `defensive`). A reasonable player wins about a third of the time and survives about a quarter. A player who does nothing always loses.
+Balance test, from this folder: `node tools/simulate.mjs 100 defensive --scenario=saratoga` (strategies: `passive`, `simple`, `defensive`; scenarios: `1776`, `saratoga`). In 1776 a careful player wins about one game in five and survives about one in four. Saratoga is easier, as it was historically: careful play usually wins, but three stars take cutting Burgoyne off or forcing his surrender. Doing nothing loses both.
 
 ## Adding portraits and paintings
 

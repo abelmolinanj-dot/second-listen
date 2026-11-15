@@ -219,7 +219,7 @@ function openMonth(state, { first }) {
   scenarioOf(state).SCENARIO.onOpenMonth?.(state);
 
   deliverMail(state);
-  log(state, `— ${dateLabel(state)} —`, "date");
+  log(state, dateLabel(state), "date");
 }
 
 function landReinforcement(state, r) {

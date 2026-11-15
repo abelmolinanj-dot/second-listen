@@ -297,7 +297,7 @@ function renderTop() {
   $("#turnof").textContent = `Month ${state.turn + 1} of ${state.lastTurn + 1}`;
   $("#treasury").textContent = money(state.treasury);
   $("#cause-bar").style.width = Math.round(state.cause) + "%";
-  $("#cause-bar").style.background = state.cause < 25 ? "var(--british)" : "var(--gold)";
+  $("#cause-bar").style.background = state.cause < 25 ? "var(--british)" : "var(--stripes)";
   $("#cause-num").textContent = Math.round(state.cause);
   const open = unanswered(state).length;
   const unread = state.letters.filter((l) => !l.read).length;
@@ -520,7 +520,7 @@ function battleHtml(b) {
   const winner = b.attackerWins ? att : def;
   const cls = winner.side === "P" ? "won" : "lost";
   const who = (x) => `${x.general ? esc(x.general) + "'s " : ""}${sideName(x.side)} force (${fmtMen(x.men)})`;
-  let s = `<div class="battle ${cls}"><b>${esc(REGIONS[b.region].name)}${b.surprise ? " — surprise attack" : ""}</b><br>`;
+  let s = `<div class="battle ${cls}"><b>${esc(REGIONS[b.region].name)}${b.surprise ? ": surprise attack" : ""}</b><br>`;
   s += `${who(att)} attacked ${who(def)}. `;
   s += b.attackerWins ? `The attackers won. ` : `The attack was beaten off. `;
   s += `Losses: ${fmtMen(b.attackerWins ? b.winnerLoss : b.loserLoss)} attackers, ${fmtMen(b.attackerWins ? b.loserLoss : b.winnerLoss)} defenders.`;

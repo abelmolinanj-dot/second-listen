@@ -79,7 +79,7 @@ export function armyFigure({ side, hessian, men, regulars, militia, general, sho
   const spots = count === 3 ? [[-10, -3, 0.82, second], [10, -3, 0.82, main], [0, 0, 1, main]] : count === 2 ? [[-6, -2, 0.9, second], [6, 0, 1, main]] : [[0, 0, 1, main]];
 
   let s = `<rect x="-24" y="-52" width="48" height="70" fill="transparent"/>`;
-  if (selected) s += `<ellipse cx="0" cy="1" rx="23" ry="7" fill="#d9a43b" opacity=".75"/>`;
+  if (selected) s += `<ellipse cx="0" cy="1" rx="23" ry="7" fill="#ffffff" stroke="#c8102e" stroke-width="1.5" opacity=".9"/>`;
   s += `<ellipse cx="0" cy="1" rx="17" ry="4.2" fill="#000" opacity=".22"/>`;
   if (general) s += `<path d="M-15,0 V-46" stroke="#4a3520" stroke-width="1.2"/><g class="flag" transform="translate(-15,-46)">${flag(kind)}</g>`;
   for (const [x, y, sc, u] of spots) s += `<g transform="translate(${x},${y}) scale(${sc})">${soldier(u)}</g>`;
@@ -93,7 +93,7 @@ export function armyFigure({ side, hessian, men, regulars, militia, general, sho
 export function battleMarker() {
   return `<g class="boom-inner">
     <circle r="16" fill="#f3e8cf" opacity=".75"/>
-    <circle r="11" fill="#d9a43b" opacity=".55"/>
+    <circle r="11" fill="#ffffff" opacity=".7"/>
     <path d="M-9,-9 L9,9 M9,-9 L-9,9" stroke="#2a2118" stroke-width="2.6" stroke-linecap="round"/>
     <path d="M-10,-7 L-7,-10 M10,-7 L7,-10" stroke="#2a2118" stroke-width="2.2" stroke-linecap="round"/>
   </g>`;

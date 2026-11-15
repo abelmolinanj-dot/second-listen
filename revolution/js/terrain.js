@@ -1,7 +1,7 @@
 // Map decoration: mountains, forests, farmland, roads, towns, forts, waves and water names.
 // Everything is placed from real geography (longitude/latitude) and drawn once when the game starts.
 
-import { project, WIDTH, HEIGHT, MAINLAND, ISLANDS, pointInPolygon, linePath } from "./geo.js";
+import { project, WIDTH, HEIGHT, MAINLAND, ISLANDS, pointInPolygon, linePath, polygonPath, seaPath } from "./geo.js";
 import { REGIONS } from "./data/regions.js";
 
 // Deterministic randomness so the map looks the same every time.
@@ -29,7 +29,16 @@ const RIDGES = [
 ];
 
 // Wilderness: thick forest. Other regions get scattered woods among the farms.
-const FOREST = { stjohns: 70, ticonderoga: 55, mohawk: 90, wyoming: 90, newhampshire: 60, bennington: 35, kingston: 35, southjersey: 40, easton: 30, delmarva: 25, frederick: 25, lancaster: 10, virginia: 25, springfield: 15 };
+const FOREST = { stjohns: 120, ticonderoga: 95, saratoga: 45, mohawk: 150, wyoming: 150, newhampshire: 100, bennington: 60, kingston: 60, southjersey: 70, easton: 50, delmarva: 40, frederick: 40, lancaster: 18, virginia: 40, springfield: 28, connecticut: 20, morristown: 22, highlands: 20 };
+
+// Salt marshes and tidal meadows, as [lon, lat, size].
+const MARSHES = [
+  [-74.1, 40.78, 1.0], // Hackensack Meadows
+  [-74.35, 39.75, 1.1], [-74.55, 39.35, 1.0], // the Jersey shore
+  [-75.45, 39.35, 1.1], [-75.2, 39.05, 0.9], // Delaware Bay
+  [-75.9, 38.4, 1.2], [-76.05, 38.75, 0.9], // Eastern Shore
+  [-72.5, 41.25, 0.7], [-70.95, 42.55, 0.7],
+];
 
 // The main roads of the colonies.
 const ROADS = [
@@ -90,19 +99,33 @@ function clearOfMarkers(p, seeds, r = 34) {
 }
 
 export const TERRAIN_DEFS = `
+<filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+<filter id="softer" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+<clipPath id="landclip"><path d="${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}"/></clipPath>
+<clipPath id="seaclip"><path clip-rule="evenodd" d="${seaPath()}"/></clipPath>
+<linearGradient id="seadepth" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#bcd7e6" stop-opacity="0"/><stop offset=".55" stop-color="#2f6491" stop-opacity=".18"/><stop offset="1" stop-color="#1c4a75" stop-opacity=".45"/>
+</linearGradient>
 <symbol id="mtn" viewBox="-10 -9 20 13" overflow="visible">
-  <path d="M-9,4 L-1,-8 L2,-4 L4,-6 L10,4 Z" fill="#d8c79e" stroke="#7b6544" stroke-width=".9" stroke-linejoin="round"/>
-  <path d="M-1,-8 L1,4 L10,4 L4,-6 L2,-4 Z" fill="#b29c70" opacity=".85"/>
-  <path d="M-1,-8 L-2.6,-5.6 L-1,-5 L0.2,-6.2 Z" fill="#f4ecd8"/>
+  <path d="M-9,4 L-1,-8 L2,-4 L4,-6 L10,4 Z" fill="#a99a72" stroke="#5c4a2e" stroke-width=".9" stroke-linejoin="round"/>
+  <path d="M-1,-8 L1,4 L10,4 L4,-6 L2,-4 Z" fill="#7d6c48" opacity=".85"/>
+  <path d="M-9,4 L-6,-0.5 L-3,1.5 L-1,4 Z" fill="#6f8a55" opacity=".8"/>
+  <path d="M-1,-8 L-2.6,-5.6 L-1,-5 L0.2,-6.2 Z" fill="#ffffff"/>
 </symbol>
 <symbol id="pine" viewBox="-5 -10 10 12" overflow="visible">
-  <path d="M0,-9 L4,-2 L2,-2 L5,2 L-5,2 L-2,-2 L-4,-2 Z" fill="#5f7e52" stroke="#3e5636" stroke-width=".6"/>
-  <rect x="-.7" y="2" width="1.4" height="2" fill="#5b4632"/>
+  <path d="M0,-9 L4,-2 L2,-2 L5,2 L-5,2 L-2,-2 L-4,-2 Z" fill="#355f3b" stroke="#21402a" stroke-width=".6"/>
+  <path d="M0,-9 L-4,-2 L-2,-2 L-5,2 L0,2 Z" fill="#4c7a4b" opacity=".7"/>
+  <rect x="-.7" y="2" width="1.4" height="2" fill="#4a3826"/>
 </symbol>
 <symbol id="oak" viewBox="-5 -8 10 11" overflow="visible">
-  <circle cx="0" cy="-3.5" r="4.2" fill="#7f9a5f" stroke="#55703f" stroke-width=".6"/>
-  <circle cx="-1.4" cy="-4.6" r="1.6" fill="#94ad73"/>
-  <rect x="-.7" y=".4" width="1.4" height="2.4" fill="#5b4632"/>
+  <circle cx="0" cy="-3.5" r="4.2" fill="#5f8a4a" stroke="#3c5f30" stroke-width=".6"/>
+  <circle cx="-1.4" cy="-4.6" r="1.7" fill="#7fa863"/>
+  <rect x="-.7" y=".4" width="1.4" height="2.4" fill="#4a3826"/>
+</symbol>
+<symbol id="marsh" viewBox="-12 -6 24 10" overflow="visible">
+  <ellipse rx="11" ry="3.6" fill="#9fbf9a" opacity=".55"/>
+  <path d="M-8,0 l-1,-4 M-7,0 l0,-5 M-6,0 l1,-4 M-1,1 l-1,-4 M0,1 l0,-5 M1,1 l1,-4 M5,0 l-1,-4 M6,0 l0,-5 M7,0 l1,-4" stroke="#4f7a4c" stroke-width=".7"/>
+  <path d="M-10,2 h5 M-2,3 h6 M4,2 h5" stroke="#6f9cbc" stroke-width=".8"/>
 </symbol>
 <symbol id="town" viewBox="-12 -12 24 14" overflow="visible">
   <rect x="-10" y="-4" width="6" height="6" fill="#efe3c6" stroke="#5a4632" stroke-width=".8"/>
@@ -133,6 +156,45 @@ export function terrainLayer(shapes, seeds) {
   const rand = seeded(1776);
   const seedPts = Object.values(seeds);
   let s = "";
+
+  // The land itself, colored like a relief map: a pale sandy coastal plain, greener rolling country inland,
+  // and brown uplands along the real mountain ranges. Each layer is one blurred group, so it stays fast.
+  const coast = `${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}`;
+  s += `<g clip-path="url(#landclip)">`;
+  s += `<g filter="url(#soft)"><path d="${coast}" fill="none" stroke="#ece2bd" stroke-width="44" stroke-linejoin="round"/></g>`;
+  s += `<g filter="url(#soft)" opacity=".55">`;
+  for (const [id, poly] of Object.entries(shapes)) {
+    const n = FOREST[id] ?? 8;
+    if (n < 18) continue;
+    s += `<path d="${polygonPath(poly)}" fill="#6f9558" opacity="${Math.min(0.85, n / 150).toFixed(2)}"/>`;
+  }
+  s += `</g>`;
+  // Patches of woodland among the farms everywhere else.
+  s += `<g filter="url(#softer)" opacity=".35">`;
+  for (let i = 0; i < 140; i++) {
+    const p = [rand() * WIDTH, rand() * HEIGHT];
+    if (!onLand(p)) continue;
+    s += `<ellipse cx="${p[0].toFixed(0)}" cy="${p[1].toFixed(0)}" rx="${(10 + rand() * 22).toFixed(0)}" ry="${(6 + rand() * 12).toFixed(0)}" fill="#7a9e5f"/>`;
+  }
+  s += `</g>`;
+  // Uplands: a broad brown band under each range, with a darker spine.
+  s += `<g filter="url(#soft)">`;
+  for (const r of RIDGES) {
+    const d = linePath(densifyMap(r.pts));
+    s += `<path d="${d}" fill="none" stroke="#b49a68" stroke-width="${(46 * r.size).toFixed(0)}" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>`;
+    s += `<path d="${d}" fill="none" stroke="#8a7146" stroke-width="${(18 * r.size).toFixed(0)}" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/>`;
+  }
+  s += `</g></g>`;
+
+  // Marshes along the coast.
+  for (const [lon, lat, size] of MARSHES) {
+    const [x, y] = project([lon, lat]);
+    for (let k = 0; k < 3; k++) {
+      const q = [x + (rand() - 0.5) * 22 * size, y + (rand() - 0.5) * 14 * size];
+      if (!onLand(q) || !clearOfMarkers(q, seedPts, 26)) continue;
+      s += `<use href="#marsh" x="${(q[0] - 12 * size).toFixed(1)}" y="${(q[1] - 5 * size).toFixed(1)}" width="${(24 * size).toFixed(1)}" height="${(10 * size).toFixed(1)}"/>`;
+    }
+  }
 
   // Farmland hatching on settled, open regions.
   for (const [id, poly] of Object.entries(shapes)) {
@@ -187,6 +249,11 @@ export function terrainLayer(shapes, seeds) {
 export function overlayLayer(seeds) {
   const rand = seeded(1781);
   let s = "";
+  // Water: deeper toward the open ocean, and pale shallows along every shore.
+  s += `<g clip-path="url(#seaclip)" pointer-events="none">
+    <rect x="-60" y="-60" width="${WIDTH + 120}" height="${HEIGHT + 120}" fill="url(#seadepth)"/>
+    <g filter="url(#softer)"><path d="${polygonPath(MAINLAND)}${Object.values(ISLANDS).map(polygonPath).join("")}" fill="none" stroke="#d4e7f1" stroke-width="16" stroke-linejoin="round" opacity=".8"/></g>
+  </g>`;
   for (const road of ROADS) s += `<path class="road" d="${linePath(densifyMap(road))}"/>`;
 
   // Waves scattered on open water.
@@ -222,10 +289,10 @@ export function overlayLayer(seeds) {
   </g>`;
   const [tx, ty] = project([-71.4, 37.35]);
   s += `<g transform="translate(${tx.toFixed(0)},${ty.toFixed(0)})">
-    <rect x="-110" y="-26" width="220" height="48" rx="3" fill="#f3e8cf" stroke="#5c4d3c" stroke-width="1.2" opacity=".93"/>
+    <rect x="-110" y="-26" width="220" height="48" rx="3" fill="#ffffff" stroke="#0c1a38" stroke-width="1.2" opacity=".95"/><rect x="-110" y="-26" width="220" height="5" fill="#c8102e"/>
     <rect x="-106" y="-22" width="212" height="40" rx="2" fill="none" stroke="#5c4d3c" stroke-width=".5"/>
     <text text-anchor="middle" y="-4" font-family="IM Fell English, Georgia, serif" font-size="15" fill="#2a2118">The Northern Colonies</text>
-    <text text-anchor="middle" y="13" font-family="IM Fell English, Georgia, serif" font-style="italic" font-size="11" fill="#5c4d3c">and the Seat of War, 1776</text>
+    <text text-anchor="middle" y="13" font-family="IM Fell English, Georgia, serif" font-style="italic" font-size="11" fill="#1f3566">and the Seat of War, 1775 to 1783</text>
   </g>`;
   s += `<rect x="-60" y="-60" width="${WIDTH + 120}" height="${HEIGHT + 120}" fill="url(#vignette)" pointer-events="none"/>`;
   return s;
