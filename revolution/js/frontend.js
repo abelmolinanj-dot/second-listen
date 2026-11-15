@@ -8,7 +8,7 @@ import { PORTRAITS, SCENES } from "./data/assets.js";
 import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPath, MAINLAND, ISLANDS, LAKES, RIVERS } from "./geo.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
 import { bust } from "./soldiers.js";
-import { sfx, music, soundPrefs, setSfx, setMusic } from "./sound.js";
+import { sfx, music, soundPrefs, setSfx, setMusic, setVolume } from "./sound.js";
 
 const PROGRESS_KEY = "dispatches76-progress";
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -230,12 +230,15 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       <h3>Sound</h3>
       <label class="check"><input type="checkbox" id="opt-sfx" ${p.sfx ? "checked" : ""}> Sound effects (muskets, cannon, drums)</label>
       <label class="check"><input type="checkbox" id="opt-music" ${p.music ? "checked" : ""}> Fife and drum music</label>
+  <label class="slider">Volume <input type="range" id="opt-vol" min="0" max="100" value="${Math.round((p.volume ?? 0.4) * 100)}"></label>
       <h3>Progress</h3>
       <p class="page-lead">Stars and settings are saved in this browser.</p>
       <button class="btn danger" id="reset">Erase stars and saved game</button></div>`);
     on("#back", showMain);
     root.querySelector("#opt-sfx").onchange = (e) => { setSfx(e.target.checked); if (e.target.checked) sfx.musket(); };
     root.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
+    root.querySelector("#opt-vol").oninput = (e) => setVolume(e.target.value / 100);
+    root.querySelector("#opt-vol").onchange = () => sfx.musket();
     on("#reset", () => {
       if (!confirm("Erase all stars and your saved game? This can't be undone.")) return;
       try { for (const k of Object.keys(localStorage)) if (k.startsWith("dispatches76-") && k !== "dispatches76-sound") localStorage.removeItem(k); } catch { /* ignore */ }

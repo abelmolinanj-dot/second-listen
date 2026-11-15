@@ -310,3 +310,5 @@ select { font: inherit; padding: 7px; border-radius: 8px; border: 1px solid #000
   .cs-text { min-height: 36%; display: flex; flex-direction: column; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .cs-art, .snowflake, .token .flag { animation: none; } .token { transition: none; } }
+.slider { display: flex; align-items: center; gap: 12px; margin: 12px 0 2px; font-size: 14px; font-weight: 600; }
+.slider input { flex: 1; accent-color: var(--accent); }

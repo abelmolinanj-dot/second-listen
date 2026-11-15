@@ -14,7 +14,7 @@ import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
-import { sfx, music, soundPrefs, setSfx, setMusic } from "./sound.js";
+import { sfx, music, soundPrefs, setSfx, setMusic, setVolume } from "./sound.js";
 import { createTutorial } from "./tutorial.js";
 import { createFrontend, recordResult } from "./frontend.js";
 
@@ -676,12 +676,15 @@ function showMenu() {
   <h3>Sound</h3>
   <label class="check"><input type="checkbox" id="opt-sfx" ${p.sfx ? "checked" : ""}> Sound effects (muskets, cannon, drums)</label>
   <label class="check"><input type="checkbox" id="opt-music" ${p.music ? "checked" : ""}> Fife and drum music</label>
+  <label class="slider">Volume <input type="range" id="opt-vol" min="0" max="100" value="${Math.round((p.volume ?? 0.4) * 100)}"></label>
   ${howToPlay()}<div class="modal-actions">${state && !state.tutorial && scenarioOf(state).SCENARIO.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn" id="tomain">Main menu</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
     c.querySelector("#close").onclick = closeModal;
     c.querySelector("#tomain").onclick = () => { save(); $("#modal").hidden = true; frontend.showMain(); };
     c.querySelector("#restart").onclick = () => { if (confirm("Abandon this campaign and start over?")) startNew(state.scenario, false); };
     c.querySelector("#opt-sfx").onchange = (e) => { setSfx(e.target.checked); if (e.target.checked) sfx.musket(); };
     c.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
+    c.querySelector("#opt-vol").oninput = (e) => setVolume(e.target.value / 100);
+    c.querySelector("#opt-vol").onchange = () => sfx.musket();
     const g = c.querySelector("#guide");
     if (g) g.onclick = () => { closeModal(); tutorial.start(); };
   });

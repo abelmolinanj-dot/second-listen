@@ -3,7 +3,9 @@
 // Browsers only allow sound after the player taps something, so the first tap calls unlock().
 
 const PREFS_KEY = "dispatches76-sound";
-let prefs = { sfx: true, music: true };
+let prefs = { sfx: true, music: true, volume: 0.4 };
+const MUSIC_LEVEL = 0.22;
+const masterLevel = () => Math.max(0, Math.min(1, prefs.volume)) * 0.5;
 try { prefs = { ...prefs, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") }; } catch { /* storage unavailable */ }
 const savePrefs = () => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* ignore */ } };
 
@@ -14,13 +16,15 @@ function init() {
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return false;
   ctx = new AC();
-  master = ctx.createGain(); master.gain.value = 0.8;
+  master = ctx.createGain(); master.gain.value = masterLevel();
+  // Take the harsh top off every sound, so gunfire thumps instead of hissing.
+  const tame = ctx.createBiquadFilter(); tame.type = "lowpass"; tame.frequency.value = 5200;
   // A gentle compressor keeps a big volley from clipping.
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -14; comp.ratio.value = 4;
-  master.connect(comp); comp.connect(ctx.destination);
+  master.connect(tame); tame.connect(comp); comp.connect(ctx.destination);
   sfxBus = ctx.createGain(); sfxBus.gain.value = prefs.sfx ? 1 : 0; sfxBus.connect(master);
-  musicBus = ctx.createGain(); musicBus.gain.value = prefs.music ? 0.32 : 0; musicBus.connect(master);
+  musicBus = ctx.createGain(); musicBus.gain.value = prefs.music ? MUSIC_LEVEL : 0; musicBus.connect(master);
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -35,10 +39,11 @@ export function unlock() {
 window.addEventListener("pointerdown", unlock, { once: true, capture: true });
 
 export const soundPrefs = () => ({ ...prefs });
+export function setVolume(v) { prefs.volume = v; savePrefs(); if (master) master.gain.value = masterLevel(); }
 export function setSfx(on) { prefs.sfx = on; savePrefs(); if (sfxBus) sfxBus.gain.value = on ? 1 : 0; }
 export function setMusic(on) {
   prefs.music = on; savePrefs();
-  if (musicBus) musicBus.gain.value = on ? 0.32 : 0;
+  if (musicBus) musicBus.gain.value = on ? MUSIC_LEVEL : 0;
   if (!on) stopMusic();
 }
 
@@ -104,9 +109,9 @@ export const sfx = {
     if (!ready()) return;
     const t = now() + 0.05;
     for (let i = 0; i < 8; i++) snareAt(t + i * 0.055, 0.12 + i * 0.02);
-    const volleys = size > 8000 ? 4 : size > 3000 ? 3 : 2;
-    const cannons = size > 12000 ? 3 : size > 5000 ? 2 : size > 2000 ? 1 : 0;
-    for (let v = 0; v < volleys; v++) volleyAt(t + 0.5 + v * 0.62, 7 + Math.floor(Math.random() * 6), v % 2 ? 0.4 : -0.4);
+    const volleys = size > 8000 ? 3 : 2;
+    const cannons = size > 12000 ? 2 : size > 4000 ? 1 : 0;
+    for (let v = 0; v < volleys; v++) volleyAt(t + 0.5 + v * 0.7, 5 + Math.floor(Math.random() * 4), v % 2 ? 0.4 : -0.4);
     for (let c = 0; c < cannons; c++) cannonAt(t + 0.8 + c * 0.75 + Math.random() * 0.2, 0.8, (Math.random() - 0.5) * 0.6);
   },
   // Paper and a wax seal: opening a letter.
@@ -210,7 +215,7 @@ export function stopMusic() {
   g.setValueAtTime(g.value, t);
   g.linearRampToValueAtTime(0, t + 0.3);
   // Old notes are already scheduled, so swap in a fresh bus.
-  const fresh = ctx.createGain(); fresh.gain.value = prefs.music ? 0.32 : 0; fresh.connect(master);
+  const fresh = ctx.createGain(); fresh.gain.value = prefs.music ? MUSIC_LEVEL : 0; fresh.connect(master);
   const old = musicBus; musicBus = fresh;
   setTimeout(() => old.disconnect(), 400);
 }
