@@ -16,6 +16,7 @@ import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
 import { sfx, music, soundPrefs, setSfx, setMusic, setVolume } from "./sound.js";
+import { askConfirm } from "./confirm.js";
 import { createTutorial } from "./tutorial.js";
 import { createFrontend, recordResult } from "./frontend.js";
 
@@ -750,7 +751,7 @@ function showMenu() {
   ${howToPlay()}<div class="modal-actions">${state && !state.tutorial && scenarioOf(state).SCENARIO.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn" id="tomain">Main menu</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
     c.querySelector("#close").onclick = closeModal;
     c.querySelector("#tomain").onclick = () => { save(); $("#modal").hidden = true; frontend.showMain(); };
-    c.querySelector("#restart").onclick = () => { if (confirm("Abandon this campaign and start over?")) startNew(state.scenario, false); };
+    c.querySelector("#restart").onclick = async () => { if (await askConfirm("Abandon this campaign and start over from the beginning?", { ok: "Start over", danger: true })) startNew(state.scenario, false); };
     c.querySelector("#opt-sfx").onchange = (e) => { setSfx(e.target.checked); if (e.target.checked) sfx.musket(); };
     c.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
     c.querySelector("#opt-vol").oninput = (e) => setVolume(e.target.value / 100);

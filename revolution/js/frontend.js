@@ -10,6 +10,7 @@ import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPa
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons } from "./terrain.js";
 import { bust } from "./soldiers.js";
 import { sfx, music, soundPrefs, setSfx, setMusic, setVolume } from "./sound.js";
+import { askConfirm } from "./confirm.js";
 
 const PROGRESS_KEY = "dispatches76-progress";
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -179,8 +180,8 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     brief.classList.add("open");
     brief.scrollTop = 0;
     const b = brief.querySelector("#b-begin");
-    if (b) b.onclick = () => {
-      if (saved && !confirm(savedHere ? "Start this campaign over? Your saved game will be lost." : `This replaces your saved game (${saved.label}). Start anyway?`)) return;
+    if (b) b.onclick = async () => {
+      if (saved && !(await askConfirm(savedHere ? "Start this campaign over? Your saved game will be lost." : `This replaces your saved game (${saved.label}). Start anyway?`, { ok: "Start", danger: true }))) return;
       const guide = !!brief.querySelector("#guide")?.checked;
       hide();
       onBegin(m.scenario, guide);
@@ -246,8 +247,8 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     root.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
     root.querySelector("#opt-vol").oninput = (e) => setVolume(e.target.value / 100);
     root.querySelector("#opt-vol").onchange = () => sfx.musket();
-    on("#reset", () => {
-      if (!confirm("Erase all stars and your saved game? This can't be undone.")) return;
+    on("#reset", async () => {
+      if (!(await askConfirm("Erase all stars and your saved game? This can't be undone.", { ok: "Erase", danger: true }))) return;
       try { for (const k of Object.keys(localStorage)) if (k.startsWith("dispatches76-") && k !== "dispatches76-sound") localStorage.removeItem(k); } catch { /* ignore */ }
       showMain();
     });

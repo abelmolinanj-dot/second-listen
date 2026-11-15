@@ -33,6 +33,16 @@ export const PORTRAITS = {
   fraser:     "img/portraits/fraser.jpg",     // engraving (New York Public Library)
   riedesel:   "img/portraits/riedesel.jpg",   // engraving, 1856
   stleger:    "img/portraits/stleger.jpg",    // engraving, 1794
+  // Founders
+  congress:   "img/portraits/congress.jpg",   // John Hancock, by John Singleton Copley, 1765
+  franklin:   "img/portraits/franklin.jpg",   // Joseph-Siffred Duplessis, about 1785
+  jadams:     "img/portraits/jadams.jpg",     // John Adams, by Mather Brown, 1788
+  samadams:   "img/portraits/samadams.jpg",   // Samuel Adams, by John Singleton Copley, about 1772
+  hamilton:   "img/portraits/hamilton.jpg",   // John Trumbull, about 1805
+  lafayette:  "img/portraits/lafayette.jpg",  // Charles Willson Peale, 1779
+  morris:     "img/portraits/morris.jpg",     // Charles Willson Peale, about 1782
+  jay:        "img/portraits/jay.jpg",        // Gilbert Stuart, 1794
+  paine:      "img/portraits/paine.jpg",      // Laurent Dabos, about 1792
   // heister: no public-domain portrait found yet; the drawn bust is used.
 };
 

@@ -50,3 +50,17 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `portraits/fraser.jpg` | Simon Fraser | Engraving, between 1777 and 1890 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gen._Simon_Fraser.jpg) (New York Public Library) | Public domain |
 | `portraits/riedesel.jpg` | Baron Friedrich Adolf von Riedesel | Engraving from Max von Eelking's biography, 1856 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Friedrich_Adolf_Riedesel.jpg) | Public domain |
 | `portraits/stleger.jpg` | Barry St. Leger | Engraving, 1794 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Barry_St._Leger_(NYPL_b12349140-421807).jpg) (New York Public Library) | Public domain |
+
+## Portraits of the Founders
+
+| File | Shows | Artist and date | Source | License |
+|---|---|---|---|---|
+| `portraits/congress.jpg` | John Hancock | John Singleton Copley, 1765 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:John_Hancock_painting.jpg) (Museum of Fine Arts, Boston) | Public domain |
+| `portraits/franklin.jpg` | Benjamin Franklin | Joseph-Siffred Duplessis, about 1785 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Joseph_Siffrein_Duplessis_-_Benjamin_Franklin_-_Google_Art_Project.jpg) | Public domain |
+| `portraits/jadams.jpg` | John Adams | Mather Brown, 1788 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:1788_JohnAdams_byMatherBrown.jpg) (Boston Athenaeum) | Public domain |
+| `portraits/samadams.jpg` | Samuel Adams | John Singleton Copley, about 1772 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Samuel_Adams_by_John_Singleton_Copley.jpg) (Museum of Fine Arts, Boston) | Public domain |
+| `portraits/hamilton.jpg` | Alexander Hamilton | John Trumbull, about 1805 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Alexander_Hamilton_portrait_by_John_Trumbull_1806.jpg) | Public domain |
+| `portraits/lafayette.jpg` | Marquis de Lafayette | Charles Willson Peale, 1779 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Marquis_de_Lafayette_3.jpg) | Public domain |
+| `portraits/morris.jpg` | Robert Morris | Charles Willson Peale, about 1782 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Robert_Morris_by_Charles_Willson_Peale,_c._1782_(New_Orleans_Mus_of_Art_78.2)_-_crop.jpg) (New Orleans Museum of Art) | Public domain |
+| `portraits/jay.jpg` | John Jay | Gilbert Stuart, 1794 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gilbert_Stuart,_John_Jay,_1794,_NGA_75023.jpg) (National Gallery of Art) | CC0 |
+| `portraits/paine.jpg` | Thomas Paine | Laurent Dabos, about 1792 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Laurent_Dabos_%E2%80%93_Thomas_Paine_%E2%80%93_Google_Art_Project.jpg) (National Portrait Gallery) | Public domain |
