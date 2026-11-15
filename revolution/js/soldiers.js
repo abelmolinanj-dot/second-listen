@@ -4,33 +4,69 @@
 
 import { PORTRAITS } from "./data/assets.js";
 
+// Uniforms of 1776 to 1777. coat and facings (lapels, cuffs, turnbacks), waistcoat, breeches, and the hat.
 const UNIFORMS = {
-  continental: { coat: "#2e4a7d", facing: "#e8dcb5", legs: "#e8dcb5", hat: "tricorne" },
-  militia: { coat: "#94784c", facing: "#c9b483", legs: "#6d5a40", hat: "round" },
-  british: { coat: "#b3312a", facing: "#f1e7cc", legs: "#efe9dc", hat: "tricorne" },
-  hessian: { coat: "#26375f", facing: "#b7372e", legs: "#e6d79f", hat: "mitre" },
+  continental: { coat: "#24407a", facing: "#e3cf9a", vest: "#efe6cc", legs: "#efe6cc", gaiters: "#1b1a1f", hat: "tricorne", lace: "#f1ead6", hair: "#ece6d6", belts: true, bayonet: true },
+  militia: { coat: "#cdb98a", facing: "#cdb98a", vest: "#cdb98a", legs: "#6b5638", gaiters: "#5a472e", hat: "slouch", hair: "#5a3e24", belts: false, bayonet: false, hunting: true },
+  british: { coat: "#b8241e", facing: "#f3ecd8", vest: "#f3ecd8", legs: "#f3ecd8", gaiters: "#1b1a1f", hat: "tricorne", lace: "#f3ecd8", hair: "#ece6d6", belts: true, bayonet: true },
+  hessian: { coat: "#1f2f57", facing: "#b8241e", vest: "#e8cf6c", legs: "#e8cf6c", gaiters: "#1b1a1f", hat: "mitre", hair: "#ece6d6", belts: true, bayonet: true, moustache: true },
 };
 
-// One soldier with a shouldered musket, standing with his feet at (0, 0), about 36 units tall.
+// One soldier at "shoulder arms", feet at (0, 0), about 40 units tall, drawn in period uniform.
 function soldier(u) {
+  const ink = "#16151a";
+  // Hats: the cocked tricorne with lace edging, the Hessian brass mitre cap, or the militiaman's slouch hat.
   const hat = u.hat === "mitre"
-    ? `<path d="M-3.2,-25.6 L0,-35 L3.2,-25.6 Z" fill="#c9a33a" stroke="#6b5420" stroke-width=".5"/><circle cx="0" cy="-30" r="1.1" fill="#f3dd8a"/>`
-    : u.hat === "round"
-      ? `<ellipse cx="0" cy="-26.3" rx="5" ry="1.3" fill="#4a3a28"/><path d="M-2.8,-26.5 Q0,-31 2.8,-26.5 Z" fill="#4a3a28"/>`
-      : `<path d="M-5.4,-26 Q0,-28.6 5.4,-26 L3.4,-28.6 Q0,-31.6 -3.4,-28.6 Z" fill="#1d1a17"/><circle cx="2.8" cy="-28.4" r=".8" fill="#e9e1cc"/>`;
-  const belts = u.hat === "round" ? "" : `<path d="M-4.2,-20.5 L3.8,-11 M4.2,-20.5 L-3.8,-11" stroke="#f4efe2" stroke-width="1.1"/>`;
+    ? `<path d="M-3.3,-27.4 L-2.5,-37.2 Q0,-39.6 2.5,-37.2 L3.3,-27.4 Z" fill="#d4ad3e" stroke="#6b5420" stroke-width=".45"/>
+       <path d="M-2.2,-35.5 Q0,-36.8 2.2,-35.5 M-2.6,-32 L2.6,-32" stroke="#8a6a1e" stroke-width=".4" fill="none"/>
+       <circle cx="0" cy="-30" r="1.25" fill="#fff1b0" stroke="#8a6a1e" stroke-width=".3"/>
+       <rect x="-3.4" y="-28.3" width="6.8" height="1.3" fill="#b8241e"/><circle cx="0" cy="-39.3" r="1" fill="#f1ead6"/>`
+    : u.hat === "slouch"
+      ? `<ellipse cx="0" cy="-27.4" rx="6.2" ry="1.5" fill="#3b2c1c"/><path d="M-3,-27.6 Q-2.6,-31.6 0,-31.8 Q2.6,-31.6 3,-27.6 Z" fill="#3b2c1c"/><path d="M-3,-28.4 H3" stroke="#6b5638" stroke-width=".6"/>`
+      : `<path d="M-6,-27.6 Q0,-26.2 6,-27.6 L4.3,-31.2 Q0,-33.6 -4.3,-31.2 Z" fill="${ink}"/>
+         <path d="M-6,-27.6 Q0,-26.2 6,-27.6 M4.3,-31.2 Q0,-33.6 -4.3,-31.2" stroke="${u.lace}" stroke-width=".45" fill="none"/>
+         <circle cx="3" cy="-29.4" r="1" fill="${ink}" stroke="${u.lace}" stroke-width=".35"/>`;
+  // Long arms: a musket with a fixed bayonet, or the militia's long rifle.
+  const gun = u.bayonet
+    ? `<path d="M6.4,-13 L6.4,-34.5" stroke="#9ea3aa" stroke-width=".9"/><path d="M6.4,-34.5 L6.4,-41" stroke="#d9dde2" stroke-width=".55"/>
+       <path d="M5.4,-9.5 L7.4,-9.5 L7,-16 L5.8,-16 Z" fill="#6b4524"/><path d="M6.4,-16 L6.4,-30" stroke="#6b4524" stroke-width="1.1"/>`
+    : `<path d="M6.4,-11 L6.4,-38" stroke="#5a3a1e" stroke-width="1.1"/><path d="M6.4,-24 L6.4,-38.5" stroke="#8a8f96" stroke-width=".6"/><path d="M5.5,-9 L7.3,-9 L7,-14 L5.8,-14 Z" fill="#5a3a1e"/>`;
+  // Crossbelts for the cartridge box and bayonet, or the hunting shirt's fringed cape and a powder horn.
+  const kit = u.belts
+    ? `<path d="M-4.6,-21.6 L4,-12.6 M4.6,-21.6 L-4,-12.6" stroke="#f6f1e2" stroke-width="1.15"/><rect x="-0.9" y="-17.8" width="1.8" height="1.4" fill="#d4ad3e"/>`
+    : `<path d="M-5.6,-21.8 Q0,-19.4 5.6,-21.8 L5,-18.2 Q0,-16.6 -5,-18.2 Z" fill="#bfa877" stroke="#7a6640" stroke-width=".35"/>
+       <path d="M-4.6,-18 l-.4,1.6 M-3,-17.5 l-.3,1.6 M-1.4,-17.2 l-.2,1.6 M0,-17.1 v1.6 M1.4,-17.2 l.2,1.6 M3,-17.5 l.3,1.6 M4.6,-18 l.4,1.6" stroke="#7a6640" stroke-width=".35"/>
+       <path d="M-5.2,-20.6 L4.6,-12.2" stroke="#4a3520" stroke-width=".6"/><path d="M2.6,-12.4 Q4.8,-12.8 5.6,-10.6 L4.6,-10.4 Q4,-11.8 2.8,-11.6 Z" fill="#efe2bf" stroke="#7a6640" stroke-width=".3"/>`;
+  const fringe = u.hunting ? `<path d="M-5.6,-10.6 l-.3,1.4 M-4,-10.6 l-.2,1.4 M-2.4,-10.6 v1.4 M2.4,-10.6 v1.4 M4,-10.6 l.2,1.4 M5.6,-10.6 l.3,1.4" stroke="#7a6640" stroke-width=".35"/>` : "";
   return `
-    <path d="M4.6,-38 L4.6,-34" stroke="#c9ccd1" stroke-width=".9"/>
-    <path d="M4.6,-34 L4.6,-12" stroke="#5a3f27" stroke-width="1.5"/>
-    <rect x="-3.4" y="-10" width="2.7" height="10" fill="${u.legs}" stroke="#1d1a17" stroke-width=".35"/>
-    <rect x=".7" y="-10" width="2.7" height="10" fill="${u.legs}" stroke="#1d1a17" stroke-width=".35"/>
-    <rect x="-3.5" y="-5" width="2.9" height="5" fill="#1d1a17"/>
-    <rect x=".6" y="-5" width="2.9" height="5" fill="#1d1a17"/>
-    <path d="M-5,-21.5 Q0,-23 5,-21.5 L5.4,-10.5 L6.6,-6.8 L-6.6,-6.8 L-5.4,-10.5 Z" fill="${u.coat}" stroke="#1d1a17" stroke-width=".45"/>
-    <path d="M-1.4,-21.8 L1.4,-21.8 L1.1,-12 L-1.1,-12 Z" fill="${u.facing}"/>
-    ${belts}
-    <path d="M5,-21 L6.3,-14 L4.2,-13.2 L3.6,-20" fill="${u.coat}" stroke="#1d1a17" stroke-width=".4"/>
-    <circle cx="0" cy="-24.3" r="2.7" fill="#e8c39e" stroke="#6b4b33" stroke-width=".35"/>
+    ${gun}
+    <!-- legs: breeches, then gaiters buttoned to the knee, then shoes -->
+    <path d="M-3.3,-12 L-0.5,-12 L-0.7,-0.8 L-3.1,-0.8 Z" fill="${u.legs}" stroke="${ink}" stroke-width=".3"/>
+    <path d="M0.5,-12 L3.3,-12 L3.1,-0.8 L0.7,-0.8 Z" fill="${u.legs}" stroke="${ink}" stroke-width=".3"/>
+    <path d="M-3.2,-6.6 L-0.6,-6.6 L-0.7,-0.6 L-3.1,-0.6 Z M0.6,-6.6 L3.2,-6.6 L3.1,-0.6 L0.7,-0.6 Z" fill="${u.gaiters}"/>
+    <ellipse cx="-2" cy="-0.3" rx="1.9" ry=".7" fill="${ink}"/><ellipse cx="2" cy="-0.3" rx="1.9" ry=".7" fill="${ink}"/>
+    <!-- coat: body, long skirts with turned-back facings -->
+    <path d="M-5.2,-13 L-6.9,-5.2 L-3.4,-5.6 L-2.4,-12 Z M5.2,-13 L6.9,-5.2 L3.4,-5.6 L2.4,-12 Z" fill="${u.coat}" stroke="${ink}" stroke-width=".35"/>
+    ${u.hunting ? "" : `<path d="M-5.8,-9.6 L-6.6,-5.4 L-4.6,-5.6 Z M5.8,-9.6 L6.6,-5.4 L4.6,-5.6 Z" fill="${u.facing}"/>`}
+    <path d="M-5.2,-22.2 Q0,-23.8 5.2,-22.2 L5.4,-12.4 L-5.4,-12.4 Z" fill="${u.coat}" stroke="${ink}" stroke-width=".4"/>
+    <path d="M-1.7,-22 L1.7,-22 L1.4,-11.6 L-1.4,-11.6 Z" fill="${u.vest}"/>
+    ${u.hunting ? "" : `<path d="M-1.7,-22 L-3.3,-21.2 L-2.7,-14.6 L-1.5,-14 Z M1.7,-22 L3.3,-21.2 L2.7,-14.6 L1.5,-14 Z" fill="${u.facing}"/>
+    <circle cx="-2.6" cy="-20" r=".32" fill="#e9d48a"/><circle cx="-2.5" cy="-18" r=".32" fill="#e9d48a"/><circle cx="-2.4" cy="-16" r=".32" fill="#e9d48a"/>
+    <circle cx="2.6" cy="-20" r=".32" fill="#e9d48a"/><circle cx="2.5" cy="-18" r=".32" fill="#e9d48a"/><circle cx="2.4" cy="-16" r=".32" fill="#e9d48a"/>`}
+    ${fringe}
+    ${kit}
+    <!-- arms: the left hangs at the side, the right steadies the musket -->
+    <path d="M-5.2,-21.6 L-6.3,-13.6 L-4.7,-13.2 L-3.9,-20.4 Z" fill="${u.coat}" stroke="${ink}" stroke-width=".35"/>
+    <path d="M5.2,-21.6 L6.8,-15.6 L5.4,-14.6 L3.9,-20.4 Z" fill="${u.coat}" stroke="${ink}" stroke-width=".35"/>
+    ${u.hunting ? "" : `<path d="M-6.3,-14.6 L-4.7,-14.2 L-4.6,-13.2 L-6.3,-13.6 Z M6.8,-15.6 L5.4,-14.6 L5.2,-15.6 L6.5,-16.4 Z" fill="${u.facing}"/>`}
+    <circle cx="-5.5" cy="-12.6" r=".95" fill="#e3b892"/><circle cx="6.3" cy="-14.4" r=".95" fill="#e3b892"/>
+    <!-- head: black neck stock, face, powdered or natural hair with a queue -->
+    <rect x="-1.3" y="-23.6" width="2.6" height="1.2" fill="${ink}"/>
+    <ellipse cx="0" cy="-25.6" rx="2.6" ry="2.9" fill="#e9c39c" stroke="#7a5236" stroke-width=".3"/>
+    <path d="M-2.6,-26.2 Q-2.8,-28.4 0,-28.6 Q2.8,-28.4 2.6,-26.2 Q2.4,-27.4 0,-27.6 Q-2.4,-27.4 -2.6,-26.2 Z" fill="${u.hair}"/>
+    <circle cx="-2.7" cy="-25.6" r=".85" fill="${u.hair}"/><circle cx="2.7" cy="-25.6" r=".85" fill="${u.hair}"/>
+    <circle cx="-.9" cy="-25.9" r=".28" fill="${ink}"/><circle cx=".9" cy="-25.9" r=".28" fill="${ink}"/>
+    ${u.moustache ? `<path d="M-1.3,-24.4 Q0,-25 1.3,-24.4" stroke="#3a2a1a" stroke-width=".55" fill="none"/>` : ""}
     ${hat}`;
 }
 
@@ -53,7 +89,7 @@ function medallion(genId, short, side) {
   const inner = src
     ? `<image href="${src}" x="-8" y="-8" width="16" height="16" preserveAspectRatio="xMidYMin slice" clip-path="url(#medal-clip)"/>`
     : `${bust(side === "P" ? "#2e4a7d" : "#b3312a")}<text y="2.6" text-anchor="middle" font-size="7" font-weight="700" fill="#fff" font-family="Inter, sans-serif">${short[0]}</text>`;
-  return `<g transform="translate(15,-40)"><circle r="9" fill="#f3e8cf" stroke="${ring}" stroke-width="2"/>${inner}</g>`;
+  return `<g transform="translate(17,-48)"><circle r="9" fill="#f3e8cf" stroke="${ring}" stroke-width="2"/>${inner}</g>`;
 }
 
 // A small generic officer's bust in a powdered wig, used until a real portrait is added.
@@ -76,12 +112,12 @@ export function armyFigure({ side, hessian, men, regulars, militia, general, sho
   const main = side === "P" ? (militia > regulars ? UNIFORMS.militia : UNIFORMS.continental) : hessian ? UNIFORMS.hessian : UNIFORMS.british;
   const second = side === "P" && militia > 0 && regulars > 0 ? (main === UNIFORMS.militia ? UNIFORMS.continental : UNIFORMS.militia) : main;
   const count = men >= 8000 ? 3 : men >= 2500 ? 2 : 1;
-  const spots = count === 3 ? [[-10, -3, 0.82, second], [10, -3, 0.82, main], [0, 0, 1, main]] : count === 2 ? [[-6, -2, 0.9, second], [6, 0, 1, main]] : [[0, 0, 1, main]];
+  const spots = count === 3 ? [[-12, -3, 0.98, second], [12, -3, 0.98, main], [0, 0, 1.2, main]] : count === 2 ? [[-7, -2, 1.08, second], [7, 0, 1.2, main]] : [[0, 0, 1.2, main]];
 
-  let s = `<rect x="-24" y="-52" width="48" height="70" fill="transparent"/>`;
+  let s = `<rect x="-26" y="-60" width="52" height="78" fill="transparent"/>`;
   if (selected) s += `<ellipse cx="0" cy="1" rx="23" ry="7" fill="#ffffff" stroke="#c8102e" stroke-width="1.5" opacity=".9"/>`;
   s += `<ellipse cx="0" cy="1" rx="17" ry="4.2" fill="#000" opacity=".22"/>`;
-  if (general) s += `<path d="M-15,0 V-46" stroke="#4a3520" stroke-width="1.2"/><g class="flag" transform="translate(-15,-46)">${flag(kind)}</g>`;
+  if (general) s += `<path d="M-17,0 V-54" stroke="#4a3520" stroke-width="1.3"/><g class="flag" transform="translate(-17,-54)">${flag(kind)}</g>`;
   for (const [x, y, sc, u] of spots) s += `<g transform="translate(${x},${y}) scale(${sc})">${soldier(u)}</g>`;
   if (dugIn) s += `<path d="M-21,2 Q-12,-9 0,-8 Q12,-9 21,2 Z" fill="#8a6d45" stroke="#4d3b28" stroke-width=".8"/><path d="M-15,-3 l-3,-5 M-7,-6 l-2,-5 M2,-7 l1,-5 M10,-5 l3,-5 M16,-2 l4,-4" stroke="#4d3b28" stroke-width="1.2"/>`;
   if (general) s += medallion(general, short, side);
