@@ -36,3 +36,17 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `scenes/winter.jpg` | *The March to Valley Forge* | William B. T. Trego, 1883 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_March_to_Valley_Forge,_December_19,_1777,_by_William_B._T._Trego.jpg) (Museum of the American Revolution) | Public domain |
 | `scenes/victory.jpg` | *The Capture of the Hessians at Trenton* | John Trumbull, 1786–1828 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_Capture_of_the_Hessians_at_Trenton_December_26_1776.jpeg) (Yale University Art Gallery) | Public domain |
 | `scenes/saratoga.jpg` | *Surrender of General Burgoyne* | John Trumbull, 1821 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Surrender_of_General_Burgoyne.jpg) (U.S. Capitol) | Public domain |
+
+## Portraits for Saratoga, 1777
+
+| File | Shows | Artist and date | Source | License |
+|---|---|---|---|---|
+| `portraits/gates.jpg` | Horatio Gates | Gilbert Stuart, about 1790 to 1794 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Horatio_Gates_MET_DT2041.jpg) (Metropolitan Museum of Art) | CC0 |
+| `portraits/schuyler.jpg` | Philip Schuyler | Engraving by T. Kelly after John Trumbull, 1835 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Major_general_Philip_Schuyler_-_painted_by_J._Trumbull_;_engraved_by_T._Kelly._LCCN2004666636.jpg) (Library of Congress) | Public domain |
+| `portraits/stclair.jpg` | Arthur St. Clair | Charles Willson Peale, about 1780 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Arthur_St._Clair_MET_ap32.110.jpg) (Metropolitan Museum of Art) | CC0 |
+| `portraits/stark.jpg` | John Stark | Ulysses Dow Tenney, about 1790 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:General_John_Stark_-_Ulysses_Tenney,_c1790_(Manchester_Hist_Assoc_MHA_316)_crop.jpg) (Manchester Historic Association) | Public domain |
+| `portraits/morgan.jpg` | Daniel Morgan | Charles Willson Peale, about 1794 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DanielMorgan.jpeg) | Public domain |
+| `portraits/burgoyne.jpg` | John Burgoyne | Joshua Reynolds, about 1766 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BurgoyneByReynolds.jpg) (Frick Collection) | Public domain |
+| `portraits/fraser.jpg` | Simon Fraser | Engraving, between 1777 and 1890 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gen._Simon_Fraser.jpg) (New York Public Library) | Public domain |
+| `portraits/riedesel.jpg` | Baron Friedrich Adolf von Riedesel | Engraving from Max von Eelking's biography, 1856 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Friedrich_Adolf_Riedesel.jpg) | Public domain |
+| `portraits/stleger.jpg` | Barry St. Leger | Engraving, 1794 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Barry_St._Leger_(NYPL_b12349140-421807).jpg) (New York Public Library) | Public domain |

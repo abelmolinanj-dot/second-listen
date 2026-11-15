@@ -23,6 +23,16 @@ export const PORTRAITS = {
   clinton:    "img/portraits/clinton.jpg",    // engraving after John Smart, 1780
   carleton:   "img/portraits/carleton.jpg",   // unknown artist, about 1760
   rall:       "img/portraits/rall.jpg",       // detail of John Trumbull's study for the Battle of Trenton
+  // Saratoga, 1777
+  gates:      "img/portraits/gates.jpg",      // Gilbert Stuart, about 1793
+  schuyler:   "img/portraits/schuyler.jpg",   // engraving by T. Kelly after John Trumbull
+  stclair:    "img/portraits/stclair.jpg",    // Charles Willson Peale, about 1780
+  stark:      "img/portraits/stark.jpg",      // Ulysses Dow Tenney, about 1790
+  morgan:     "img/portraits/morgan.jpg",     // Charles Willson Peale, about 1794
+  burgoyne:   "img/portraits/burgoyne.jpg",   // Joshua Reynolds, about 1766
+  fraser:     "img/portraits/fraser.jpg",     // engraving (New York Public Library)
+  riedesel:   "img/portraits/riedesel.jpg",   // engraving, 1856
+  stleger:    "img/portraits/stleger.jpg",    // engraving, 1794
   // heister: no public-domain portrait found yet; the drawn bust is used.
 };
 
