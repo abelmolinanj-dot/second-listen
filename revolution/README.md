@@ -19,6 +19,10 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 
 ## What's in the prototype
 
+- **A main menu** with Continue, Campaign, Conquest (coming), Generals, Settings and Credits.
+- **A campaign map**: the war as a trail of eight missions from Boston in 1775 to Yorktown in 1781. Tap a mission for its briefing: a painting, the situation, your orders, difficulty, and your best result in stars (1–3). The Campaign of 1776 is playable; the rest show when they're coming. Missions are listed in `js/data/missions.js`.
+- **A generals roster** showing every commander's ratings, trait and loyalty.
+
 - **Map** of the northern colonies, Virginia to Canada, with 34 regions, drawn like a period map: mountain ranges, forests, farmland, the main post roads, towns, forts, rivers and named waters. The New York–Philadelphia corridor is magnified so it's playable on a phone.
 - **Terrain that matters**: hills (defenders +20%) and forest (+10%); in either, militia fight nearly as well as regulars.
 - **Soldiers on the map**: Continentals in blue and buff, redcoats, Hessians in brass caps and militia in hunting shirts. Bigger armies show more men. Armies carry the Grand Union Flag or the King's Colours, and march across the map when they move.
@@ -51,6 +55,8 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/terrain.js` | Map artwork: mountains, forests, roads, towns, waves, compass |
 | `js/soldiers.js` | Soldier figures, flags and general medallions |
 | `js/scenes.js` | Cutscenes and their drawn artwork |
+| `js/frontend.js` | Main menu, campaign map, mission briefings, generals roster, settings, credits |
+| `js/data/missions.js` | The campaign's missions and how stars are earned |
 | `js/sound.js` | Sound effects and music, synthesized with the Web Audio API |
 | `js/tutorial.js` | The aide-de-camp's guided tutorial |
 | `js/data/facts.js` | The "Did you know?" history notes |

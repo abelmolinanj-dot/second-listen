@@ -16,6 +16,7 @@ import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
 import { sfx, music, soundPrefs, setSfx, setMusic } from "./sound.js";
 import { createTutorial } from "./tutorial.js";
+import { createFrontend, recordResult } from "./frontend.js";
 
 const SAVE_KEY = "dispatches76-save";
 const PLAYED_KEY = "dispatches76-played";
@@ -617,7 +618,9 @@ function showGameOver(summary) {
     return;
   }
   showGameOver.played = false;
-  let h = `<div class="title-hero"><div class="seal">${g.result === "defeat" ? "⚑" : "★"}</div><h1>${esc(g.title)}</h1></div><p>${esc(g.text)}</p>`;
+  const stars = recordResult(state.mission || "1776", g);
+  let h = `<div class="title-hero"><div class="seal">${g.result === "defeat" ? "⚑" : "★"}</div><h1>${esc(g.title)}</h1>
+    <div class="result-stars">${"★".repeat(stars)}<i>${"★".repeat(3 - stars)}</i></div></div><p>${esc(g.text)}</p>`;
   if (summary && summary.battles.length) h += `<h3>The last battles</h3>` + summary.battles.map(battleHtml).join("");
   h += `<h3>Your record</h3><div class="stats" style="color:var(--ink)">
     <div class="stat"><b>${state.stats.won}</b><span>Battles won</span></div>
@@ -625,11 +628,12 @@ function showGameOver(summary) {
     <div class="stat"><b>${Math.round(state.cause)}</b><span>Cause</span></div>
     <div class="stat"><b>${(1 / state.priceLevel).toFixed(2)}</b><span>Dollar's value</span></div>
     ${g.score !== undefined ? `<div class="stat"><b>${g.score}</b><span>Score</span></div>` : ""}</div>`;
-  h += `<div class="modal-actions"><button class="btn" id="view">Look at the map</button><button class="btn primary" id="again">Play again</button></div>`;
+  h += `<div class="modal-actions"><button class="btn" id="view">Look at the map</button><button class="btn" id="again">Play again</button><button class="btn primary" id="tocamp">Campaign map</button></div>`;
   clearSave();
   modal(h, (c) => {
     c.querySelector("#view").onclick = () => { $("#modal").hidden = true; };
-    c.querySelector("#again").onclick = () => startNew();
+    c.querySelector("#again").onclick = () => startNew(false);
+    c.querySelector("#tocamp").onclick = () => { $("#modal").hidden = true; frontend.showCampaign(); };
   });
 }
 
@@ -645,18 +649,23 @@ function howToPlay() {
   <li><b>Winter</b> (December–February) kills men camped outside cities and makes attacks harder.</li></ul>`;
 }
 
-function showTitle() {
+// The main menu, campaign map and other full-screen pages live in frontend.js.
+const frontend = createFrontend({
+  savedGame: () => { const s = loadSave(); return s && !s.gameOver ? { label: dateLabel(s), mission: s.mission || "1776" } : null; },
+  onBegin: (scenario, guide) => startNew(guide),
+  onContinue: continueGame,
+  hasPlayed,
+});
+
+function continueGame() {
   const saved = loadSave();
-  modal(`<div class="title-hero"><div class="seal">✒</div><h1>Dispatches of '76</h1><p class="meta">A strategy game of the American Revolution · Prototype</p></div>
-  <h2 style="margin-top:14px">${esc(SCENARIO.title)}</h2><p>${esc(SCENARIO.blurb)}</p>
-  <h3>To win</h3><ul class="goals">${SCENARIO.goals.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>
-  ${howToPlay()}
-  <label class="check"><input type="checkbox" id="guide" ${hasPlayed() ? "" : "checked"}> Guide me through the first two months</label>
-  <div class="modal-actions">${saved ? `<button class="btn" id="continue">Continue (${esc(dateLabel(saved))})</button>` : ""}<button class="btn primary" id="new">Begin the campaign</button></div>`, (c) => {
-    c.querySelector("#new").onclick = () => startNew(c.querySelector("#guide").checked);
-    const cont = c.querySelector("#continue");
-    if (cont) cont.onclick = () => { state = saved; closeModal(); fitView(); if (unanswered(state).length) showLetters(); };
-  });
+  if (!saved) { frontend.showCampaign(); return; }
+  state = saved;
+  ui.army = null; ui.region = null; ui.target = null;
+  $("#modal").hidden = true;
+  fitView();
+  render();
+  if (unanswered(state).length) showLetters();
 }
 
 function showMenu() {
@@ -665,8 +674,9 @@ function showMenu() {
   <h3>Sound</h3>
   <label class="check"><input type="checkbox" id="opt-sfx" ${p.sfx ? "checked" : ""}> Sound effects (muskets, cannon, drums)</label>
   <label class="check"><input type="checkbox" id="opt-music" ${p.music ? "checked" : ""}> Fife and drum music</label>
-  ${howToPlay()}<div class="modal-actions">${state && !state.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
+  ${howToPlay()}<div class="modal-actions">${state && !state.tutorial ? `<button class="btn" id="guide">Show the guide</button>` : ""}<button class="btn danger" id="restart">Restart campaign</button><button class="btn" id="tomain">Main menu</button><button class="btn primary" id="close">Back to the war</button></div>`, (c) => {
     c.querySelector("#close").onclick = closeModal;
+    c.querySelector("#tomain").onclick = () => { save(); $("#modal").hidden = true; frontend.showMain(); };
     c.querySelector("#restart").onclick = () => { if (confirm("Abandon this campaign and start over?")) startNew(false); };
     c.querySelector("#opt-sfx").onchange = (e) => { setSfx(e.target.checked); if (e.target.checked) sfx.musket(); };
     c.querySelector("#opt-music").onchange = (e) => { setMusic(e.target.checked); if (e.target.checked) music.victory(); };
@@ -677,6 +687,7 @@ function showMenu() {
 
 function startNew(guide = false) {
   state = newGame();
+  state.mission = "1776";
   ui.army = null; ui.region = null; ui.target = null;
   save();
   $("#modal").hidden = true;
@@ -687,4 +698,4 @@ function startNew(guide = false) {
 }
 
 buildMap();
-showTitle();
+frontend.showMain();
