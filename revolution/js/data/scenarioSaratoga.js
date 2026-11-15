@@ -47,6 +47,8 @@ export const SCENARIO = {
   },
   tutorial: false,
   finish,
+  objectives,
+  advice,
   checkEnd,
   onOpenMonth,
   onCloseMonth,
@@ -123,7 +125,7 @@ function burgoyneCornered(state) {
   const near = armyList(state, "P").filter((a) => distance(a.region, b.region) <= 1);
   const ours = near.reduce((s, a) => s + armyMen(a), 0);
   const trapped = !retreatSpot(state, b, null);
-  return (armyMen(b) < (state.flags.history?.burgoyneMen || BURGOYNE_START) * (state.flags.burgoyneDespairs ? 0.75 : 0.6) || trapped) && ours >= armyMen(b) * 1.1;
+  return (armyMen(b) < (state.flags.history?.burgoyneMen || BURGOYNE_START) * (state.flags.burgoyneDespairs ? 0.75 : 0.65) || trapped) && ours >= armyMen(b) * 1.1;
 }
 
 // ---------- month hooks ----------
@@ -190,19 +192,57 @@ function checkEnd(state) {
   return null;
 }
 
+// Burgoyne counts as "broken" if his army is down to half its starting strength, or pushed back north of Saratoga.
+function burgoyneBroken(state) {
+  const b = burgoyne(state);
+  if (!b) return true;
+  const start = state.flags.history?.burgoyneMen || BURGOYNE_START;
+  return armyMen(b) <= start * 0.5 || ["stjohns", "ticonderoga"].includes(b.region) && state.turn >= 3;
+}
+
 function finish(state) {
   const albany = state.regions.albany.owner === "P";
-  const invaders = armyList(state, "B").filter((a) => NORTH_WOODS.includes(a.region));
-  if (albany && !invaders.length) {
-    return { result: "victory", stars: 2, title: "The North holds", text: "Burgoyne's campaign has failed. His army limps back toward Canada, and the Hudson is still yours. Not a decisive victory, but a victory.", score: scoreOf(state) };
+  if (albany && burgoyneBroken(state)) {
+    return { result: "victory", stars: 2, title: "The North holds", text: "Burgoyne's campaign has failed. His army is broken and the Hudson is still yours. Not a surrender, but a victory the whole country can see.", score: scoreOf(state) };
   }
-  if (albany && state.cause < 40) {
-    return { result: "defeat", stars: 0, title: "Burgoyne winters on the Hudson", text: "Albany still stands, but Burgoyne's army is camped in the Hudson Valley and the country has lost heart. In the spring he will finish what he started.", score: scoreOf(state) };
+  if (albany && state.cause >= 40) {
+    return { result: "survived", stars: 1, title: "Albany holds", text: "Albany is still in American hands, but Burgoyne's army is still in the field as winter comes. The question will be settled next year.", score: scoreOf(state) };
   }
   if (albany) {
-    return { result: "survived", stars: 1, title: "Stalemate in the north", text: "Albany is still in American hands, but British troops remain in the Hudson Valley as winter comes. The question will be settled next year.", score: scoreOf(state) };
+    return { result: "defeat", stars: 0, title: "Burgoyne winters on the Hudson", text: "Albany still stands, but the country has lost heart. In the spring Burgoyne will finish what he started.", score: scoreOf(state) };
   }
   return { result: "defeat", stars: 0, title: "The Hudson is cut", text: "Albany has fallen. The British hold the Hudson from Canada to New York, and New England is cut off from the other states.", score: scoreOf(state) };
+}
+
+// The "Your orders" box: what each star needs, and how the campaign stands right now.
+function objectives(state) {
+  const b = burgoyne(state);
+  const g = state.generals.burgoyne;
+  const surrendered = g.status === "captured" || !!state.flags.convention || (state.turn >= 1 && !b && g.status !== "away");
+  const albany = state.regions.albany.owner === "P";
+  return {
+    status: b ? `Burgoyne: ${menWords(armyMen(b))} men at ${REGIONS[b.region].name}` : "Burgoyne's army is gone",
+    goals: [
+      { stars: 3, text: "Force Burgoyne to surrender, or destroy his army", done: surrendered },
+      { stars: 2, text: "Hold Albany and break Burgoyne: cut him to half strength or push him back past Saratoga", done: albany && burgoyneBroken(state) },
+      { stars: 1, text: "Hold Albany to the end of November", done: albany, failed: !albany },
+    ],
+  };
+}
+
+// The aide's advice for this month, read from the situation on the map.
+function advice(state) {
+  const b = burgoyne(state);
+  const cmd = commandArmy(state);
+  const clinton = findGeneralArmy(state, "clinton");
+  if (!b) return "Burgoyne's army is finished. Hold what you have until the campaign ends.";
+  const start = state.flags.history?.burgoyneMen || BURGOYNE_START;
+  if (state.turn === 0) return "Burgoyne must come down through Ticonderoga, then Saratoga, then Albany. Ticonderoga can't hold long. Gather your armies around Albany and recruit militia there each month: they're cheap, and you only need them until autumn.";
+  if (clinton && clinton.stalled === 0 && clinton.region !== "manhattan") return "Clinton is coming up the Hudson from New York. Keep enough men in the Hudson Highlands to slow him, or he could reach Albany behind you.";
+  if (armyMen(b) <= start * 0.65) return `Burgoyne is down to ${menWords(armyMen(b))} men. Put a large army right next to him. If his road home is blocked (retake Ticonderoga behind him), he'll have to ask for terms.`;
+  if (["stjohns", "ticonderoga"].includes(b.region)) return `Burgoyne is at ${REGIONS[b.region].name}. Move a strong army to Saratoga and dig in: its hills favor the defender, and every month he waits, hunger costs him men.`;
+  if (cmd && distance(cmd.region, b.region) <= 1) return "Burgoyne is next to you. Dig in on good ground and let him attack, or strike when the odds shown are in your favor. Every battle he loses brings him closer to surrender.";
+  return "Bring your armies together. Burgoyne beats small armies one at a time, but he can't beat them all at once.";
 }
 
 // ---------- letters ----------

@@ -451,3 +451,18 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .honor.congress .portrait { width: 44px; height: 44px; }
 .gc-record { margin-top: 6px; padding: 6px 8px; background: #eef2fa; border-radius: 6px; font-size: 12.5px; color: var(--ink); }
 .gc-record ul { margin: 4px 0 0; padding-left: 16px; }
+
+/* --- your orders --- */
+.orders { margin: 6px 0 12px; border: 1px solid rgba(31,53,102,.3); border-top: 4px solid var(--accent); border-radius: 8px; background: #ffffff; overflow: hidden; }
+.orders-head { font-family: var(--caps); font-size: 16px; padding: 8px 12px 0; }
+.orders-status { font-size: 13px; padding: 2px 12px 8px; color: var(--ink-soft); border-bottom: 1px solid rgba(31,53,102,.15); }
+.goal { display: flex; align-items: flex-start; gap: 8px; padding: 7px 12px; font-size: 13.5px; line-height: 1.35; border-bottom: 1px solid rgba(31,53,102,.1); }
+.goal-stars { flex: none; width: 46px; color: var(--accent); letter-spacing: 1px; }
+.goal-text { flex: 1; }
+.goal-mark { flex: none; width: 18px; font-weight: 700; text-align: center; }
+.goal.done { background: #eef7ef; }
+.goal.done .goal-mark { color: var(--good); }
+.goal.failed { opacity: .6; }
+.goal.failed .goal-mark { color: var(--bad); }
+.aide { padding: 9px 12px; font-family: var(--text); font-size: 14px; line-height: 1.5; background: #f4f6fb; }
+.aide b { font-family: var(--sans); font-size: 12.5px; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }

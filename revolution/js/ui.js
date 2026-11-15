@@ -397,6 +397,14 @@ function renderPanel() {
     h += recruitButtons(ui.region);
   } else {
     h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">You are the Board of War: you run the army and pay for it.</p>`;
+    // Your orders: what each star needs, a live check beside each, and the aide's advice for this month.
+    const SC = scenarioOf(state).SCENARIO;
+    if (SC.objectives) {
+      const o = SC.objectives(state);
+      h += `<div class="orders"><div class="orders-head">Your orders</div><div class="orders-status">${esc(o.status)}</div>
+        ${o.goals.map((g) => `<div class="goal ${g.done ? "done" : g.failed ? "failed" : ""}"><span class="goal-stars">${"★".repeat(g.stars)}</span><span class="goal-text">${esc(g.text)}</span><span class="goal-mark">${g.done ? "✓" : g.failed ? "✗" : ""}</span></div>`).join("")}
+        ${SC.advice ? `<div class="aide"><b>Your aide suggests:</b> ${esc(SC.advice(state))}</div>` : ""}</div>`;
+    }
     h += `<p>Tap an army below or on the map to give it orders, or tap any region to learn about it. When you're done, end the month and the British move.</p>`;
     const mine = armyList(state, "P").sort((x, y) => armyMen(y) - armyMen(x));
     h += `<h3 class="panel-h">Your armies</h3><div class="army-list">${mine.map((a) => `<button class="army-chip${a.moved ? " moved" : ""}" data-pick="${a.id}">${a.general ? portraitOf(a.general, "tiny") : `<span class="chip-flag"></span>`}<span><b>${esc(describeArmy(state, a))}</b><small>${esc(REGIONS[a.region].name)} · ${fmtMen(armyMen(a))}${a.moved ? " · done this month" : ""}</small></span></button>`).join("")}</div>`;

@@ -6,7 +6,7 @@ import { REGIONS } from "./regions.js";
 import { GENERALS } from "./generals.js";
 import {
   newArmy, armyAt, armyList, armyMen, findGeneralArmy, changeCause, changeLoyalty, spend, earn, money, fmtMen, menWords,
-  moveArmy, distance,
+  moveArmy, distance, threatTo, power,
 } from "../rules.js";
 import { makeRng } from "../rng.js";
 
@@ -43,7 +43,37 @@ export const SCENARIO = {
   },
   tutorial: true,
   finish: finishScenario,
+  objectives,
+  advice,
 };
+
+// The "Your orders" box: what each star needs, and how the campaign stands.
+function objectives(state) {
+  const held = (id) => state.regions[id].owner === "P";
+  const w = findGeneralArmy(state, "washington");
+  const months = state.lastTurn - state.turn + 1;
+  return {
+    status: `${w ? `Washington: ${menWords(armyMen(w))} men at ${REGIONS[w.region].name}` : "Washington's army is gone"} · Philadelphia ${held("philadelphia") ? "held" : "lost"} · ${months} month${months === 1 ? "" : "s"} left`,
+    goals: [
+      { stars: 3, text: "Philadelphia held, Cause at 60 or more, and New York City retaken (or Trenton held with 3 victories)", done: held("philadelphia") && state.cause >= 60 && (held("manhattan") || (held("trenton") && state.stats.won >= 3)) },
+      { stars: 2, text: "Philadelphia held and Cause at 35 or more when June 1777 ends", done: held("philadelphia") && state.cause >= 35 },
+      { stars: 1, text: "Keep Washington free and the Cause alive until June 1777", done: !!w && state.cause > 0, failed: state.generals.washington.status === "captured" },
+    ],
+  };
+}
+
+// The aide's advice for this month, read from the map.
+function advice(state) {
+  const w = findGeneralArmy(state, "washington");
+  if (!w) return "Washington's army is gone. Hold Philadelphia with whatever you have left.";
+  const threat = threatTo(state, w.region, "P");
+  if (state.turn === 0) return "Howe will strike New York soon. The city sits on islands the Royal Navy controls, so it's a trap if you stay too long. Dig in to make him pay for every mile, but never let Washington's army be surrounded.";
+  if (threat > power(state, w) * 1.5) return "Washington is badly outnumbered. Fall back now, toward New Jersey and Philadelphia. Losing ground costs a little Cause; losing the army costs everything.";
+  if (armyList(state, "B").some((a) => distance(a.region, "philadelphia") <= 1)) return "The British are close to Philadelphia. Bring your strongest army to the city and dig in. Losing the capital costs a lot of Cause.";
+  if (state.turn >= 4 && state.turn <= 6) return "Winter is here. Keep armies in cities where you can. Look for small British or Hessian posts close to Washington: a winter surprise attack could turn the war.";
+  if (state.treasury < 20) return "The treasury is nearly empty. Unpaid soldiers desert. Printing money helps now and hurts later; Robert Morris and the French may help if you hold on.";
+  return "Keep Washington's army whole and between Howe and Philadelphia. Recruit where you can, and strike only when the odds shown are good.";
+}
 
 function finishScenario(state) {
   const held = (id) => state.regions[id].owner === "P";
