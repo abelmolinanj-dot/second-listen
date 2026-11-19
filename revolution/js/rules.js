@@ -483,3 +483,54 @@ export function distance(from, to) {
 export function threatTo(state, regionId, side) {
   return ADJ[regionId].reduce((s, n) => { const e = armyAt(state, n, enemy(side)); return s + (e ? power(state, e) : 0); }, 0);
 }
+
+// ---------- supply ----------
+// An army eats from a friendly city, fort or supply depot within a few regions, along a road of friendly
+// regions with no enemy army on it. The British also supply by sea: any coastal region they hold works.
+// Cut an army off, and it goes hungry.
+export const SUPPLY_RANGE = 3;
+export const DEPOT_COST = 10;
+
+export function isSupplySource(state, side, id) {
+  const r = REGIONS[id], s = state.regions[id];
+  if (s.owner !== side) return false;
+  if (r.city || r.fort || s.depot) return true;
+  if (side === "B" && (r.coastal || id === "stjohns")) return true;
+  return false;
+}
+
+// The road from an army to its nearest source of supply, as a list of region ids starting where the army is,
+// or null if it's cut off.
+export function supplyPath(state, army) {
+  const side = army.side;
+  if (isSupplySource(state, side, army.region)) return [army.region];
+  const prev = { [army.region]: null };
+  let frontier = [army.region];
+  for (let d = 1; d <= SUPPLY_RANGE && frontier.length; d++) {
+    const next = [];
+    for (const id of frontier) for (const n of ADJ[id]) {
+      if (n in prev) continue;
+      if (state.regions[n].owner !== side || armyAt(state, n, enemy(side))) continue;
+      prev[n] = id;
+      if (isSupplySource(state, side, n)) {
+        const path = [n];
+        for (let p = id; p !== null; p = prev[p]) path.unshift(p);
+        return path;
+      }
+      next.push(n);
+    }
+    frontier = next;
+  }
+  return null;
+}
+
+export function buildDepot(state, regionId) {
+  const s = state.regions[regionId], r = REGIONS[regionId];
+  if (s.owner !== "P") return "You can only build a depot in a region you hold.";
+  if (r.city || r.fort || s.depot) return "This region already supplies your armies.";
+  if (state.treasury < DEPOT_COST) return "The treasury can't cover a depot.";
+  spend(state, DEPOT_COST, "fortifications");
+  s.depot = true;
+  log(state, `A supply depot was set up at ${r.name}.`, "money");
+  return null;
+}

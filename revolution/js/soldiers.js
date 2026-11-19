@@ -107,7 +107,7 @@ export function bust(coat, scale = 1) {
 export const SOLDIER_DEFS = `<clipPath id="medal-clip"><circle r="8"/></clipPath>`;
 
 // Build the inside of an army's map marker. Coordinates are relative to the region's center.
-export function armyFigure({ side, hessian, men, regulars, militia, general, short, moved, dugIn, selected, label }) {
+export function armyFigure({ side, hessian, men, regulars, militia, general, short, moved, dugIn, selected, label, unsupplied }) {
   const kind = side === "P" ? "P" : hessian ? "H" : "B";
   const main = side === "P" ? (militia > regulars ? UNIFORMS.militia : UNIFORMS.continental) : hessian ? UNIFORMS.hessian : UNIFORMS.british;
   const second = side === "P" && militia > 0 && regulars > 0 ? (main === UNIFORMS.militia ? UNIFORMS.continental : UNIFORMS.militia) : main;
@@ -121,6 +121,8 @@ export function armyFigure({ side, hessian, men, regulars, militia, general, sho
   for (const [x, y, sc, u] of spots) s += `<g transform="translate(${x},${y}) scale(${sc})">${soldier(u)}</g>`;
   if (dugIn) s += `<path d="M-21,2 Q-12,-9 0,-8 Q12,-9 21,2 Z" fill="#8a6d45" stroke="#4d3b28" stroke-width=".8"/><path d="M-15,-3 l-3,-5 M-7,-6 l-2,-5 M2,-7 l1,-5 M10,-5 l3,-5 M16,-2 l4,-4" stroke="#4d3b28" stroke-width="1.2"/>`;
   if (general) s += medallion(general, short, side);
+  // Cut off from supply: a red warning badge.
+  if (unsupplied) s += `<g transform="translate(-19,-30)"><circle r="6.5" fill="#c8102e" stroke="#ffffff" stroke-width="1.4"/><text y="3.4" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff" font-family="Inter, sans-serif">!</text></g>`;
   const fill = side === "P" ? "#253c73" : hessian ? "#7d2a22" : "#a8342b";
   s += `<g transform="translate(0,9)"><rect x="-17" y="-1" width="34" height="13" rx="6.5" fill="${fill}" stroke="#f3e8cf" stroke-width="1.2"/><text y="8.6" text-anchor="middle" class="count">${label}</text></g>`;
   return s;

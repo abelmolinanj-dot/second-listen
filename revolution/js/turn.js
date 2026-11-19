@@ -8,7 +8,7 @@ import { REGIONS } from "./data/regions.js";
 import { SCENARIOS, DEFAULT_SCENARIO, scenarioOf } from "./data/scenarios.js";
 import {
   armyList, armyAt, armyMen, militiaMen, newArmy, monthlyIncome, armyUpkeep, earn, spend, changeCause, log,
-  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather,
+  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather, supplyPath,
 } from "./rules.js";
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, unanswered } from "./letters.js";
@@ -176,6 +176,18 @@ function closeMonth(state) {
 
   // Anything special this scenario does at the end of a month (supply lines, for example).
   scenarioOf(state).SCENARIO.onCloseMonth?.(state);
+
+  // Armies cut off from supply go hungry: men fall sick, desert, or wander off to forage.
+  for (const a of Object.values(state.armies)) {
+    a.unsupplied = !supplyPath(state, a);
+    if (!a.unsupplied || armyMen(a) < 100) continue;
+    const lostReg = Math.round(a.regulars * 0.05);
+    let lostMil = 0;
+    for (const b of a.militia) { const m = Math.round(b.men * 0.08); b.men -= m; lostMil += m; }
+    a.regulars -= lostReg;
+    const lost = lostReg + lostMil;
+    if (lost > 30) log(state, `${a.side === "P" ? "Our" : "An enemy"} army at ${REGIONS[a.region].name} is cut off from supply and lost ${menWords(lost)} men.`, a.side === "P" ? "bad" : "good");
+  }
 
   // Remove armies that have melted away.
   for (const a of Object.values(state.armies)) {

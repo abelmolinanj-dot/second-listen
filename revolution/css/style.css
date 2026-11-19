@@ -499,3 +499,9 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .town circle { fill: #2a2118; }
 .town text { font-family: var(--serif); font-size: 8.5px; fill: #2a2118; paint-order: stroke; stroke: rgba(255,255,255,.8); stroke-width: 2px; pointer-events: none; }
 .town { pointer-events: none; }
+
+/* --- supply --- */
+.supply-line { fill: none; stroke: #6b4524; stroke-width: 2.6; stroke-dasharray: 2 6; stroke-linecap: round; pointer-events: none; opacity: .85; }
+.supply { font-size: 13px; margin: 6px 0; padding: 6px 10px; border-radius: 6px; }
+.supply.good { background: #eef7ef; }
+.supply.bad { background: #fdecee; color: var(--bad); }

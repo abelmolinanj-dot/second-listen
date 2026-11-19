@@ -6,6 +6,7 @@ import {
   armyList, armyAt, armyMen, militiaMen, generalOf, moveTargets, winChance, oddsLabel, moveArmy, digIn, recruit, canRecruit,
   regularsCost, militiaCost, printMoney, monthlyIncome, monthlyUpkeep, regionIncome, assignGeneral, reserveGenerals,
   dateLabel, isWinter, money, fmtMen, menWords, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES, WEATHER, season,
+  supplyPath, buildDepot, SUPPLY_RANGE, DEPOT_COST,
 } from "./rules.js";
 import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
 import { answerLetter, unanswered, senderName, senderRole } from "./letters.js";
@@ -255,6 +256,8 @@ function renderMap() {
       hl += `<path class="hl ${t.kind}${ui.target === t.region ? " target" : ""}" d="${polygonPath(shapes[t.region])}"/>`;
     }
   }
+  // The selected army's road back to its supply.
+  if (ui.army && state.armies[ui.army]) { const sp = supplyPath(state, state.armies[ui.army]); if (sp && sp.length > 1) hl += `<path class="supply-line" d="${linePath(sp.map((id) => seeds[id]))}"/>`; }
   $("#highlights").innerHTML = hl;
   // Army figures. Each keeps its element between renders, so a move slides it across the map.
   const layer = $("#tokens");
@@ -273,10 +276,10 @@ function renderMap() {
       if (fresh) { el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.dataset.army = a.id; el.style.transition = "none"; }
       el.dataset.region = rid;
       el.setAttribute("class", `token ${a.side}${a.moved && a.side === "P" ? " moved" : ""}`);
-      const key = [armyMen(a), a.general, a.moved, a.dugIn, ui.army === a.id, a.hessian, militiaMen(a) > a.regulars].join("|");
+      const key = [armyMen(a), a.general, a.moved, a.dugIn, ui.army === a.id, a.hessian, militiaMen(a) > a.regulars, a.side === "P" && !supplyPath(state, a)].join("|");
       if (el.dataset.key !== key) {
         el.dataset.key = key;
-        el.innerHTML = armyFigure({ side: a.side, hessian: a.hessian, men: armyMen(a), regulars: a.regulars, militia: militiaMen(a), general: a.general, short: g ? g.short : "", moved: a.moved, dugIn: a.dugIn, selected: ui.army === a.id, label: fmtMen(armyMen(a)) });
+        el.innerHTML = armyFigure({ side: a.side, hessian: a.hessian, men: armyMen(a), regulars: a.regulars, militia: militiaMen(a), general: a.general, short: g ? g.short : "", moved: a.moved, dugIn: a.dugIn, selected: ui.army === a.id, label: fmtMen(armyMen(a)), unsupplied: a.side === "P" && !supplyPath(state, a) });
       }
       el.style.transform = `translate(${x + ox}px, ${y}px)`;
       layer.appendChild(el); // keeps northern armies behind southern ones
@@ -362,6 +365,7 @@ function renderPanel() {
     const g = generalOf(state, a);
     h += `<h2>${esc(describeArmy(state, a))}</h2><p class="sub">at ${esc(REGIONS[a.region].name)}${a.moved ? " · has acted this month" : ""}${a.dugIn ? " · dug in" : ""}</p>`;
     h += armySummary(a);
+    h += supplyNote(a);
     if (g) h += generalCard(g, a.general);
     else {
       const spare = reserveGenerals(state, "P");
@@ -392,6 +396,7 @@ function renderPanel() {
     if (r.terrain === "forest") h += `<p class="hint">Forest: defenders are 10% stronger, and militia fight almost as well as regulars.</p>`;
     if (r.note) h += `<p class="hint">${esc(r.note)}</p>`;
     h += factHtml(regionFact(ui.region));
+    h += depotButton(ui.region);
     h += recruitButtons(ui.region);
   } else {
     h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">You are the Board of War: you run the army and pay for it.</p>`;
@@ -433,6 +438,7 @@ function renderPanel() {
   };
   on("rec-reg", () => doRecruit("regulars"));
   on("rec-mil", () => doRecruit("militia"));
+  on("build-depot", () => { const e = buildDepot(state, ui.region); if (e) toast(e); else sfx.coins(); save(); render(); });
   const sel = document.getElementById("assign");
   if (sel) sel.onchange = () => { if (sel.value) { const e = assignGeneral(state, sel.value, ui.army); if (e) toast(e); save(); render(); } };
 }
@@ -850,4 +856,19 @@ function noteWounds(battles) {
     (state.wounds ||= []).push({ general: id, text });
     state.log.unshift({ turn: state.turn, text: `General ${state.generals[id].short} was wounded at ${REGIONS[b.region].name}.`, kind: "bad" });
   }
+}
+
+// ---------- supply in the panel ----------
+function supplyNote(a) {
+  const sp = supplyPath(state, a);
+  if (!sp) return `<p class="supply bad"><b>Out of supply.</b> This army loses men every month until it is within ${SUPPLY_RANGE} friendly regions of a city, fort or depot.</p>`;
+  if (sp.length === 1) return `<p class="supply good"><b>Supplied</b> from ${esc(REGIONS[a.region].name)}.</p>`;
+  return `<p class="supply good"><b>Supplied</b> from ${esc(REGIONS[sp[sp.length - 1]].name)}, ${sp.length - 1} region${sp.length > 2 ? "s" : ""} away (the dashed line).</p>`;
+}
+function depotButton(id) {
+  const s = state.regions[id], r = REGIONS[id];
+  if (s.owner !== "P") return "";
+  if (s.depot) return `<p class="hint">A supply depot here feeds armies within ${SUPPLY_RANGE} regions.</p>`;
+  if (r.city || r.fort) return "";
+  return `<div class="row"><button class="btn small" id="build-depot">Build a supply depot · ${money(DEPOT_COST)}</button></div><p class="hint">Feeds your armies within ${SUPPLY_RANGE} regions, so they can operate far from cities.</p>`;
 }
