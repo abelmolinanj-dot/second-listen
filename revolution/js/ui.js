@@ -6,7 +6,7 @@ import {
   armyList, armyAt, armyMen, militiaMen, generalOf, moveTargets, winChance, oddsLabel, moveArmy, digIn, recruit, canRecruit,
   regularsCost, militiaCost, printMoney, monthlyIncome, monthlyUpkeep, regionIncome, assignGeneral, reserveGenerals,
   dateLabel, isWinter, money, fmtMen, menWords, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES, WEATHER, season,
-  supplyPath, buildDepot, SUPPLY_RANGE, DEPOT_COST,
+  supplyPath, buildDepot, SUPPLY_RANGE, DEPOT_COST, TACTICS, flankChance,
 } from "./rules.js";
 import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
 import { answerLetter, unanswered, senderName, senderRole } from "./letters.js";
@@ -15,7 +15,7 @@ import { randomQuote } from "./data/quotes.js";
 import { awardHonors, noteFact, noteLetter } from "./book.js";
 import { applyLegacy, recordLegacy, getLegacy } from "./legacy.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extraLand, mapLettering } from "./terrain.js";
-import { SOLDIER_DEFS, armyFigure, battleMarker, bust } from "./soldiers.js";
+import { SOLDIER_DEFS, armyFigure, battleMarker, bust, battleScene } from "./soldiers.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
@@ -230,8 +230,8 @@ function onMapTap(target, clientX, clientY) {
   if (ui.army && state.armies[ui.army].general === "washington") tutorial.event("select");
 }
 
-function doMove(regionId) {
-  const r = moveArmy(state, ui.army, regionId, { share: ui.split ? 0.5 : 1 });
+function doMove(regionId, tactic = null) {
+  const r = moveArmy(state, ui.army, regionId, { share: ui.split ? 0.5 : 1, tactic });
   if (typeof r === "string") { toast(r); return; }
   ui.split = false;
   ui.target = null;
@@ -418,7 +418,7 @@ function renderPanel() {
   p.innerHTML = h;
 
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-  on("do-attack", () => doMove(ui.target));
+  on("do-attack", () => (bigBattle() ? showCloseup() : doMove(ui.target)));
   on("cancel-attack", () => { ui.target = null; render(); });
   on("split", () => { ui.split = !ui.split; render(); });
   on("dig", () => { const e = digIn(state, ui.army); if (e) toast(e); else { sfx.tap(); tutorial.event("act"); } save(); render(); });
@@ -604,6 +604,9 @@ function battleHtml(b) {
   const who = (x) => `${x.general ? esc(x.general) + "'s " : ""}${sideName(x.side)} force (${menWords(x.men)})`;
   let s = `<div class="battle ${cls}"><b>${esc(REGIONS[b.region].name)}${b.surprise ? ": surprise attack" : ""}</b><br>`;
   s += `${who(att)} attacked ${who(def)}. `;
+  const TACTIC_TEXT = { charge: "Our men went in with the bayonet. ", probe: "Our men probed the enemy line. ", volley: "" };
+  if (b.tactic === "flank") s += b.flank ? "The flanking column found the enemy's flank. " : "The flanking column lost its way and arrived too late. ";
+  else if (b.tactic) s += TACTIC_TEXT[b.tactic] || "";
   s += b.attackerWins ? `The attackers won. ` : `The attack was beaten off. `;
   s += `Losses: ${menWords(b.attackerWins ? b.winnerLoss : b.loserLoss)} attackers, ${menWords(b.attackerWins ? b.loserLoss : b.winnerLoss)} defenders.`;
   if (b.surrendered) s += ` The defenders were trapped and surrendered${b.generalCaptured ? `, and ${esc(b.generalCaptured)} was taken prisoner` : ""}.`;
@@ -871,4 +874,55 @@ function depotButton(id) {
   if (s.depot) return `<p class="hint">A supply depot here feeds armies within ${SUPPLY_RANGE} regions.</p>`;
   if (r.city || r.fort) return "";
   return `<div class="row"><button class="btn small" id="build-depot">Build a supply depot · ${money(DEPOT_COST)}</button></div><p class="hint">Feeds your armies within ${SUPPLY_RANGE} regions, so they can operate far from cities.</p>`;
+}
+
+// ---------- battle close-ups: for big attacks, choose a tactic before the battle ----------
+function attackerNow() {
+  const a = state.armies[ui.army];
+  return ui.split ? { ...a, regulars: Math.round(a.regulars / 2), militia: a.militia.map((b) => ({ ...b, men: Math.round(b.men / 2) })), general: null } : a;
+}
+function bigBattle() {
+  const a = state.armies[ui.army], foe = ui.target && armyAt(state, ui.target, "B");
+  return a && foe && armyMen(attackerNow()) >= 2000 && armyMen(foe) >= 2000;
+}
+const TACTIC_ADVICE = {
+  charge: "Fix bayonets and go straight at them. They won't stand.",
+  volley: "Advance in good order and give them volley for volley. No tricks.",
+  flank: "Send a column round through the woods and take them in the flank.",
+  probe: "Feel out their line first. If it holds, we pull back and keep the army.",
+};
+function recommendedTactic(g) {
+  if (!g) return "volley";
+  if (["bold", "aggressive", "gambler"].includes(g.trait)) return "charge";
+  if (["riflemen", "cavalry"].includes(g.trait)) return "flank";
+  if (["entrenched", "rearguard", "steadfast", "cautious"].includes(g.trait)) return "probe";
+  return "volley";
+}
+function showCloseup() {
+  const a = state.armies[ui.army], att = attackerNow(), target = ui.target;
+  const foe = armyAt(state, target, "B");
+  const r = REGIONS[target];
+  const t = moveTargets(state, a).find((x) => x.region === target);
+  const g = ui.split ? null : generalOf(state, a);
+  const rec = recommendedTactic(g);
+  const art = battleScene({ left: militiaMen(att) > att.regulars ? "militia" : "continental", right: foe.hessian ? "hessian" : "british", terrain: r.terrain || (r.city || r.fort ? "city" : "open"), leftFlag: "P", rightFlag: foe.hessian ? "H" : "B" });
+  const desc = {
+    charge: "A stronger attack, but heavy losses on both sides.",
+    volley: "The ordinary attack.",
+    flank: `About ${Math.round(flankChance(state, att, target) * 100)}% chance the column finds their flank: then the attack is much stronger. If it gets lost, the attack is weaker.`,
+    probe: "A weaker attack, but you lose far fewer men if it fails.",
+  };
+  const opts = ["charge", "volley", "flank", "probe"].map((k) => {
+    const p = winChance(state, att, foe, target, { sea: t && t.sea, tactic: k });
+    return `<button class="tactic ${k === rec ? "rec" : ""}" data-tactic="${k}"><b>${esc(TACTICS[k].label)}${k === rec ? " · advised" : ""}</b><span>${esc(desc[k])}</span><em class="${p >= 0.6 ? "good" : p < 0.4 ? "bad" : ""}">${Math.round(p * 100)}% chance to win</em></button>`;
+  }).join("");
+  modal(`<div class="closeup-art">${art}<div class="closeup-title"><span>${esc(dateLabel(state))}</span><h2>The Battle of ${esc(r.name)}</h2></div></div>
+    <p class="closeup-forces"><b>${menWords(armyMen(att))}</b> ${g ? `under ${esc(g.short)}` : "Continentals"} against <b>${menWords(armyMen(foe))}</b> ${foe.hessian ? "Hessians" : "British"}${generalOf(state, foe) ? ` under ${esc(generalOf(state, foe).short)}` : ""}${foe.dugIn ? ", dug in" : ""}.</p>
+    ${g ? `<div class="voice">${portraitOf(a.general)}<div><div class="voice-name">${esc(g.name)}</div><p>“${esc(TACTIC_ADVICE[rec])}”</p></div></div>` : ""}
+    <div class="tactics">${opts}</div>
+    <div class="modal-actions"><button class="btn" id="cu-cancel">Call off the attack</button></div>`, (c) => {
+    sfx.drumroll();
+    for (const b of c.querySelectorAll("[data-tactic]")) b.onclick = () => { $("#modal").hidden = true; doMove(target, b.dataset.tactic); };
+    c.querySelector("#cu-cancel").onclick = () => { ui.target = null; closeModal(); };
+  });
 }

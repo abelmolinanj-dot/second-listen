@@ -505,3 +505,23 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .supply { font-size: 13px; margin: 6px 0; padding: 6px 10px; border-radius: 6px; }
 .supply.good { background: #eef7ef; }
 .supply.bad { background: #fdecee; color: var(--bad); }
+
+/* --- battle close-ups --- */
+.closeup-art { position: relative; margin: -20px -20px 12px; height: 250px; overflow: hidden; border-radius: 10px 10px 0 0; border-bottom: 4px solid var(--accent); background: #8f9455; }
+.closeup-art .battle-art { width: 100%; height: 100%; display: block; }
+.bs-smoke circle { animation: drift 6s ease-in-out infinite alternate; }
+@keyframes drift { to { transform: translate(14px, -6px); } }
+.closeup-title { position: absolute; left: 0; right: 0; top: 0; padding: 12px 18px 26px; background: linear-gradient(rgba(8,16,36,.8), transparent); color: #ffffff; }
+.closeup-title span { font-family: var(--caps); font-size: 13px; color: #ffd9de; }
+.closeup-title h2 { color: #ffffff !important; margin: 0 !important; font-size: 28px !important; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+.closeup-forces { font-family: var(--text); font-size: 15.5px; }
+.tactics { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-top: 10px; }
+.tactic { text-align: left; border: 1px solid rgba(31,53,102,.35); border-radius: 10px; background: #ffffff; color: var(--ink); padding: 10px 12px; transition: transform .12s, border-color .12s; }
+.tactic:hover { transform: translateY(-1px); border-color: var(--accent); }
+.tactic.rec { border: 2px solid var(--accent); }
+.tactic b { display: block; font-size: 15px; }
+.tactic span { display: block; font-size: 13px; color: var(--ink-soft); margin: 3px 0 6px; line-height: 1.4; }
+.tactic em { font-style: normal; font-weight: 700; font-size: 14px; }
+.tactic em.good { color: var(--good); }
+.tactic em.bad { color: var(--bad); }
+@media (prefers-reduced-motion: reduce) { .bs-smoke circle { animation: none; } }

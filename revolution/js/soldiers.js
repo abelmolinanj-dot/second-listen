@@ -136,3 +136,35 @@ export function battleMarker() {
     <path d="M-10,-7 L-7,-10 M10,-7 L7,-10" stroke="#2a2118" stroke-width="2.2" stroke-linecap="round"/>
   </g>`;
 }
+
+// ---------- battle close-up art ----------
+// A wide scene of two battle lines facing each other across the ground of the region being fought over.
+// kinds: "continental", "militia", "british", "hessian". terrain: "hills", "forest", "city" or "open".
+export function battleScene({ left, right, terrain = "open", leftFlag = "P", rightFlag = "B" }) {
+  const W = 800, H = 300;
+  let r = 7;
+  const rand = () => { r = (r * 16807) % 2147483647; return r / 2147483647; };
+  const sky = `<defs><linearGradient id="bs-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d9bbd"/><stop offset=".7" stop-color="#e9dcc0"/><stop offset="1" stop-color="#f1e6cc"/></linearGradient></defs>
+    <rect width="${W}" height="${H}" fill="url(#bs-sky)"/>`;
+  let back = "";
+  if (terrain === "hills") back = `<path d="M0,170 Q120,90 260,150 Q380,80 520,140 Q650,70 800,135 L800,300 L0,300 Z" fill="#7f8a5c"/><path d="M0,190 Q200,140 400,185 Q600,150 800,180 L800,300 L0,300 Z" fill="#94a066"/>`;
+  else if (terrain === "forest") { back = `<rect y="150" width="${W}" height="150" fill="#8d9a5f"/>`; for (let i = 0; i < 46; i++) { const x = i * 18 - 5, h = 40 + rand() * 40; back += `<path d="M${x},175 l9,-${h.toFixed(0)} l9,${h.toFixed(0)} Z" fill="${rand() < 0.5 ? "#2f4d33" : "#3d5e3c"}"/>`; } }
+  else if (terrain === "city") { back = `<rect y="160" width="${W}" height="140" fill="#a39a74"/>`; for (let i = 0; i < 12; i++) { const x = 30 + i * 64, h = 30 + rand() * 40; back += `<rect x="${x}" y="${160 - h}" width="44" height="${h}" fill="#8a6a55" stroke="#4d3b28" stroke-width="1"/><path d="M${x - 4},${160 - h} L${x + 22},${140 - h} L${x + 48},${160 - h} Z" fill="#5c3b2e"/>`; } back += `<path d="M380,100 V40 M372,60 H388" stroke="#4d3b28" stroke-width="4"/>`; }
+  else back = `<rect y="160" width="${W}" height="140" fill="#a8ae6d"/><path d="M0,200 H800 M0,232 H800" stroke="#8a8a52" stroke-width="2" stroke-dasharray="30 10"/><path d="M0,180 L800,176" stroke="#6b5537" stroke-width="2"/>${Array.from({ length: 20 }, (_, i) => `<path d="M${i * 42},172 v12" stroke="#6b5537" stroke-width="2"/>`).join("")}`;
+  const ground = `<rect y="215" width="${W}" height="85" fill="#8f9455" opacity=".55"/>`;
+  const line = (kind, x0, dir) => {
+    let s = "";
+    // The rear rank first (smaller, farther back), then the front rank over it.
+    for (let row = 0; row < 2; row++) for (let i = 0; i < 7; i++) {
+      const x = x0 + dir * (i * 34 + (row ? 0 : 17)), y = row ? 290 : 258;
+      s += `<g transform="translate(${x},${y}) scale(${row ? 2.6 : 2.15})">${soldier(UNIFORMS[kind])}</g>`;
+    }
+    return s;
+  };
+  const flagPole = (x, kind) => `<path d="M${x},262 V118" stroke="#3a2a1c" stroke-width="3.5"/><g transform="translate(${x},120) scale(4)">${flag(kind)}</g>`;
+  let smoke = "";
+  for (let i = 0; i < 18; i++) { const x = 280 + rand() * 240, y = 200 + rand() * 60, rr = 14 + rand() * 26; smoke += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${rr.toFixed(0)}" fill="#f4f0e6" opacity="${(0.45 + rand() * 0.35).toFixed(2)}"/>`; }
+  return `<svg class="battle-art" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">${sky}${back}${ground}
+    ${flagPole(60, leftFlag)}${line(left, 40, 1)}${flagPole(730, rightFlag)}${line(right, 760, -1)}
+    <g class="bs-smoke">${smoke}</g></svg>`;
+}

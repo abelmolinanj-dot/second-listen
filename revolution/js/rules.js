@@ -253,7 +253,23 @@ export function moveTargets(state, army) {
 }
 
 // --- battle math ---
-function battleFactors(state, att, def, regionId, { surprise = false, sea = false } = {}) {
+// Tactics for a big attack, chosen in the battle close-up. A multiplies the attack; the loss numbers scale casualties.
+export const TACTICS = {
+  charge: { label: "Frontal bayonet charge", A: 1.12, winLoss: 1.35, loseLoss: 1.25 },
+  volley: { label: "Steady volleys", A: 1, winLoss: 1, loseLoss: 1 },
+  flank: { label: "Turn their flank" },
+  probe: { label: "Probe and pull back", A: 0.9, winLoss: 0.9, loseLoss: 0.55 },
+  flankHit: { A: 1.3, winLoss: 0.9, loseLoss: 1 },
+  flankMiss: { A: 0.85, winLoss: 1, loseLoss: 1.15 },
+};
+// The chance a flanking march works: better with an attacking general, and in woods or hills that hide it.
+export function flankChance(state, army, regionId) {
+  const g = generalOf(state, army);
+  const p = 0.35 + 0.1 * (g ? g.atk : 0) + (REGIONS[regionId].terrain ? 0.1 : 0) + (g && g.trait === "riflemen" ? 0.1 : 0);
+  return Math.max(0.25, Math.min(0.85, p));
+}
+
+function battleFactors(state, att, def, regionId, { surprise = false, sea = false, tactic = null } = {}) {
   const ag = generalOf(state, att);
   const dg = generalOf(state, def);
   const r = REGIONS[regionId];
@@ -278,11 +294,16 @@ function battleFactors(state, att, def, regionId, { surprise = false, sea = fals
   if (r.terrain && dg && dg.trait === "riflemen") D *= 1.15;
   if (state.regions[regionId].works && def.side === "P") D *= 1.15;
   if (surprise && dg && dg.trait === "complacent") D *= 0.55;
+  if (tactic && TACTICS[tactic] && TACTICS[tactic].A) A *= TACTICS[tactic].A;
   return { A, D };
 }
 
 // Chance an attack succeeds, estimated by simulating the dice. Used for the preview and by the AI.
-export function winChance(state, att, def, regionId, opts) {
+export function winChance(state, att, def, regionId, opts = {}) {
+  if (opts.tactic === "flank") {
+    const p = flankChance(state, att, regionId);
+    return p * winChance(state, att, def, regionId, { ...opts, tactic: "flankHit" }) + (1 - p) * winChance(state, att, def, regionId, { ...opts, tactic: "flankMiss" });
+  }
   const { A, D } = battleFactors(state, att, def, regionId, opts);
   let wins = 0;
   const N = 400;
@@ -343,7 +364,7 @@ function captureRegion(state, regionId, side) {
 
 // Move an army (or part of it) into a target region, fighting if the enemy is there.
 // Returns a report describing what happened, or a string explaining why it can't.
-export function moveArmy(state, armyId, targetId, { share = 1, surprise = false, withGeneral = false } = {}) {
+export function moveArmy(state, armyId, targetId, { share = 1, surprise = false, withGeneral = false, tactic = null } = {}) {
   let army = state.armies[armyId];
   if (!army) return "No such army.";
   const target = moveTargets(state, army).find((t) => t.region === targetId);
@@ -363,11 +384,15 @@ export function moveArmy(state, armyId, targetId, { share = 1, surprise = false,
     captureRegion(state, targetId, army.side);
     return { type: "move", side: army.side, from, to: targetId, armyId: merged.id };
   }
-  return fight(state, army, foe, targetId, { surprise, sea: target.sea });
+  return fight(state, army, foe, targetId, { surprise, sea: target.sea, tactic });
 }
 
 function fight(state, att, def, regionId, opts) {
   const rand = rng(state);
+  // A flanking march either finds the enemy's flank or gets lost in the woods.
+  let flank = null;
+  if (opts.tactic === "flank") { flank = rand() < flankChance(state, att, regionId); opts = { ...opts, tactic: flank ? "flankHit" : "flankMiss" }; }
+  const T = (opts.tactic && TACTICS[opts.tactic]) || TACTICS.volley;
   const f = battleFactors(state, att, def, regionId, opts);
   const A = f.A * between(rand, 0.8, 1.2);
   const D = f.D * between(rand, 0.8, 1.2);
@@ -385,8 +410,15 @@ function fight(state, att, def, regionId, opts) {
   const winner = attackerWins ? att : def;
   const lg = generalOf(state, loser);
   report.attackerWins = attackerWins;
-  report.winnerLoss = applyLosses(winner, winnerFrac, 1);
-  report.loserLoss = applyLosses(loser, loserFrac * (lg && lg.trait === "rearguard" ? 0.65 : 1), 1.4);
+  report.tactic = opts.tactic ? (flank === null ? opts.tactic : "flank") : null;
+  report.flank = flank;
+  // Tactics change the butcher's bill: a charge is bloody for everyone, a probe costs little if it fails.
+  const bloody = opts.tactic === "charge" ? 1.2 : 1; // a bayonet charge costs the defender too
+  const attackerMult = attackerWins ? T.winLoss ?? 1 : T.loseLoss ?? 1;
+  const wl = attackerWins ? attackerMult : bloody;
+  const ll = attackerWins ? bloody : attackerMult;
+  report.winnerLoss = applyLosses(winner, winnerFrac * wl, 1);
+  report.loserLoss = applyLosses(loser, loserFrac * ll * (lg && lg.trait === "rearguard" ? 0.65 : 1), 1.4);
   if (attackerWins) {
     const to = retreatSpot(state, def, att.region);
     if (to) {
