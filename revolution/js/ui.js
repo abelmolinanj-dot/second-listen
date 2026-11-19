@@ -9,7 +9,7 @@ import {
   supplyPath, buildDepot, SUPPLY_RANGE, DEPOT_COST, TACTICS, flankChance,
 } from "./rules.js";
 import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
-import { answerLetter, unanswered, senderName, senderRole } from "./letters.js";
+import { answerLetter, unanswered, senderName, senderRole, EVENTS } from "./letters.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { randomQuote } from "./data/quotes.js";
 import { awardHonors, noteFact, noteLetter } from "./book.js";
@@ -562,7 +562,9 @@ function showLetters(after) {
           c.querySelector("#next").onclick = () => (over ? showGameOver(null) : unanswered(state).length ? showLetters(after) : after ? after() : closeModal());
         });
         renderTop();
+        const chosenScene = EVENTS[l.event]?.choices?.[Number(b.dataset.choice)]?.scene;
         if (l.event === "declaration") { $("#modal").hidden = true; playScene("declaration", {}, showOutcome); }
+        else if (chosenScene && !(lost && typeof lost === "object")) { $("#modal").hidden = true; playScene(chosenScene, { extra: [outcome] }, showOutcome); }
         else if (lost && typeof lost === "object") {
           $("#modal").hidden = true;
           render();

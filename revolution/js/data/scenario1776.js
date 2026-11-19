@@ -542,6 +542,78 @@ Congress has at last agreed that men should enlist for three years or the length
 G. Washington`,
     choices: [{ label: "Welcome them", hint: `+${menWords(2500)} regulars join Washington.`, apply(state) { const w = washArmy(state); if (w) w.regulars += 2500; return "New regiments marched into Washington's camp."; } }],
   },
+  // ---------- on the water ----------
+  {
+    id: "r76_turtle", random: true, weight: 3, fromTurn: 1, untilTurn: 2, from: "putnam", place: "New York",
+    title: "A machine that swims under water",
+    body: () => `Gentlemen,
+
+A Connecticut man named David Bushnell has built a boat that goes under the water. It is shaped like two turtle shells joined together, and one man inside works it with cranks. The idea is to row under a British warship in the dark, screw a keg of powder to her bottom, and get away before it goes off.
+
+It sounds like madness. But it costs little, and if it sinks Admiral Howe's flagship, it would be the wonder of the age. Sergeant Ezra Lee has volunteered.
+
+I. Putnam`,
+    choices: [
+      {
+        label: `Send the Turtle against the flagship (${money(6)})`, scene: "turtle",
+        hint: "A long shot. If it works, the British fleet grows cautious.",
+        apply(state) {
+          if (state.treasury >= 6) spend(state, 6, "letters");
+          if (makeRng(state)() < 0.15) {
+            changeCause(state, 4, "The Turtle attacked the British fleet.");
+            const howe = findGeneralArmy(state, "howe"); if (howe) howe.stalled = Math.max(howe.stalled || 0, 1);
+            state.flags.noLandingsUntil = state.turn + 1;
+            return "Sergeant Lee reached HMS Eagle in the dark and the charge went off under her stern. She didn't sink, but the whole fleet cut its cables and moved out to sea. Howe will be careful for a while.";
+          }
+          return "Sergeant Lee reached HMS Eagle in the dark, but the screw would not bite into her hull. At dawn he had to cast off the charge and escape. It exploded harmlessly in the harbor. It was the first submarine attack in history, and it failed, just as the real one did.";
+        },
+      },
+      { label: "It's madness", hint: "Nothing changes.", apply: () => "Bushnell went back to Connecticut to improve his machine." },
+    ],
+  },
+  {
+    id: "r76_fireships", random: true, weight: 3, fromTurn: 1, untilTurn: 3, from: "washington", place: "New York",
+    title: ["British ships on the Hudson", "Warships above the city"],
+    body: [
+      () => `Gentlemen,
+
+Two of the enemy's warships, the Phoenix and the Rose, ran past our batteries and are anchored far up the Hudson. Our cannon could not stop them. Any ship that can do that can land troops behind us.
+
+I can send fire ships down on them in the dark: old hulls packed with brush and tar, set alight and steered at the enemy. Or I can sink hulks in the river to block it for good. Either costs money.
+
+G. Washington`,
+      () => `Gentlemen,
+
+I must report that British warships have sailed straight up the Hudson past our forts as if they were not there. As long as they can do that, every mile of riverbank is a place they might land.
+
+The engineers propose two remedies: fire ships, to burn them where they lie, or a line of sunken hulks across the channel. I ask the Board's choice.
+
+G. Washington`,
+    ],
+    choices: [
+      {
+        label: `Send fire ships (${money(5)})`, scene: "fireships",
+        hint: "If it works, the British can't land troops from the sea next month.",
+        apply(state) {
+          if (state.treasury >= 5) spend(state, 5, "letters");
+          if (makeRng(state)() < 0.5) { state.flags.noLandingsUntil = state.turn + 1; changeCause(state, 2, "Fire ships attacked the British on the Hudson."); return "The fire ships drifted down in the dark. One grappled a tender and burned her to the waterline, and the warships slipped their cables and ran back down to the harbor. The Navy will think twice before landing troops this month."; }
+          return "The fire ships were spotted and towed aside by the warships' boats. They burned on the shore, lighting up the whole river, and did no harm.";
+        },
+      },
+      {
+        label: `Sink hulks in the river (${money(10)})`,
+        hint: "The British can never land at Westchester or Fort Lee by sea again this campaign.",
+        apply(state) {
+          if (state.treasury < 10) return "The treasury could not cover the hulks.";
+          spend(state, 10, "fortifications");
+          state.closedPorts = [...(state.closedPorts || []), "westchester", "hackensack"];
+          return "Old ships were loaded with stones and sunk across the channel, with sharpened timbers pointing downstream. No warship will land troops on those banks again.";
+        },
+      },
+      { label: "Let them be", hint: "Nothing changes.", apply: () => "The warships stayed where they were, watching." },
+    ],
+  },
+
   // ---------- camp life ----------
   {
     id: "r76_martha", random: true, weight: 3, fromTurn: 6, untilTurn: 9, from: "mwashington", place: "Winter quarters",

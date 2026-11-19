@@ -241,7 +241,7 @@ export function moveTargets(state, army) {
   // within a few days' sail (three regions by land).
   if (army.side === "B" && REGIONS[army.region].coastal && !state.noNavy) {
     for (const [id, r] of Object.entries(REGIONS)) {
-      if (r.coastal && id !== army.region && !out.has(id) && !(state.closedPorts || []).includes(id) && distance(army.region, id) <= SEA_RANGE) out.set(id, { region: id, sea: true });
+      if (r.coastal && id !== army.region && !out.has(id) && !(state.closedPorts || []).includes(id) && !(army.side === "B" && (state.flags.noLandingsUntil ?? -1) >= state.turn) && distance(army.region, id) <= SEA_RANGE) out.set(id, { region: id, sea: true });
     }
   }
   return [...out.values()].map((t) => {

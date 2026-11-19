@@ -127,6 +127,33 @@ const ART = {
       ${figure(330, 462, 1.6)}${figure(470, 462, 1.6)}${figure(300, 470, 1.4, "#2b2a2e")}
       <g class="snow">${snow(110, 8)}</g>`;
   },
+  // A river at night: British warships at anchor, and a fire ship drifting down on them in flames.
+  fireships() {
+    const r = rng(41);
+    let stars = "";
+    for (let i = 0; i < 60; i++) stars += `<circle cx="${(r() * W).toFixed(0)}" cy="${(r() * 200).toFixed(0)}" r="${(0.5 + r()).toFixed(1)}" fill="#fff" opacity="${(0.3 + r() * 0.6).toFixed(2)}"/>`;
+    let flames = "";
+    for (let i = 0; i < 14; i++) { const x = 300 + r() * 90, h = 30 + r() * 70; flames += `<path d="M${x.toFixed(0)},330 q${(-8 + r() * 16).toFixed(0)},-${(h / 2).toFixed(0)} ${(-4 + r() * 8).toFixed(0)},-${h.toFixed(0)} q${(6 + r() * 8).toFixed(0)},${(h / 2).toFixed(0)} ${(8 + r() * 8).toFixed(0)},${h.toFixed(0)} Z" fill="${r() < 0.5 ? "#f08a2c" : "#ffd36e"}" opacity=".9"/>`; }
+    return `<defs>${sky("skn", [[0, "#060b18"], [0.7, "#1b2440"], [1, "#2f2a3a"]])}<radialGradient id="fireglow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffb347" stop-opacity=".75"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#skn)"/>${stars}
+      ${hills(300, "#0d1220", 5, 40)}
+      <rect y="320" width="${W}" height="180" fill="#101a2e"/>
+      <circle cx="345" cy="320" r="190" fill="url(#fireglow)"/>
+      ${ship(560, 340, 1.5, "#05070d", "#3a3f4f")}${ship(690, 350, 1.1, "#05070d", "#3a3f4f")}
+      <path d="M290,332 L400,332 L390,346 L300,346 Z" fill="#1a0e08"/>${flames}
+      <path d="M300,360 h90 M310,380 h70 M325,400 h40" stroke="#f08a2c" stroke-width="3" opacity=".35"/>`;
+  },
+  // New York harbor at night: a small wooden submarine creeping up on a great warship.
+  turtle() {
+    return `<defs>${sky("skt", [[0, "#0a1426"], [0.55, "#142542"], [1, "#1d3352"]])}</defs>
+      <rect width="${W}" height="${H}" fill="url(#skt)"/>
+      <circle cx="640" cy="90" r="26" fill="#e9eef5" opacity=".75"/>
+      <rect y="250" width="${W}" height="250" fill="#0e2240"/>
+      ${ship(470, 262, 2.4, "#04060c", "#2c3344")}
+      <path d="M250,250 Q470,268 690,250 L690,262 Q470,300 250,262 Z" fill="#071222" opacity=".8"/>
+      <g transform="translate(300,340)"><ellipse rx="30" ry="22" fill="#6b4a2a" stroke="#2a1a0e" stroke-width="2"/><rect x="-7" y="-34" width="14" height="14" rx="3" fill="#7d5a34" stroke="#2a1a0e" stroke-width="2"/><circle cx="-2" cy="-27" r="2.5" fill="#ffd36e"/><path d="M30,0 l14,-6 M30,0 l14,6" stroke="#2a1a0e" stroke-width="3"/></g>
+      <path d="M310,318 Q380,290 440,268" stroke="#9fb4cf" stroke-width="1.5" stroke-dasharray="4 6" fill="none" opacity=".6"/>`;
+  },
   // Lake Champlain in June: Burgoyne's army comes down the lake in boats between forested mountains.
   lake() {
     const r = rng(21);
@@ -228,6 +255,8 @@ export const SCENE_TEXT = {
     ],
   },
   saratoga: { art: "victory", lines: ["Saratoga, October 1777."] },
+  fireships: { art: "fireships", lines: ["Night on the Hudson."] },
+  turtle: { art: "turtle", lines: ["New York harbor, after midnight."] },
   victory: { art: "victory", lines: [] },
   defeat: { art: "defeat", lines: [] },
 };

@@ -155,6 +155,9 @@ function onOpenMonth(state) {
       log(state, `${menWords(men)} militia from New England marched into ${REGIONS[a.region].name} to fight Burgoyne.`, "good");
     }
   }
+  // The chain across the Hudson holds Clinton for a month when he first moves.
+  const cl = findGeneralArmy(state, "clinton");
+  if (cl && state.flags.riverChain && !state.flags.chainUsed && !cl.stalled && state.turn >= 3) { cl.stalled = 1; state.flags.chainUsed = true; log(state, "Clinton's boats are held up below the Highlands by the chain and boom across the Hudson.", "good"); }
   // In November Howe called Clinton back to New York, and to Philadelphia.
   const c = findGeneralArmy(state, "clinton");
   if (c && state.turn === 5 && c.region !== "manhattan") {
@@ -748,6 +751,51 @@ John Hancock`,
           return "St. Clair handed over his command and went to await his trial. (He was cleared in 1778.)";
         },
       },
+    ],
+  },
+
+  // ---------- on the water ----------
+  {
+    id: "sar_brownraid", random: true, weight: 3, fromTurn: 3, untilTurn: 4, from: (state) => commander(state),
+    when: (state) => !!burgoyne(state) && burgoyne(state).region !== "stjohns" && state.regions.ticonderoga.owner === "B",
+    title: "A raid on Lake George",
+    body: () => `Gentlemen,
+
+Burgoyne's supplies come up Lake George and Lake Champlain in boats, and his rear is weakly held. Colonel John Brown of Massachusetts proposes to take some hundreds of militia through the woods, fall on the landing at the north end of Lake George, burn or seize the boats, and free our men held prisoner there.
+
+If he succeeds, Burgoyne's army goes hungry. If he fails, we lose good men in the woods.`,
+    choices: [
+      {
+        label: "Send Brown's raiders", scene: "fireships",
+        hint: "About a 65% chance: Burgoyne loses his boats and stores. If not, the militia pay for it.",
+        apply(state) {
+          const b = burgoyne(state), a = commandArmy(state);
+          if (makeRng(state)() < 0.65) {
+            state.flags.burgoyneHungry = true;
+            if (b) b.regulars = Math.max(500, b.regulars - 300);
+            changeCause(state, 2, "Brown's raiders struck Lake George.");
+            return "Brown's men took the landing at dawn, freed a hundred American prisoners, captured some three hundred of the enemy and burned the boats. Burgoyne's road home is a ruin, and his men are on short rations.";
+          }
+          if (a) for (const m of a.militia) m.men = Math.round(m.men * 0.85);
+          return "The raiders were discovered on the march and driven back through the woods with losses.";
+        },
+      },
+      { label: "Keep every man here", hint: "Nothing changes.", apply: () => "Brown's men stayed in camp, grumbling." },
+    ],
+  },
+  {
+    id: "sar_chain", random: true, weight: 3, fromTurn: 1, untilTurn: 3, from: "putnam", place: "Hudson Highlands",
+    title: "A chain across the Hudson",
+    body: () => `Gentlemen,
+
+If Clinton comes up the river from New York, his boats must pass the Highlands. The engineers propose to stretch an iron chain and a boom of logs across the river below Fort Montgomery, with sharpened timbers sunk in the channel. It would not stop him forever, but it would hold him under the guns of our forts.
+
+The iron and the labor will cost money.
+
+I. Putnam`,
+    choices: [
+      { label: `Build the chain and boom (${money(10)})`, hint: "When Clinton moves up the Hudson, he's held up for a month.", apply(state) { if (state.treasury < 10) return "The treasury could not cover the iron."; spend(state, 10, "fortifications"); state.flags.riverChain = true; return "Smiths hammered out the links, and the chain was floated across the river on rafts of logs."; } },
+      { label: "Trust to the forts", hint: "Nothing changes.", apply: () => "Putnam said he hoped the forts would be enough." },
     ],
   },
 
