@@ -30,7 +30,7 @@ played and judged before the next. Anything that turns out too complicated gets 
 11. Foreign volunteers: Lafayette, Steuben (drills militia into regulars), Kosciuszko (fortifies faster), Pulaski.
 12. Camp life: Martha Washington at winter quarters, soldiers' families, camp doctors, letters from home.
 
-**Phase 3: deeper war**
+**Phase 3: deeper war** (built November 18, 2026)
 13. Supply wagons and forage: supply lines on the map; cut the enemy's, protect yours.
 14. Battle close-ups: for big battles, a short illustrated scene with one decision in the middle.
 15. Naval moments: Lake Champlain, the West Point chain, the French fleet off Yorktown.

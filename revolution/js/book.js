@@ -32,3 +32,19 @@ export function awardHonors(state, gameOver) {
   if (fresh.length) saveBook(b);
   return fresh;
 }
+
+// ---------- the Daily Dispatch: best score per day, and how many days in a row ----------
+const DAILY = "dispatches76-daily";
+export function todayKey(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+export function getDaily() { try { return JSON.parse(localStorage.getItem(DAILY) || "{}"); } catch { return {}; } }
+export function recordDaily(day, score, stars, title) {
+  const all = getDaily();
+  const prev = all[day] || { best: -Infinity, plays: 0 };
+  all[day] = { best: Math.max(prev.best, score), stars: Math.max(prev.stars || 0, stars), plays: prev.plays + 1, title };
+  try { localStorage.setItem(DAILY, JSON.stringify(all)); } catch { /* ignore */ }
+  let streak = 0;
+  for (let d = new Date(`${day}T12:00:00`); all[todayKey(d)]; d.setDate(d.getDate() - 1)) streak++;
+  return { ...all[day], streak };
+}

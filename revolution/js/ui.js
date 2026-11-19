@@ -12,7 +12,7 @@ import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
 import { answerLetter, unanswered, senderName, senderRole, EVENTS } from "./letters.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { randomQuote } from "./data/quotes.js";
-import { awardHonors, noteFact, noteLetter } from "./book.js";
+import { awardHonors, noteFact, noteLetter, recordDaily } from "./book.js";
 import { applyLegacy, recordLegacy, getLegacy } from "./legacy.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extraLand, mapLettering } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust, battleScene } from "./soldiers.js";
@@ -748,7 +748,8 @@ function showGameOver(summary) {
   if (H) h += `<div class="history-box"><h3>What really happened</h3><p>${esc(H.summary)}</p><p>${esc(H.outcome)}</p><ul>${H.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></div>`;
   // Honors earned for the first time.
   // Congress votes its thanks: honors that stay with the general in later campaigns.
-  const voted = recordLegacy(state, g);
+  const voted = state.daily ? [] : recordLegacy(state, g);
+  if (state.daily) h += dailyResultHtml(g);
   if (voted.length) h += `<h3>Congress votes its thanks</h3>` + voted.map((v) => `<div class="honor congress">${portraitOf(v.id)}<div><b>${esc(state.generals[v.id]?.name || v.id)}</b><span>${esc(v.honor)}, ${esc(v.why)}</span></div></div>`).join("");
   const fresh = awardHonors(state, g);
   if (fresh.length) h += `<h3>Honors earned</h3>` + fresh.map((a) => `<div class="honor"><div class="honor-medal">★</div><div><b>${esc(a.title)}</b><span>${esc(a.goal)}</span><p>${esc(a.note)}</p></div></div>`).join("");
@@ -776,7 +777,7 @@ function howToPlay() {
 // The main menu, campaign map and other full-screen pages live in frontend.js.
 const frontend = createFrontend({
   savedGame: () => { const s = loadSave(); return s && !s.gameOver ? { label: dateLabel(s), mission: s.mission || "1776" } : null; },
-  onBegin: (scenario, guide) => startNew(scenario, guide),
+  onBegin: (scenario, guide, opts) => startNew(scenario, guide, opts),
   onContinue: continueGame,
   hasPlayed,
 });
@@ -814,10 +815,12 @@ function showMenu() {
   });
 }
 
-function startNew(scenarioId = "1776", guide = false) {
-  state = newGame(undefined, scenarioId);
+function startNew(scenarioId = "1776", guide = false, { daily = null } = {}) {
+  // The Daily Dispatch uses a seed made from the date, so everyone gets the same game that day.
+  state = newGame(daily ? dailySeed(daily) : undefined, scenarioId);
   state.mission = scenarioId;
-  applyLegacy(state); // generals remember earlier campaigns
+  state.daily = daily;
+  if (!daily) applyLegacy(state); // generals remember earlier campaigns (not in the daily, to keep it fair)
   const S = scenarioOf(state).SCENARIO;
   ui.army = null; ui.region = null; ui.target = null;
   save();
@@ -927,4 +930,28 @@ function showCloseup() {
     for (const b of c.querySelectorAll("[data-tactic]")) b.onclick = () => { $("#modal").hidden = true; doMove(target, b.dataset.tactic); };
     c.querySelector("#cu-cancel").onclick = () => { ui.target = null; closeModal(); };
   });
+}
+
+// ---------- the Daily Dispatch ----------
+function dailySeed(day) {
+  let h = 2166136261;
+  for (const ch of `dispatches76-${day}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return (h % 2147483646) + 1;
+}
+function dailyResultHtml(g) {
+  const stars = typeof g.stars === "number" ? g.stars : 0;
+  const rec = recordDaily(state.daily, g.score ?? 0, stars, g.title);
+  const label = new Date(`${state.daily}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const share = `Dispatches of '76 · Daily Dispatch, ${label} · ${"★".repeat(stars)}${"☆".repeat(3 - stars)} · Score ${g.score ?? 0} · ${g.title}`;
+  setTimeout(() => {
+    const btn = document.getElementById("copy-daily");
+    if (btn) btn.onclick = async () => {
+      try { await navigator.clipboard.writeText(share); btn.textContent = "Copied"; }
+      catch { const t = document.getElementById("daily-share"); t.select(); btn.textContent = "Select and copy the text"; }
+    };
+  }, 0);
+  return `<div class="daily-box"><h3>Daily Dispatch · ${esc(label)}</h3>
+    <p>Score <b>${g.score ?? 0}</b>${rec.best > (g.score ?? 0) ? ` · your best today is ${rec.best}` : rec.plays > 1 ? " · a new best for today" : ""} · ${rec.streak} day${rec.streak === 1 ? "" : "s"} in a row</p>
+    <textarea id="daily-share" readonly rows="2">${esc(share)}</textarea>
+    <button class="btn primary small" id="copy-daily">Copy result to share</button></div>`;
 }

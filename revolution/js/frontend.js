@@ -11,7 +11,7 @@ import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extra
 import { bust } from "./soldiers.js";
 import { sfx, music, soundPrefs, setSfx, setMusic, setVolume, setVoice, speak, stopSpeaking } from "./sound.js";
 import { askConfirm } from "./confirm.js";
-import { getBook } from "./book.js";
+import { getBook, getDaily, todayKey } from "./book.js";
 import { getLegacy } from "./legacy.js";
 import { ACHIEVEMENTS } from "./data/achievements.js";
 import { FACTS } from "./data/facts.js";
@@ -91,6 +91,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
           ${saved ? `<button class="mm-btn primary" id="mm-continue"><b>Continue</b><span>${esc(saved.label)}</span></button>` : ""}
           <button class="mm-btn ${saved ? "" : "primary"}" id="mm-campaign"><b>Campaign</b><span>The War for Independence · ${stars} ★</span></button>
           <button class="mm-btn locked" id="mm-conquest"><b>Conquest</b><span>Take the continent, then the world · Coming 2027</span></button>
+          <button class="mm-btn" id="mm-daily"><b>Daily Dispatch</b><span>${dailyLine()}</span></button>
           <button class="mm-btn" id="mm-generals"><b>Who's Who</b><span>Generals, Founders and the King's men</span></button>
           <button class="mm-btn" id="mm-book"><b>History Book</b><span>Honors, paintings and notes you've found</span></button>
           <div class="mm-row">
@@ -104,6 +105,12 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     on("#mm-conquest", showConquest);
     on("#mm-generals", () => showGenerals("P"));
     on("#mm-book", () => showBook());
+    on("#mm-daily", async () => {
+      const saved = savedGame();
+      if (saved && !(await askConfirm(`The Daily Dispatch replaces your saved game (${saved.label}). Start anyway?`, { ok: "Start", danger: true }))) return;
+      hide();
+      onBegin("saratoga", false, { daily: todayKey() });
+    });
     on("#mm-settings", showSettings);
     on("#mm-credits", showCredits);
   }
@@ -325,4 +332,10 @@ function recordHtml(id) {
   if (r.loyalty !== null && r.loyalty !== undefined) bits.push(`last loyalty ${r.loyalty}`);
   const extra = [...(r.honors || []).map((h) => `★ ${h}`), ...(r.wounds || []), ...(r.notes || [])];
   return `<div class="gc-record"><b>Your record:</b> ${bits.join(" · ")}${extra.length ? `<ul>${extra.map((x) => `<li>${x.replace(/[<>&]/g, "")}</li>`).join("")}</ul>` : ""}</div>`;
+}
+
+// The menu line for the Daily Dispatch: today's best score, if any.
+function dailyLine() {
+  const rec = getDaily()[todayKey()];
+  return rec ? `Today's Saratoga, the same for everyone · your best today: ${rec.best}` : "Today's Saratoga, the same for everyone · new every day";
 }

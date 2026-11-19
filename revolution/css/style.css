@@ -525,3 +525,8 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .tactic em.good { color: var(--good); }
 .tactic em.bad { color: var(--bad); }
 @media (prefers-reduced-motion: reduce) { .bs-smoke circle { animation: none; } }
+
+/* --- the Daily Dispatch --- */
+.daily-box { margin: 14px 0; padding: 12px 14px; background: #ffffff; border: 1px solid rgba(31,53,102,.3); border-left: 5px solid var(--accent); border-radius: 8px; }
+.daily-box h3 { margin-top: 0 !important; }
+.daily-box textarea { width: 100%; font: 13px var(--sans); color: var(--ink); border: 1px solid rgba(31,53,102,.3); border-radius: 6px; padding: 6px 8px; resize: none; margin: 6px 0 8px; background: #f4f6fb; }

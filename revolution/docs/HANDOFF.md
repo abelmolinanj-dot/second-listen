@@ -37,18 +37,17 @@ real. Target: playable public release around January to February 2027. "Ship, fi
 - History must be accurate. If a quote isn't documented, say "attributed" or paraphrase. Never put invented words in
   a real person's mouth.
 
-## Where things stand (November 15, 2026)
+## Where things stand (November 18, 2026)
 
 Built: main menu, campaign map with 8 missions (1776 and Saratoga playable), letters with portraits and seals,
 councils of war, spy reports, monthly newspaper, Who's Who with large portraits and biographies, History Book,
 honors, generals who remember across campaigns, foreign volunteers, camp life, weather, seasons, night turns,
-quotes, sound, a tutorial for 1776, an orders box with an aide's tips, period soldiers, and a real map from
-Natural Earth data. Phases 1 and 2 of the roadmap are done.
+quotes, sound, a tutorial for 1776, an orders box with an aide's tips, period soldiers, a real map from
+Natural Earth data, supply lines and depots, battle close-ups with tactics, naval moments, and the Daily Dispatch.
+Phases 1, 2 and 3 of the roadmap are done.
 
 Next, in order:
-1. Phase 3: supply lines (armies far from friendly cities, forts or depots go hungry; cut the enemy's), battle
-   close-ups with a mid-battle decision, naval moments, a daily challenge.
-2. The third mission, the Philadelphia campaign of 1777, built on the Saratoga template (Lafayette, Pulaski and
+1. The third mission, the Philadelphia campaign of 1777, built on the Saratoga template (Lafayette, Pulaski and
    Steuben are already in the data, waiting for it).
-3. Phase 4: "An Officer's Road", a personal career mode inspired by Mount and Blade: Warband.
-4. Optional: a public-domain period map from Wikimedia Commons for the History Book (approved in principle).
+2. Phase 4: "An Officer's Road", a personal career mode inspired by Mount and Blade: Warband.
+3. Optional: a public-domain period map from Wikimedia Commons for the History Book (approved in principle).
