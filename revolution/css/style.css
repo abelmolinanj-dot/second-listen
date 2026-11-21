@@ -726,3 +726,4 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 /* Period paintings on the attack and defense screens: a slow pan across the canvas. */
 .closeup-art .painting { position: absolute; inset: 0; background-size: cover; background-position: center 35%; animation: kenburns 24s ease-out forwards; }
 .closeup-art .painting::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgba(0,0,0,.65)); }
+.sp-art { height: 150px; margin: -16px -20px 12px; background-size: cover; background-position: center 40%; border-bottom: 3px solid #c8102e; }

@@ -36,6 +36,14 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `scenes/winter.jpg` | *The March to Valley Forge* | William B. T. Trego, 1883 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_March_to_Valley_Forge,_December_19,_1777,_by_William_B._T._Trego.jpg) (Museum of the American Revolution) | Public domain |
 | `scenes/victory.jpg` | *The Capture of the Hessians at Trenton* | John Trumbull, 1786–1828 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_Capture_of_the_Hessians_at_Trenton_December_26_1776.jpeg) (Yale University Art Gallery) | Public domain |
 | `scenes/saratoga.jpg` | *Surrender of General Burgoyne* | John Trumbull, 1821 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Surrender_of_General_Burgoyne.jpg) (U.S. Capitol) | Public domain |
+| `scenes/battles/warren.jpg` | The Death of General Warren at the Battle of Bunker's Hill | John Trumbull, 1786 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_Death_of_General_Warren_at_the_Battle_of_Bunker%27s_Hill,_June_17,_1775.jpg) | Public domain |
+| `scenes/battles/princeton.jpg` | The Death of General Mercer at the Battle of Princeton | John Trumbull, about 1787 to 1831 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_Death_of_General_Mercer_at_the_Battle_of_Princeton_January_3_1777.jpeg) (Yale University Art Gallery) | Public domain |
+| `scenes/battles/longisland.jpg` | The Battle of Long Island | Alonzo Chappel, 1858 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Battle_of_Long_Island,_1858.jpg) | Public domain |
+| `scenes/battles/germantown.jpg` | The Battle of Germantown (the Chew House) | Xavier della Gatta, 1782 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Battle_of_Germantown.jpg) (Museum of the American Revolution) | Public domain |
+| `scenes/battles/paoli.jpg` | The Paoli Massacre | Xavier della Gatta, 1782 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Battle_of_Paoli.jpg) | Public domain |
+| `scenes/battles/bunkerhill.jpg` | The Battle of Bunker Hill | Howard Pyle, 1897 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bunker_Hill_by_Pyle.jpg) (Delaware Art Museum) | Public domain |
+| `scenes/battles/monmouth.jpg` | Washington Rallying the Troops at Monmouth | Emanuel Leutze, 1854 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Washington_Rallying_the_Troops_at_Monmouth_1854_Emanuel_Leutze.jpg) | Public domain |
+| `scenes/battles/brandywine.jpg` | Battle of the Brandywine (cropped from the print) | F. C. Yohn, 1898 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Battle_of_the_Brandywine_-_F.C._Yohn_;_drawn_by_F.C._Yohn._LCCN90713897.jpg) (Library of Congress) | Public domain |
 
 ## Portraits for Saratoga, 1777
 

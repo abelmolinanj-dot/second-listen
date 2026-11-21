@@ -11,6 +11,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 
 const INFO = {
   delaware: {
+    art: "img/scenes/crossing.jpg",
     title: "Crossing the Delaware",
     when: "Christmas night, 1776",
     intro: "Colonel Glover's Marblehead fishermen are rowing the army across the Delaware in big Durham boats, through sleet and floating ice. Washington wanted everyone across by midnight. Every load that reaches the Jersey shore before dawn keeps the surprise alive.",
@@ -18,6 +19,7 @@ const INFO = {
     officers: "Let Glover's men handle it",
   },
   longisland: {
+    art: "img/scenes/battles/longisland.jpg",
     title: "Escape from Long Island",
     when: "The night of August 29, 1776",
     intro: "The army is trapped on Long Island with the East River at its back. Washington has gathered every boat he can find, and Glover's Marbleheaders will row all night. The campfires must stay lit so the British think the lines are still manned.",
@@ -25,6 +27,7 @@ const INFO = {
     officers: "Let Glover's men handle it",
   },
   chew: {
+    art: "img/scenes/battles/germantown.jpg",
     title: "The Chew House",
     when: "Germantown, October 4, 1777",
     intro: "In the fog, the attack has run into a stone house held by six companies of British infantry. Musket fire pours from its windows. Knox says no fort should be left in the army's rear; others say push on past it.",
@@ -40,7 +43,7 @@ export function playSetPiece(kind, onDone) {
   root.innerHTML = `
     <div class="sp-top"><div class="sp-title">${esc(info.title)}</div><div class="sp-hud" id="sp-hud"></div></div>
     <div class="sp-stage"><canvas id="sp-canvas" width="${W}" height="${H}"></canvas>
-      <div class="sp-card" id="sp-card"><div class="sp-when">${esc(info.when)}</div><h2>${esc(info.title)}</h2><p>${esc(info.intro)}</p><p class="sp-how">${esc(info.how)}</p>
+      <div class="sp-card" id="sp-card">${info.art ? `<div class="sp-art" style="background-image:url('${info.art}')"></div>` : ""}<div class="sp-when">${esc(info.when)}</div><h2>${esc(info.title)}</h2><p>${esc(info.intro)}</p><p class="sp-how">${esc(info.how)}</p>
         <div class="sp-btns"><button class="bf-big" id="sp-go">Take command</button><button class="bf-btn" id="sp-skip">${esc(info.officers)}</button></div></div></div>
     <div class="sp-extra" id="sp-extra"></div>`;
   document.body.appendChild(root);

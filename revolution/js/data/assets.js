@@ -57,8 +57,18 @@ export const PORTRAITS = {
 
 // Period paintings of battles, by region, for the battle scenes and the attack screens. Any region without one
 // uses the general victory or defeat painting. Add more as they are downloaded (credit them in img/CREDITS.md).
+const B = (f) => `img/scenes/battles/${f}.jpg`;
 export const BATTLE_PAINTINGS = {
-  trenton: "img/scenes/victory.jpg",
+  // New York and New Jersey, 1776 to 1777
+  longisland: B("longisland"), manhattan: B("longisland"), statenisland: B("longisland"), hackensack: B("longisland"),
+  westchester: B("bunkerhill"), trenton: "img/scenes/victory.jpg", princeton: B("princeton"),
+  newbrunswick: B("monmouth"), newark: B("monmouth"), morristown: B("monmouth"), southjersey: B("monmouth"),
+  // Pennsylvania, 1777
+  philadelphia: B("germantown"), chester: B("brandywine"), wilmington: B("brandywine"), bucks: B("paoli"), lancaster: B("paoli"),
+  delmarva: B("paoli"), baltimore: B("paoli"), easton: B("paoli"),
+  // New England and the north
+  boston: B("warren"), rhodeisland: B("warren"), connecticut: B("warren"), newhampshire: B("bunkerhill"),
+  springfield: B("bunkerhill"), bennington: B("bunkerhill"), highlands: B("bunkerhill"), kingston: B("bunkerhill"),
 };
 export function battlePainting(regionId, won) {
   return BATTLE_PAINTINGS[regionId] || (won ? SCENES.victory : SCENES.defeat || SCENES.victory);
@@ -71,5 +81,5 @@ export const SCENES = {
   winter:      "img/scenes/winter.jpg",      // William B. T. Trego, The March to Valley Forge (1883)
   victory:     "img/scenes/victory.jpg",     // John Trumbull, The Capture of the Hessians at Trenton
   saratoga:    "img/scenes/saratoga.jpg",    // John Trumbull, Surrender of General Burgoyne (1821)
-  // defeat: no painting yet; the drawn art is used.
+  defeat:      "img/scenes/battles/warren.jpg", // John Trumbull, The Death of General Warren at the Battle of Bunker's Hill (1786)
 };
