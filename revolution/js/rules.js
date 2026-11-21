@@ -294,6 +294,9 @@ function battleFactors(state, att, def, regionId, { surprise = false, sea = fals
   if (r.terrain && dg && dg.trait === "riflemen") D *= 1.15;
   if (state.regions[regionId].works && def.side === "P") D *= 1.15;
   if (surprise && dg && dg.trait === "complacent") D *= 0.55;
+  // A flank march the defender failed to watch for (set by a scenario, for one side, for one month).
+  const fb = state.flags && state.flags.flankBonus;
+  if (fb && fb.side === att.side && fb.turn === state.turn) A *= 1.3;
   if (tactic && TACTICS[tactic] && TACTICS[tactic].A) A *= TACTICS[tactic].A;
   return { A, D };
 }

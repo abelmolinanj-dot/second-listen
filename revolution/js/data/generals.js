@@ -29,6 +29,8 @@ export const GENERALS = {
     trait: "drillmaster", traitText: "Drillmaster: militia under him fight almost like regulars." },
   pulaski:    { side: "P", name: "Casimir Pulaski", short: "Pulaski", rank: 4, atk: 3, def: 1, loyalty: 70,
     trait: "cavalry", traitText: "Cavalry: strikes hard in open country, where there are no woods or hills." },
+  wayne:      { side: "P", name: "Anthony Wayne", short: "Wayne", rank: 5, atk: 3, def: 1, loyalty: 80,
+    trait: "bold", traitText: "Bold: \"Mad Anthony\" hits hard when attacking, and is not always careful about his camp." },
   // The Northern Department, 1777
   gates:      { side: "P", name: "Horatio Gates", short: "Gates", rank: 8, atk: 1, def: 3, loyalty: 60,
     trait: "entrenched", traitText: "Entrenched: when dug in, his lines are even harder to break. Popular with New England, and ambitious." },
@@ -54,6 +56,11 @@ export const GENERALS = {
     trait: null, traitText: "Commander of the Hessian corps." },
   rall:       { side: "B", name: "Johann Rall", short: "Rall", rank: 5, atk: 2, def: 1, hessian: true,
     trait: "complacent", traitText: "Complacent: badly surprised if attacked in winter quarters." },
+  // The Philadelphia campaign, 1777
+  knyphausen: { side: "B", name: "Wilhelm von Knyphausen", short: "Knyphausen", rank: 8, atk: 2, def: 3, hessian: true,
+    trait: null, traitText: "Commander of the Hessian corps after Heister: steady, experienced and hard to break." },
+  grey:       { side: "B", name: "Charles Grey", short: "Grey", rank: 6, atk: 3, def: 1,
+    trait: "aggressive", traitText: "\"No-flint\" Grey: had his men take the flints from their muskets and attack at night with the bayonet." },
   // Burgoyne's army from Canada, 1777. north: they march south from Canada.
   burgoyne:   { side: "B", name: "John Burgoyne", short: "Burgoyne", rank: 9, atk: 2, def: 2, north: true,
     trait: "gambler", traitText: "Gambler: a playwright and card player who attacks even when the odds are against him, and travels with thirty carts of baggage." },

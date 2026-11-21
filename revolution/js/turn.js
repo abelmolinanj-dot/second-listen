@@ -31,6 +31,7 @@ export function newGame(seed = Date.now() % 2147483647, scenarioId = DEFAULT_SCE
     startYear: SCENARIO.startYear,
     lastTurn: SCENARIO.turns - 1,
     aiGoal: SCENARIO.aiGoal,
+    aiGoalBold: !!SCENARIO.aiGoalBold,
     aiTargets: SCENARIO.aiTargets,
     closedPorts: SCENARIO.closedPorts,
     regions: {},

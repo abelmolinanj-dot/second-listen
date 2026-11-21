@@ -3,10 +3,12 @@
 
 import * as s1776 from "./scenario1776.js";
 import * as saratoga from "./scenarioSaratoga.js";
+import * as philadelphia from "./scenarioPhiladelphia.js";
 
 export const SCENARIOS = {
   [s1776.SCENARIO.id]: s1776,
   [saratoga.SCENARIO.id]: saratoga,
+  [philadelphia.SCENARIO.id]: philadelphia,
 };
 
 export const DEFAULT_SCENARIO = "1776";

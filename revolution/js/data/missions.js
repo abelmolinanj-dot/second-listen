@@ -39,12 +39,13 @@ export const MISSIONS = [
     length: "6 months · about 20 to 30 minutes",
   },
   {
-    id: "philadelphia", status: "soon", eta: "Coming in 2027",
+    id: "philadelphia", status: "ready", scenario: "philadelphia",
     year: "1777", title: "The Philadelphia Campaign", place: "Brandywine", at: [-75.75, 39.75], label: "below",
     image: null,
     summary: "Howe sails up the Chesapeake to take the capital. Fight him at the Brandywine and Germantown, and keep Congress out of his hands.",
-    objectives: ["Defend Philadelphia", "Keep Congress free", "Keep the army in one piece for the winter"],
+    objectives: ["3 stars: hold Philadelphia with the Cause at 50 or more", "2 stars: hold Philadelphia, or keep Washington's army at 7,000+ with the Cause at 40+ and a victory", "1 star: keep Washington free and the Cause at 35+ until December ends"],
     difficulty: 3,
+    length: "6 months · about 20 to 30 minutes",
   },
   {
     id: "valleyforge", status: "soon", eta: "Coming in 2027",

@@ -2,7 +2,7 @@
 
 A turn-based strategy game of the American Revolution, built for phones first. You are the **Board of War**: you move the Continental Army, pay for it, and answer letters from your generals.
 
-Two campaigns are playable: **The Campaign of 1776** (July 1776 to June 1777, around New York and New Jersey) and **Saratoga** (June to November 1777, against Burgoyne's invasion from Canada).
+Three campaigns are playable: **The Campaign of 1776** (July 1776 to June 1777, around New York and New Jersey), **Saratoga** (June to November 1777, against Burgoyne's invasion from Canada) and **The Philadelphia Campaign** (July to December 1777, against Howe's march on the capital).
 
 ## Play it
 
@@ -78,9 +78,10 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/data/scenarios.js` | The list of playable scenarios |
 | `js/data/scenario1776.js` | Starting setup, reinforcements, scripted letters and endings for 1776 |
 | `js/data/scenarioSaratoga.js` | The same for Saratoga, 1777 |
+| `js/data/scenarioPhiladelphia.js` | The same for the Philadelphia campaign, 1777 |
 | `tools/simulate.mjs` | Plays the campaign many times without a screen, for testing balance |
 
-Balance test, from this folder: `node tools/simulate.mjs 100 defensive --scenario=saratoga` (strategies: `passive`, `simple`, `defensive`; scenarios: `1776`, `saratoga`). In 1776 a careful player wins a little under half the time (more if they spend on the Founders' offers). Saratoga is easier, as it was historically: careful play usually wins, but three stars take cutting Burgoyne off or forcing his surrender. Doing nothing loses both.
+Balance test, from this folder: `node tools/simulate.mjs 100 defensive --scenario=saratoga` (strategies: `passive`, `simple`, `defensive`; scenarios: `1776`, `saratoga`, `philadelphia`). In 1776 a careful player wins a little under half the time (more if they spend on the Founders' offers). Saratoga is easier, as it was historically: careful play usually wins, but three stars take cutting Burgoyne off or forcing his surrender. Philadelphia is harder: a careful player keeps the capital about a third of the time and keeps the army strong most of the rest. Doing nothing loses all three.
 
 ## Adding portraits and paintings
 
@@ -100,7 +101,6 @@ The game draws its own art until real images are added. To add one:
 - Better art for tokens
 
 **More campaigns**
-- 1777: Saratoga in the north, Brandywine and Philadelphia in the south
 - 1778: Valley Forge, Steuben's training, France enters the war
 - 1780–81: the Southern campaign and Yorktown, where the French navy finally beats the Royal Navy
 - Arnold's treason, which depends on his loyalty across campaigns

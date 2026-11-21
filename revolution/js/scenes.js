@@ -254,6 +254,16 @@ export const SCENE_TEXT = {
       "You command the Northern Department. Washington and the main army are far away in Pennsylvania. The north is yours to save.",
     ],
   },
+  howeSails: {
+    art: "fleet",
+    lines: [
+      "July, 1777.",
+      "In New York harbor, General Howe has put fifteen thousand soldiers aboard more than two hundred ships. Then the fleet sails out past Sandy Hook and disappears.",
+      "Nobody in the American camp knows where he is going: up the Hudson to meet Burgoyne, to Boston, to Charleston, or to Philadelphia, the capital.",
+      "Washington's army waits in the hills of New Jersey, watching the sea.",
+      "You are the Board of War. Guess right, and make him pay for every mile.",
+    ],
+  },
   saratoga: { art: "victory", lines: ["Saratoga, October 1777."] },
   fireships: { art: "fireships", lines: ["Night on the Hudson."] },
   turtle: { art: "turtle", lines: ["New York harbor, after midnight."] },

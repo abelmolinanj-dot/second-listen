@@ -122,6 +122,22 @@ export const FIGURES = {
     bio: "\"Gentleman Johnny,\" a playwright, gambler and Member of Parliament who sold London on a plan to cut New England off by marching down from Canada. His soldiers liked him because he treated them well.",
     after: "He surrendered at Saratoga in October 1777 and went home to write plays. His comedy The Heiress was a hit in 1786.",
   },
+  wayne: {
+    group: "P", name: "Anthony Wayne", role: "Brigadier General, Pennsylvania", life: "1745 to 1796",
+    bio: "A Pennsylvania tanner and surveyor who became one of the boldest brigade commanders in the army. His men were surprised in a night bayonet attack at Paoli in September 1777, and he fought hard at Brandywine and Germantown.",
+    after: "His bayonet assault on Stony Point in 1779 made him famous as \"Mad Anthony.\" In 1794 he won the Battle of Fallen Timbers in Ohio.",
+  },
+  knyphausen: {
+    group: "B", name: "Wilhelm von Knyphausen", role: "Lieutenant General, Hessian corps", life: "1716 to 1800",
+    bio: "A veteran German general who took over the Hessian troops in America in 1777. At the Brandywine he made the frontal attack at Chadds Ford while Howe marched around the American flank.",
+    after: "He commanded at New York while Clinton was away in the south, and went home in 1782.",
+  },
+  grey: {
+    group: "B", name: "Charles Grey", role: "Major General", life: "1729 to 1807",
+    bio: "A British officer who led the night attack on Wayne's camp at Paoli in September 1777, ordering his men to take the flints from their muskets so no shot would give them away. It earned him the nickname \"No-flint\" Grey.",
+    after: "He was made an earl. His son, the second Earl Grey, became prime minister, and Earl Grey tea is named after the son.",
+  },
+
   fraser: {
     group: "B", name: "Simon Fraser", role: "Brigadier General", life: "1729 to 1777",
     bio: "A Scottish officer who led Burgoyne's advance guard and was the best field commander in his army.",

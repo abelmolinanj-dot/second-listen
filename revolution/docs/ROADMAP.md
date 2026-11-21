@@ -58,7 +58,7 @@ and the main thing that makes it more than a scenario pack.
 | When | Goal |
 |---|---|
 | Late Nov 2026 | Playtest 1776 by hand, fix what feels wrong, tune balance. Add the 7 missing portraits. |
-| Dec 2026 | Second campaign: **Saratoga and Philadelphia, 1777**. Voiced lines for the key letters. |
+| Dec 2026 | Second campaign: **Saratoga and Philadelphia, 1777** (both built in November). Next: Valley Forge and Monmouth. Voiced lines for the key letters. |
 | Jan 2027 | First version of conquest mode: **Rival States** on the colonies map. Publish on the web (GitHub Pages) for friends to test. |
 | Feb 2027 | Fix what testers find. Release on the web. Package for Google Play (Android first: no Mac needed). |
 | After launch | The world map, the later eras, iPhone. |

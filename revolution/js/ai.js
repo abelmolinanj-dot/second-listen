@@ -14,9 +14,10 @@ function value(state, id) {
   return (r.city ? 12 : 4) + (r.fort ? 3 : 0) + (state.aiTargets[id] || 0);
 }
 
-function attackThreshold(g, defender, winter) {
+function attackThreshold(g, defender, winter, prize = false) {
   let t = 0.65;
-  if (g && g.trait === "cautious") t = defender.dugIn ? 0.88 : 0.75;
+  // prize: the campaign's main objective, which even a cautious general will assault (aiGoalBold scenarios).
+  if (g && g.trait === "cautious") t = defender.dugIn && !prize ? 0.88 : 0.75;
   if (g && g.trait === "aggressive") t = 0.55;
   if (g && g.trait === "gambler") t = 0.5;
   if (winter) t = Math.max(t, 0.85);
@@ -37,7 +38,7 @@ function scoreOption(state, army, opt, winter) {
   if (opt.kind === "attack") {
     const foe = armyAt(state, opt.region, "P");
     const p = winChance(state, army, foe, opt.region, { sea: opt.sea });
-    if (p < attackThreshold(g, foe, winter)) return null;
+    if (p < attackThreshold(g, foe, winter, state.aiGoalBold && opt.region === state.aiGoal)) return null;
     score = p * (value(state, opt.region) + armyMen(foe) / 400) - (1 - p) * 10;
   } else if (opt.kind === "capture") {
     const danger = threatTo(state, opt.region, "B");

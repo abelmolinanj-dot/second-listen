@@ -109,7 +109,7 @@ export function setupScenario(state) {
   }
   state.generals.lee.status = "away";
   // Commanders who belong to later campaigns.
-  for (const id of ["gates", "schuyler", "stclair", "stark", "morgan", "burgoyne", "fraser", "riedesel", "stleger", "lafayette", "kosciuszko", "steuben", "pulaski"]) state.generals[id].status = "away";
+  for (const id of ["gates", "schuyler", "stclair", "stark", "morgan", "burgoyne", "fraser", "riedesel", "stleger", "lafayette", "kosciuszko", "steuben", "pulaski", "wayne", "knyphausen", "grey"]) state.generals[id].status = "away";
 
   const P = (region, regulars, militia, general) => {
     const a = newArmy(state, { side: "P", region, regulars, general });
