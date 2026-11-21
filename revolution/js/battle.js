@@ -10,6 +10,7 @@
 import { REGIONS } from "./data/regions.js";
 import { armyMen, militiaMen, generalOf, battleFactors, power, QUALITY } from "./rules.js";
 import { assignRegiments, recordOf, levelOf, levelBonus } from "./regiments.js";
+import { roleGeneral } from "./roles.js";
 
 export const LANES = ["left", "center", "right"];
 export const LANE_NAMES = { left: "Left", center: "Center", right: "Right" };
@@ -134,7 +135,7 @@ export function setupBattle(state, att, def, regionId, opts = {}, seed = 1) {
     orders: { P: { left: "hold", center: "hold", right: "hold" }, B: { left: "hold", center: "hold", right: "hold" } },
     generals: { P: generalOf(state, P), B: generalOf(state, B) },
     generalLane: { P: "center", B: "center" },
-    rallies: { P: (generalOf(state, P) && generalOf(state, P).trait === "steadfast" ? 2 : 1) + (state.role && state.role.id === "commander" && P.general === state.role.gen ? 1 : 0), B: 1 },
+    rallies: { P: (generalOf(state, P) && generalOf(state, P).trait === "steadfast" ? 2 : 1) + (state.role && state.role.id === "commander" && P.general === roleGeneral(state) ? 1 : 0), B: 1 },
     units: [...regiments(state, P, "P", rand), ...regiments(state, B, "B", rand)],
     fallen: [], // where men fell, for the drawing: [x, lane, side]
     events: [], // things worth saying: { tick, text, kind }

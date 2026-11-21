@@ -22,7 +22,7 @@ import { SCENES as CIV, sceneArt, answerCivilian } from "./civilians.js";
 import { applySeason, resetSeason, LIVING_DEFS, smokeColumn, SHIP, arrowPath } from "./living.js";
 import { assignRegiments, kindsFor, recordOf, levelOf, LEVELS } from "./regiments.js";
 import { STYLES, setupRival } from "./rival.js";
-import { ROLES } from "./roles.js";
+import { ROLES, roleGeneral } from "./roles.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
@@ -482,7 +482,7 @@ function renderPanel() {
     h += recruitButtons(ui.region);
   } else {
     const R = state.role && ROLES[state.role.id] && state.role.id !== "board" ? ROLES[state.role.id] : null;
-    h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">${R ? `You are ${esc(R.who(state.generals[state.role.gen]?.name || ""))}. ${esc(R.perks.join(". "))}. ${esc(R.problems.join(". "))}.` : "You are the Board of War: you run the army and pay for it."}</p>`;
+    h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">${R ? `You are ${esc(R.who(state.generals[roleGeneral(state)]?.name || ""))}. ${esc(R.perks.join(". "))}. ${esc(R.problems.join(". "))}.` : "You are the Board of War: you run the army and pay for it."}</p>`;
     // Your orders: what each star needs, a live check beside each, and the aide's advice for this month.
     const SC = scenarioOf(state).SCENARIO;
     if (SC.objectives) {
@@ -876,9 +876,10 @@ function headlineFor(battles, notes) {
     return ours ? [`Victory at ${place}`, "The King's troops driven from the field"] : [`Defeat at ${place}`, "The army falls back in good order, its officers say"];
   }
   const fell = notes.find((n) => /fell to the British/.test(n.text));
-  if (fell) return [fell.text.replace(/\.$/, ""), "The enemy advances"];
+  const clean = (t) => t.replace(/^Cause [+-]?\d+: /, "").replace(/\.$/, "");
+  if (fell) return [clean(fell.text), "The enemy advances"];
   const retaken = notes.find((n) => /was retaken/.test(n.text));
-  if (retaken) return [retaken.text.replace(/\.$/, ""), "Good news from the army"];
+  if (retaken) return [clean(retaken.text), "Good news from the army"];
   return ["News from the Army", "A quiet month, as quiet months go in wartime"];
 }
 

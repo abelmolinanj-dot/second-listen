@@ -33,6 +33,14 @@ export const ROLES = {
   },
 };
 
+// The general the "commander" role means right now. At Saratoga that is Schuyler until Congress replaces him with Gates.
+export function roleGeneral(state) {
+  const r = state.role;
+  if (!r || !r.gen) return null;
+  if (r.id === "commander" && r.gen === "schuyler" && state.generals.schuyler && state.generals.schuyler.status !== "active" && state.generals.gates && state.generals.gates.status === "active") return "gates";
+  return r.gen;
+}
+
 // Which roles each campaign offers (a general has to be in the campaign to play as him).
 export const ROLES_FOR = {
   "1776": ["board", "commander", "greene", "arnold"],

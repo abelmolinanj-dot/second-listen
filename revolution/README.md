@@ -92,6 +92,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/living.js` | The living map: seasons, smoke, campfires, ships, and the replay of the British turn |
 | `js/pixel.js` | Pixel-art soldiers drawn in code |
 | `tools/battletest.mjs` | Checks field battles against the quick battle odds |
+| `tools/stress.mjs` | Plays every campaign and role at random and checks nothing breaks |
 | `js/sound.js` | Sound effects and music, synthesized with the Web Audio API |
 | `js/tutorial.js` | The aide-de-camp's guided tutorial |
 | `js/data/facts.js` | The "Did you know?" history notes |

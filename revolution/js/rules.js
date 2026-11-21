@@ -2,6 +2,7 @@
 // so the same code runs in the browser and in the headless test in tools/simulate.mjs.
 
 import { creditRegiments } from "./regiments.js";
+import { roleGeneral } from "./roles.js";
 import { REGIONS, ADJ, isWaterCrossing } from "./data/regions.js";
 import { makeRng, between } from "./rng.js";
 
@@ -341,7 +342,8 @@ export function battleFactors(state, att, def, regionId, { surprise = false, sea
   // Who the player is playing as.
   const role = state.role;
   if (role) {
-    if (role.id === "commander" && role.gen) { if (att.general === role.gen) A *= 1.1; if (def.general === role.gen) D *= 1.1; }
+    const rg = roleGeneral(state);
+    if (role.id === "commander" && rg) { if (att.general === rg) A *= 1.1; if (def.general === rg) D *= 1.1; }
     if (role.id === "arnold" && att.side === "P") A *= 1.12;
     if (role.id === "greene" && att.side === "P") A *= 0.95;
   }
@@ -464,6 +466,9 @@ export function moveArmy(state, armyId, targetId, { share = 1, surprise = false,
     for (const b of army.militia) b.men = Math.round(b.men * 0.95);
   }
   army.tired = m.days >= 10 ? state.turn : army.tired;
+  // Two enemy armies in one region fight as one: otherwise beating one would leave the other sharing the region.
+  const stacked = armyList(state, enemy(army.side)).filter((x) => x.region === targetId);
+  for (const extra of stacked.slice(1)) mergeInto(state, extra, stacked[0]);
   const foe = armyAt(state, targetId, enemy(army.side));
   if (army.side === "P") {
     if (foe) noteHabit(state, "attack");
@@ -542,6 +547,11 @@ function fight(state, att, def, regionId, opts) {
   for (const a of [att, def]) if (state.armies[a.id] && armyMen(a) < 150) {
     if (a.general) state.generals[a.general].status = "reserve";
     removeArmy(state, a);
+  }
+  // A beaten detachment falls back on the rest of its army and rejoins it.
+  if (!attackerWins && state.armies[att.id]) {
+    const home = armyList(state, att.side).find((x) => x !== att && x.region === att.region);
+    if (home) mergeInto(state, att, home);
   }
   // The Continental regiments in the battle gain experience and, in a victory, an honor.
   const pArmy = att.side === "P" ? att : def;

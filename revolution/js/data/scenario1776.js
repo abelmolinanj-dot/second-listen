@@ -436,7 +436,7 @@ G. Washington`,
         apply(state, ctx) {
           const a = armyAt(state, "longisland", "P");
           if (!a) return "The army was no longer on the island.";
-          const s = ctx.minigame ?? 0.9;
+          const s = ctx.minigame ?? 0.96; // left to Glover's men, it goes as it really did
           const keep = Math.max(0.3, Math.min(1, s));
           const lost = Math.round(armyMen(a) * (1 - keep));
           a.regulars = Math.round(a.regulars * keep);
