@@ -36,6 +36,26 @@ played and judged before the next. Anything that turns out too complicated gets 
 15. Naval moments: Lake Champlain, the West Point chain, the French fleet off Yorktown.
 16. Daily dispatch challenge: one short scenario a day, the same for everyone, with a shareable score.
 
+**Phase 5: make it a game** (approved November 21, 2026; this comes before Phase 4)
+
+Playtest verdict: "boring, like a clicker". Too many letters, nothing to do with your hands, soldiers like blocks.
+Art direction: gritty, dark, 1990s VGA pixel art ("retro but cool"), more realistic. Fog of war and stratagem cards
+were rejected. Build order:
+
+1. Fewer letters: one main letter a month; the rest go to a dispatch tray and the general decides if you ignore them.
+   Animated pixel-art soldiers (marching, firing with smoke, flags, drummers), used everywhere.
+2. Battles you fight: the map zooms into a small field with lanes and terrain; place regiments, give orders (hold,
+   advance, charge, flank, fall back), watch volleys and routs. Music that reacts: quiet fifes, drums, battle march, lament.
+3. A map that lives (seasons, snow, frozen rivers, smoke over burned towns, ships, night campfires) and watching the
+   British turn (red arrows, sailing fleets, battle flashes).
+4. Named regiments (1st Maryland, Glover's Marbleheaders, Morgan's Riflemen, Delaware Blues) with battle honors that carry
+   over; a rival enemy general who learns your habits, adapts and taunts you in intercepted letters.
+5. Set-piece moments as short mini-games (crossing the Delaware through ice, the night escape from Long Island, the Chew
+   house); animated cutscenes with pans across paintings, smoke and marching figures, and a scene after every big battle.
+6. Armies take days to march along roads, slowed by weather and rivers; army condition you can see on the figures.
+7. A branching campaign map of alternate-history missions; choose your commander (Washington, Greene, Arnold, the Board);
+   the civilians' war in short scenes; quick battles and shareable replays. Then Phase 4 and Rival States.
+
 **Phase 4: "An Officer's Road" (inspired by Mount & Blade: Warband)**
 
 A free mode where you are one person, not the Board of War. You start in 1775 as a young officer from a colony you

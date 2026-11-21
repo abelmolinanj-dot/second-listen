@@ -84,6 +84,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .token .count { font-family: var(--sans); font-size: 9.5px; font-weight: 700; fill: #fff; }
 .token .flag { animation: wave 2.4s ease-in-out infinite; transform-origin: 0 0; }
 @keyframes wave { 50% { transform: skewY(-6deg) scaleX(.94); } }
+/* Pixel soldiers: standing, or marching in place while selected or moving. */
+.px-w1, .px-w2 { display: none; }
+.token.selected .px-st, .token.marching .px-st { display: none; }
+.token.selected .px-w1, .token.marching .px-w1 { display: inline; animation: px-a .56s steps(1) infinite; }
+.token.selected .px-w2, .token.marching .px-w2 { display: inline; animation: px-b .56s steps(1) infinite; }
+@keyframes px-a { 0% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes px-b { 0% { opacity: 0; } 50% { opacity: 1; } }
+/* Battle close-ups: each man loads, then fires. */
+.bs-load { animation: px-a 1.6s steps(1) infinite; }
+.bs-fire { animation: px-b 1.6s steps(1) infinite; }
+.battle-art { image-rendering: pixelated; }
 .boom { pointer-events: none; }
 .boom-inner { animation: boom 3.2s ease-out forwards; transform-origin: 0 0; }
 @keyframes boom { 0% { transform: scale(.2); opacity: 0; } 12% { transform: scale(1.25); opacity: 1; } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: scale(1.1); } }
@@ -168,6 +179,9 @@ select { font: inherit; padding: 7px; border-radius: 8px; border: 1px solid #000
 .inbox button { width: 100%; text-align: left; border: 0; background: none; padding: 10px 2px; color: var(--ink); }
 .inbox .t { font-weight: 700; }
 .inbox .unread .t::before { content: "● "; color: var(--british); }
+.inbox .inbox-h { font-family: var(--caps); font-size: 13px; color: var(--ink-soft); padding: 10px 2px 4px; border-bottom: 2px solid var(--accent); }
+.inbox .waiting .t::before { content: "✉ "; color: var(--accent); }
+.inbox .waiting { background: rgba(200, 16, 46, .05); }
 .ledger { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
 .ledger td { padding: 5px 2px; border-bottom: 1px dotted var(--paper-edge); }
 .ledger td.n { text-align: right; }
@@ -360,6 +374,7 @@ select { font: inherit; padding: 7px; border-radius: 8px; border: 1px solid #000
 .gazette .logline { font-size: 14px; }
 .gz-voice { margin: 6px 0; padding: 0 0 0 10px; border-left: 3px solid var(--accent); font-style: italic; font-size: 14.5px; }
 .gz-voice cite { display: block; font-style: normal; font-family: var(--caps); font-size: 13px; margin-top: 2px; }
+.gz-story { margin: 4px 0 8px; font-size: 14.5px; line-height: 1.4; }
 
 /* --- the army list in the side panel --- */
 .panel-h { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); margin: 12px 0 6px; }

@@ -81,6 +81,52 @@ export function answerLetter(state, letterId, choiceIndex) {
 }
 
 export const unanswered = (state) => state.letters.filter((l) => !l.resolved);
+// Letters that must be answered before the month can end: at most one a month. The rest wait in the dispatch tray.
+export const urgent = (state) => state.letters.filter((l) => !l.resolved && !l.tray);
+export const trayLetters = (state) => state.letters.filter((l) => !l.resolved && l.tray);
+
+// How much a letter matters, for picking the one main letter of the month.
+function weightOf(l) {
+  const e = EVENTS[l.event] || {};
+  if (e.main) return 5;
+  if (l.kind === "council") return 4;
+  if (e.scripted) return 3;
+  if (l.kind === "intel") return 2;
+  if (e.random) return 1;
+  return 0;
+}
+
+// Sort this month's new mail: news is applied at once and reported in the paper; one letter waits for an answer;
+// the others go to the tray, where the sender decides for himself if the Board says nothing by the end of the month.
+export function triageMail(state) {
+  const fresh = state.letters.filter((l) => !l.resolved && !l.triaged);
+  for (const l of fresh) l.triaged = true;
+  const open = [];
+  for (const l of fresh) {
+    const e = EVENTS[l.event] || {};
+    const onlyNews = e.choices && e.choices.length === 1 && !e.choices[0].scene && !e.keep && !String(l.choices[0].label || "").includes("$");
+    if (onlyNews) { answerLetter(state, l.id, 0); l.read = false; l.news = true; continue; }
+    open.push(l);
+  }
+  if (urgent(state).some((l) => !fresh.includes(l))) { for (const l of open) l.tray = true; return; }
+  open.sort((a, b) => weightOf(b) - weightOf(a));
+  open.forEach((l, i) => { if (i > 0) l.tray = true; });
+}
+
+// The end of the month: tray letters nobody answered. The sender uses his own judgment (autoChoice), or lets it pass.
+export function settleTray(state) {
+  for (const l of unanswered(state)) {
+    const e = EVENTS[l.event] || {};
+    const pick = typeof e.autoChoice === "function" ? e.autoChoice(state, l.ctx) : e.autoChoice;
+    if (pick !== undefined && pick !== null && e.choices && e.choices[pick]) {
+      answerLetter(state, l.id, pick);
+      l.outcome = "The Board said nothing, so they decided for themselves. " + (l.outcome || "");
+    } else {
+      l.resolved = true;
+      l.outcome = "No answer came, so they did what they thought best.";
+    }
+  }
+}
 
 // Called at the start of each month, after the enemy has moved.
 export function deliverMail(state) {
@@ -114,7 +160,7 @@ export function deliverMail(state) {
     && (e.fromTurn === undefined || state.turn >= e.fromTurn) && (e.untilTurn === undefined || state.turn <= e.untilTurn)
     && (!e.when || e.when(state)));
   const roll = makeRng({ seed: ((state.gameSeed ?? state.seed ?? 1) + state.turn * 7919) >>> 0 });
-  if (pool.length && roll() < 0.7) {
+  if (pool.length && roll() < 0.5) {
     let total = pool.reduce((s, e) => s + (e.weight || 1), 0);
     let r = roll() * total;
     const e = pool.find((x) => (r -= x.weight || 1) < 0) || pool[0];
@@ -122,11 +168,11 @@ export function deliverMail(state) {
     sendLetter(state, e.id, e.ctx ? e.ctx(state) : {});
   }
 
-  // Commanders in trouble write for orders. At most two such letters a month, starting in the second month.
-  let sent = state.turn === 0 ? 2 : 0;
+  // Commanders in trouble write for orders. At most one such letter a month, starting in the second month.
+  let sent = state.turn === 0 ? 1 : 0;
   const wash = findGeneralArmy(state, "washington");
   for (const a of armyList(state, "P").sort((x, y) => armyMen(y) - armyMen(x))) {
-    if (sent >= 2) break;
+    if (sent >= 1) break;
     if (armyMen(a) < 1500) continue;
     if ((state.cooldown[a.id] || -9) > state.turn - 3) continue;
     const threat = threatTo(state, a.region, "P");
@@ -137,6 +183,7 @@ export function deliverMail(state) {
     sendLetter(state, "endangered", { armyId: a.id, region: a.region, ratio: Math.round(ratio * 10) / 10, general: a.general }, { delayed: far });
     sent++;
   }
+  triageMail(state);
 }
 
 // --- letters every scenario can use ---
@@ -160,6 +207,7 @@ const DANGER_VOICE = {
 registerEvents([
   {
     id: "endangered",
+    autoChoice: 3, // left in the tray, the general uses his own judgment
     from: (state, ctx) => ctx.general || "colonel",
     title: (state, ctx) => `Outnumbered at ${REGIONS[ctx.region].name}`,
     body: (state, ctx) => {

@@ -11,7 +11,7 @@ import {
   isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather, supplyPath,
 } from "./rules.js";
 import { britishTurn } from "./ai.js";
-import { registerEvents, deliverMail, soldierLetter, unanswered } from "./letters.js";
+import { registerEvents, deliverMail, soldierLetter, settleTray } from "./letters.js";
 
 // Each scenario's scripted letters only fire in that scenario.
 for (const [id, s] of Object.entries(SCENARIOS)) registerEvents(s.SCENARIO_EVENTS, id);
@@ -71,10 +71,7 @@ export function endTurn(state) {
   const before = state.log.length;
 
   // Any letter left unanswered is handled by the sender.
-  for (const l of unanswered(state)) {
-    l.resolved = true;
-    l.outcome = "No answer came, so they did what they thought best.";
-  }
+  settleTray(state);
 
   // 2. The British move.
   const startBattles = state.battles.length;

@@ -9,7 +9,7 @@ import {
   supplyPath, buildDepot, SUPPLY_RANGE, DEPOT_COST, TACTICS, flankChance,
 } from "./rules.js";
 import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
-import { answerLetter, unanswered, senderName, senderRole, EVENTS } from "./letters.js";
+import { answerLetter, unanswered, urgent, trayLetters, senderName, senderRole, EVENTS } from "./letters.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { randomQuote } from "./data/quotes.js";
 import { awardHonors, noteFact, noteLetter, recordDaily } from "./book.js";
@@ -275,13 +275,16 @@ function renderMap() {
       const fresh = !el;
       if (fresh) { el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.dataset.army = a.id; el.style.transition = "none"; }
       el.dataset.region = rid;
-      el.setAttribute("class", `token ${a.side}${a.moved && a.side === "P" ? " moved" : ""}`);
+      el.setAttribute("class", `token ${a.side}${a.moved && a.side === "P" ? " moved" : ""}${ui.army === a.id ? " selected" : ""}`);
       const key = [armyMen(a), a.general, a.moved, a.dugIn, ui.army === a.id, a.hessian, militiaMen(a) > a.regulars, a.side === "P" && !supplyPath(state, a)].join("|");
       if (el.dataset.key !== key) {
         el.dataset.key = key;
         el.innerHTML = armyFigure({ side: a.side, hessian: a.hessian, men: armyMen(a), regulars: a.regulars, militia: militiaMen(a), general: a.general, short: g ? g.short : "", moved: a.moved, dugIn: a.dugIn, selected: ui.army === a.id, label: fmtMen(armyMen(a)), unsupplied: a.side === "P" && !supplyPath(state, a) });
       }
-      el.style.transform = `translate(${x + ox}px, ${y}px)`;
+      const pos = `translate(${x + ox}px, ${y}px)`;
+      // A token sliding to a new place marches while it moves.
+      if (!fresh && el.style.transform && el.style.transform !== pos) { el.classList.add("marching"); clearTimeout(el._march); el._march = setTimeout(() => el.classList.remove("marching"), 950); }
+      el.style.transform = pos;
       layer.appendChild(el); // keeps northern armies behind southern ones
       if (fresh) requestAnimationFrame(() => { el.style.transition = ""; });
       seen.add(a.id);
@@ -324,7 +327,7 @@ function renderTop() {
   const badge = $("#letters-badge");
   badge.hidden = !(open || unread);
   badge.textContent = open || unread;
-  $("#btn-letters").classList.toggle("pulse", open > 0);
+  $("#btn-letters").classList.toggle("pulse", urgent(state).length > 0);
 }
 
 // ---------- panel ----------
@@ -412,9 +415,10 @@ function renderPanel() {
     const mine = armyList(state, "P").sort((x, y) => armyMen(y) - armyMen(x));
     h += `<h3 class="panel-h">Your armies</h3><div class="army-list">${mine.map((a) => `<button class="army-chip${a.moved ? " moved" : ""}" data-pick="${a.id}">${a.general ? portraitOf(a.general, "tiny") : `<span class="chip-flag"></span>`}<span><b>${esc(describeArmy(state, a))}</b><small>${esc(REGIONS[a.region].name)} · ${fmtMen(armyMen(a))}${a.moved ? " · done this month" : ""}</small></span></button>`).join("")}</div>`;
   }
-  const open = unanswered(state).length;
+  const open = urgent(state).length;
+  const tray = trayLetters(state).length;
   if (state.gameOver) h += `<div class="end-row"><button class="btn primary" id="tocamp2">Back to the campaign map ›</button></div>`;
-  else h += `<div class="end-row">${open ? `<button class="btn gold" id="open-letters">Answer ${open} letter${open > 1 ? "s" : ""}</button>` : ""}<button class="btn primary" id="end-turn">End ${esc(dateLabel(state).split(" ")[0])} ›</button></div>`;
+  else h += `<div class="end-row">${open ? `<button class="btn gold" id="open-letters">Answer the letter</button>` : tray ? `<button class="btn" id="open-tray" title="Answer them, or leave them and the senders decide at the end of the month">Dispatches (${tray})</button>` : ""}<button class="btn primary" id="end-turn">End ${esc(dateLabel(state).split(" ")[0])} ›</button></div>`;
   p.innerHTML = h;
 
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
@@ -424,6 +428,7 @@ function renderPanel() {
   on("dig", () => { const e = digIn(state, ui.army); if (e) toast(e); else { sfx.tap(); tutorial.event("act"); } save(); render(); });
   on("end-turn", onEndTurn);
   on("open-letters", () => showLetters());
+  on("open-tray", () => showInbox());
   on("tocamp2", () => frontend.showCampaign());
   // The army list: select an army and bring it into view.
   for (const chip of p.querySelectorAll("[data-pick]")) chip.onclick = () => {
@@ -492,7 +497,7 @@ function modal(html, onReady) {
   if (onReady) onReady($("#modal-card"));
 }
 function closeModal() { $("#modal").hidden = true; render(); }
-$("#modal").addEventListener("click", (e) => { if (e.target.id === "modal" && state && !unanswered(state).length) closeModal(); });
+$("#modal").addEventListener("click", (e) => { if (e.target.id === "modal" && state && !urgent(state).length) closeModal(); });
 
 const paras = (text) => text.split(/\n\n+/).map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
 
@@ -542,14 +547,25 @@ function letterHtml(l) {
 
 // Show unanswered letters one at a time; then the inbox.
 function showLetters(after) {
-  const open = unanswered(state);
+  const open = urgent(state);
   if (open.length) {
-    const l = open[open.length - 1];
+    showLetter(open[open.length - 1], () => (urgent(state).length ? showLetters(after) : after ? after() : closeModal()), after);
+    return;
+  }
+  if (after) { after(); return; }
+  showInbox();
+}
+
+// One letter with its choices. next() runs after the outcome is read.
+function showLetter(l, next, after) {
+  {
     l.read = true;
     sfx.letter();
     noteLetter(l.event);
     speakLetter(l);
-    modal(letterHtml(l) + `<p class="meta" style="margin-top:12px">${open.length > 1 ? `${open.length - 1} more letter${open.length > 2 ? "s" : ""} waiting.` : ""}</p>`, (card) => {
+    const waiting = trayLetters(state).filter((x) => x !== l).length;
+    modal(letterHtml(l) + `<p class="meta" style="margin-top:12px">${l.tray ? "From the dispatch tray. If you leave it, the sender decides at the end of the month." : waiting ? `${waiting} more in the dispatch tray. You can answer them or leave them.` : ""}</p>` + (l.tray ? `<div class="modal-actions"><button class="btn" id="leave">Leave it for now</button></div>` : ""), (card) => {
+      const lv = card.querySelector("#leave"); if (lv) lv.onclick = () => { stopSpeaking(); showInbox(); };
       for (const b of card.querySelectorAll("[data-choice]")) b.onclick = () => {
         stopSpeaking();
         const outcome = answerLetter(state, l.id, Number(b.dataset.choice));
@@ -558,8 +574,8 @@ function showLetters(after) {
         const lost = state.lastSurprise; state.lastSurprise = null;
         // A letter can end the campaign (an enemy army surrendering, for example).
         const over = !!state.gameOver;
-        const showOutcome = () => modal(`<h2>${esc(l.title)}</h2><p class="outcome">${esc(outcome || "Your answer was sent.")}</p>${lost && typeof lost === "object" ? battleHtml(lost) : ""}<div class="modal-actions"><button class="btn primary" id="next">${over ? "Continue" : unanswered(state).length ? "Next letter" : "Continue"}</button></div>`, (c) => {
-          c.querySelector("#next").onclick = () => (over ? showGameOver(null) : unanswered(state).length ? showLetters(after) : after ? after() : closeModal());
+        const showOutcome = () => modal(`<h2>${esc(l.title)}</h2><p class="outcome">${esc(outcome || "Your answer was sent.")}</p>${lost && typeof lost === "object" ? battleHtml(lost) : ""}<div class="modal-actions"><button class="btn primary" id="next">Continue</button></div>`, (c) => {
+          c.querySelector("#next").onclick = () => (over ? showGameOver(null) : next());
         });
         renderTop();
         const chosenScene = EVENTS[l.event]?.choices?.[Number(b.dataset.choice)]?.scene;
@@ -575,19 +591,20 @@ function showLetters(after) {
         } else showOutcome();
       };
     });
-    return;
   }
-  if (after) { after(); return; }
-  showInbox();
 }
 
 function showInbox() {
   for (const l of state.letters) if (l.resolved) l.read = l.read || false;
-  const items = state.letters.slice(0, 40).map((l) => `<li class="${l.read ? "" : "unread"}"><button data-letter="${l.id}"><div class="t">${esc(l.title)}</div><div class="meta">${esc(l.fromName)} · ${monthOf(l.turn)}</div></button></li>`).join("");
+  const waiting = trayLetters(state);
+  const rest = state.letters.filter((l) => !waiting.includes(l)).slice(0, 40);
+  const item = (l) => `<li class="${l.read ? "" : "unread"}${l.tray && !l.resolved ? " waiting" : ""}"><button data-letter="${l.id}"><div class="t">${esc(l.title)}</div><div class="meta">${esc(l.fromName)} · ${monthOf(l.turn)}${l.tray && !l.resolved ? " · waiting for an answer" : l.news ? " · news" : ""}</div></button></li>`;
+  const items = (waiting.length ? `<li class="inbox-h">Dispatch tray: answer these, or leave them and the senders decide at the end of the month</li>` + waiting.map(item).join("") + `<li class="inbox-h">Earlier letters</li>` : "") + rest.map(item).join("");
   modal(`<h2>Letters</h2><ul class="inbox">${items || "<li class='meta'>No letters yet.</li>"}</ul><div class="modal-actions"><button class="btn primary" id="close">Close</button></div>`, (c) => {
     c.querySelector("#close").onclick = closeModal;
     for (const b of c.querySelectorAll("[data-letter]")) b.onclick = () => {
       const l = state.letters.find((x) => x.id === b.dataset.letter);
+      if (!l.resolved) { showLetter(l, showInbox); renderTop(); return; }
       l.read = true;
       save();
       modal(letterHtml(l) + `<div class="modal-actions"><button class="btn" id="back">Back</button></div>`, (cc) => { cc.querySelector("#back").onclick = showInbox; });
@@ -656,7 +673,7 @@ $("#btn-menu").onclick = () => showMenu();
 
 // ---------- turns ----------
 function onEndTurn() {
-  if (unanswered(state).length) { showLetters(); return; }
+  if (urgent(state).length) { showLetters(); return; }
   const before = state.log.length;
   const startTurn = state.turn;
   ui.army = null; ui.target = null; ui.split = false;
@@ -701,12 +718,17 @@ function showReport(summary, lines, voices = []) {
   const S = scenarioOf(state).SCENARIO;
   const battles = summary ? summary.battles : [];
   const moves = summary ? summary.moves.filter((m) => m.type === "move") : [];
-  const notes = lines.filter((l) => l.kind !== "date").reverse();
-  const [head, deck] = headlineFor(battles, notes);
+  // Letters that only carried news were applied when they arrived; they become stories in the paper.
+  const news = state.letters.filter((l) => l.news && l.turn === state.turn);
+  const told = new Set(news.map((l) => l.outcome));
+  const notes = lines.filter((l) => l.kind !== "date" && !told.has(l.text)).reverse();
+  let [head, deck] = headlineFor(battles, notes);
+  if (!battles.length && news.length && head === "News from the Army") [head, deck] = [news[0].title, "Dispatches reach the Board"];
   const issue = 100 + state.turn * 4 + (state.startMonth || 0);
   let h = `<div class="gazette"><div class="gz-mast"><div class="gz-rule"></div><div class="gz-name">${esc(S.newspaper || "The Pennsylvania Evening Post")}</div><div class="gz-meta"><span>Price Four Coppers</span><span>${esc(dateLabel(state))}</span><span>No. ${issue}</span></div><div class="gz-rule"></div></div>`;
   h += `<h2 class="gz-head">${esc(head)}</h2><p class="gz-deck">${esc(deck)}</p>`;
   h += `<div class="gz-cols">`;
+  if (news.length) h += `<section><h3>Dispatches</h3>${news.map((l) => `<div class="gz-story"><b>${esc(l.title)}.</b> ${esc(l.outcome || "")} <i>(${esc(l.fromName)})</i></div>`).join("")}</section>`;
   if (battles.length) h += `<section><h3>From the Seat of War</h3>${battles.map(battleHtml).join("")}</section>`;
   if (moves.length) h += `<section><h3>Movements of the Enemy</h3>${moves.map((m) => `<div class="logline">${m.side === "B" ? "British troops" : "Our troops"} moved from ${esc(REGIONS[m.from].name)} to ${esc(REGIONS[m.to].name)}.</div>`).join("")}</section>`;
   if (notes.length) h += `<section><h3>Intelligence &amp; Reports</h3>${notes.map((l) => `<div class="logline ${l.kind}">${esc(l.text)}</div>`).join("")}</section>`;
@@ -717,8 +739,8 @@ function showReport(summary, lines, voices = []) {
   h += factHtml(monthlyFact([...battles.map((b) => b.region), ...moves.map((m) => m.to)]));
   h += `</div>`;
   save();
-  const open = unanswered(state).length;
-  h += `<div class="modal-actions"><button class="btn primary" id="go">${open ? `Read ${open} letter${open > 1 ? "s" : ""}` : "Continue"}</button></div>`;
+  const open = urgent(state).length;
+  h += `<div class="modal-actions"><button class="btn primary" id="go">${open ? "Read the letter" : "Continue"}</button></div>`;
   modal(h, (c) => { c.querySelector("#go").onclick = () => (open ? showLetters() : closeModal()); });
 }
 
@@ -790,7 +812,7 @@ function continueGame() {
   $("#modal").hidden = true;
   fitView();
   render();
-  if (unanswered(state).length) showLetters();
+  if (urgent(state).length) showLetters();
 }
 
 function showMenu() {

@@ -3,6 +3,12 @@
 // and militia wear brown hunting shirts. Bigger armies show more soldiers.
 
 import { PORTRAITS } from "./data/assets.js";
+import { pixelSoldier } from "./pixel.js";
+
+// A pixel soldier with its standing and marching frames; CSS shows the marching ones while the army moves or is selected.
+function figure(u, size = 40) {
+  return `<g class="px-st">${pixelSoldier(u, "stand", size)}</g><g class="px-w1">${pixelSoldier(u, "walk1", size)}</g><g class="px-w2">${pixelSoldier(u, "walk2", size)}</g>`;
+}
 
 // Uniforms of 1776 to 1777. coat and facings (lapels, cuffs, turnbacks), waistcoat, breeches, and the hat.
 const UNIFORMS = {
@@ -118,7 +124,7 @@ export function armyFigure({ side, hessian, men, regulars, militia, general, sho
   if (selected) s += `<ellipse cx="0" cy="1" rx="23" ry="7" fill="#ffffff" stroke="#c8102e" stroke-width="1.5" opacity=".9"/>`;
   s += `<ellipse cx="0" cy="1" rx="17" ry="4.2" fill="#000" opacity=".22"/>`;
   if (general) s += `<path d="M-17,0 V-54" stroke="#4a3520" stroke-width="1.3"/><g class="flag" transform="translate(-17,-54)">${flag(kind)}</g>`;
-  for (const [x, y, sc, u] of spots) s += `<g transform="translate(${x},${y}) scale(${sc})">${soldier(u)}</g>`;
+  for (const [x, y, sc, u] of spots) s += `<g transform="translate(${x},${y}) scale(${sc})">${figure(u)}</g>`;
   if (dugIn) s += `<path d="M-21,2 Q-12,-9 0,-8 Q12,-9 21,2 Z" fill="#8a6d45" stroke="#4d3b28" stroke-width=".8"/><path d="M-15,-3 l-3,-5 M-7,-6 l-2,-5 M2,-7 l1,-5 M10,-5 l3,-5 M16,-2 l4,-4" stroke="#4d3b28" stroke-width="1.2"/>`;
   if (general) s += medallion(general, short, side);
   // Cut off from supply: a red warning badge.
@@ -155,9 +161,11 @@ export function battleScene({ left, right, terrain = "open", leftFlag = "P", rig
   const line = (kind, x0, dir) => {
     let s = "";
     // The rear rank first (smaller, farther back), then the front rank over it.
+    // Each man alternates between loading and firing, a little out of step with his neighbors, like a real volley line.
     for (let row = 0; row < 2; row++) for (let i = 0; i < 7; i++) {
-      const x = x0 + dir * (i * 34 + (row ? 0 : 17)), y = row ? 290 : 258;
-      s += `<g transform="translate(${x},${y}) scale(${row ? 2.6 : 2.15})">${soldier(UNIFORMS[kind])}</g>`;
+      const x = x0 + dir * (i * 34 + (row ? 0 : 17)), y = row ? 290 : 258, sc = row ? 2.6 : 2.15;
+      const u = UNIFORMS[kind], delay = ((i * 0.37 + row * 0.9) % 1.6).toFixed(2);
+      s += `<g transform="translate(${x},${y}) scale(${dir * sc},${sc})"><g class="bs-load" style="animation-delay:-${delay}s">${pixelSoldier(u, "load", 40)}</g><g class="bs-fire" style="animation-delay:-${delay}s">${pixelSoldier(u, "fire", 40)}</g></g>`;
     }
     return s;
   };
