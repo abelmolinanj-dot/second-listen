@@ -54,6 +54,8 @@ Next, in order:
    Phase 5 ("make it a game", see ROADMAP) is under way: step 1 (fewer letters, pixel soldiers) and the first half of
    step 2 (battles you command, battle drums) are built. Defensive battles are in too: the British turn pauses
    (state.pendingDefense, resumeBritishAttack in turn.js) when it attacks an army of 3,000+. Step 3 (a map that lives, watching the British turn) is built too. Step 4 (named regiments with
-   honors, a rival general who adapts) is built. Next is step 5: set-piece mini-games and animated cutscenes. `node tools/battletest.mjs` checks battle balance.
+   honors, a rival general who adapts) is built. Step 5 (set pieces: the Delaware crossing, the
+   Long Island escape, the Chew house; animated cutscenes and battle scenes) is built. Next is step 6: armies that
+   take days to march along roads, and army condition you can see on the figures. `node tools/battletest.mjs` checks battle balance.
 2. Phase 4: "An Officer's Road", a personal career mode inspired by Mount and Blade: Warband.
 3. Optional: a public-domain period map from Wikimedia Commons for the History Book (approved in principle).

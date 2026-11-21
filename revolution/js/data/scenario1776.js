@@ -393,12 +393,16 @@ G. Washington`;
     choices: [
       {
         label: "Cross the river and attack at dawn",
-        hint: "A surprise attack: big bonus, and complacent garrisons are badly caught out.",
+        hint: "A surprise attack: big bonus, and complacent garrisons are badly caught out. You can lead the crossing yourself.",
+        minigame: "delaware",
         apply(state, ctx) {
           const w = washArmy(state);
           if (!w || !armyAt(state, ctx.target, "B")) return "By the time the orders arrived, the chance had passed.";
           w.moved = false;
-          const r = moveArmy(state, w.id, ctx.target, { surprise: true });
+          // How the crossing went (the set piece, or Glover's men left to it): late boats mean a smaller,
+          // later attack, and a very late one loses the surprise.
+          const s = ctx.minigame ?? 0.8;
+          const r = moveArmy(state, w.id, ctx.target, { surprise: s >= 0.35, share: s >= 0.7 ? 1 : 0.7, withGeneral: true });
           state.lastSurprise = r;
           if (typeof r === "string") return r;
           if (r.attackerWins) { changeCause(state, 8, "Washington crossed the river and won by surprise."); return `Washington crossed in a sleet storm and struck ${REGIONS[ctx.target].name} at dawn. The enemy was routed. Across the country, people who had given up began to hope again.`; }
@@ -410,6 +414,45 @@ G. Washington`;
         hint: "Nothing ventured.",
         apply() { return "Washington stayed in camp. The army shivered and waited for spring."; },
       },
+    ],
+  },
+  {
+    // The night retreat from Long Island, August 29 to 30, 1776: a set piece when an army is trapped there.
+    id: "longisland_escape", scripted: true, fromTurn: 1, untilTurn: 3, from: "washington", place: "Brooklyn Heights",
+    when: (state) => { const a = armyAt(state, "longisland", "P"); return !!a && armyMen(a) >= 2000 && threatTo(state, "longisland", "P") > power(state, a) * 1.3; },
+    title: "Trapped on Long Island",
+    body: (state) => `Gentlemen,
+
+The army on Long Island, ${menWords(armyMen(armyAt(state, "longisland", "P")))} men, is penned in behind its works at Brooklyn with the enemy in front and the East River behind. If the wind turns and the King's ships come up the river, we are cut off entirely.
+
+I propose to bring the whole force over to New York tonight, in whatever boats can be found, and to keep the campfires burning so the enemy suspects nothing. Colonel Glover's regiment of Marblehead fishermen will man the boats.
+
+G. Washington`,
+    choices: [
+      {
+        label: "Bring the army off the island tonight",
+        hint: "Saves the army, gives up Long Island. You can run the crossing yourself.",
+        minigame: "longisland",
+        apply(state, ctx) {
+          const a = armyAt(state, "longisland", "P");
+          if (!a) return "The army was no longer on the island.";
+          const s = ctx.minigame ?? 0.9;
+          const keep = Math.max(0.3, Math.min(1, s));
+          const lost = Math.round(armyMen(a) * (1 - keep));
+          a.regulars = Math.round(a.regulars * keep);
+          for (const m of a.militia) m.men = Math.round(m.men * keep);
+          const dest = ["manhattan", "westchester", "newark"].find((r) => state.regions[r].owner === "P" && !armyAt(state, r, "B"));
+          if (dest) {
+            const there = armyAt(state, dest, "P");
+            if (there) { there.regulars += a.regulars; there.militia.push(...a.militia); there.regs = [...(there.regs || []), ...(a.regs || [])]; if (!there.general && a.general) there.general = a.general; else if (a.general) state.generals[a.general].status = "reserve"; delete state.armies[a.id]; }
+            else { a.region = dest; a.moved = true; }
+          }
+          if (s >= 0.95) { changeCause(state, 3, "The army escaped from Long Island."); return "By morning the whole army was across, and a fog rolled in to hide the last boats. When the British reached the lines at Brooklyn, they found them empty. It was one of the great escapes of the war."; }
+          if (s >= 0.6) { changeCause(state, 1, "Most of the army escaped from Long Island."); return `Most of the army got across in the night, but ${menWords(lost)} men were left on the shore and taken.`; }
+          changeCause(state, -3, "The escape from Long Island went badly."); return `The crossing went badly. ${menWords(lost)} men were caught on the Brooklyn shore at dawn.`;
+        },
+      },
+      { label: "Hold the lines at Brooklyn", hint: "The army stays and fights where it is.", apply: () => "The army stayed in its lines on Brooklyn Heights, and waited for the attack." },
     ],
   },
   {

@@ -360,11 +360,13 @@ G. Washington`,
     choices: [
       {
         label: "Attack at dawn",
-        hint: "Washington attacks the British at Philadelphia. The fog may help or hurt.",
-        apply(state) {
+        hint: "Washington attacks the British at Philadelphia. The fog may help or hurt. You can lead the fight at the Chew house yourself.",
+        minigame: "chew",
+        apply(state, ctx) {
           const w = wash(state);
           if (!w || !armyAt(state, "philadelphia", "B")) return "By the time the orders came, the chance had passed.";
-          const fogHelps = makeRng(state)() < 0.45;
+          // The fight at the Chew house decides whether the attack keeps its momentum (left to chance without the set piece).
+          const fogHelps = ctx && ctx.minigame !== undefined && ctx.minigame !== null ? ctx.minigame >= 0.55 : makeRng(state)() < 0.45;
           w.moved = false;
           const r = moveArmy(state, w.id, "philadelphia", { surprise: fogHelps });
           if (typeof r === "string") return "The army could not reach Germantown.";

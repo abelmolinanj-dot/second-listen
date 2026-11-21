@@ -3,6 +3,28 @@
 
 import { SCENES } from "./data/assets.js";
 import { noteScene } from "./book.js";
+import { pixelSoldier } from "./pixel.js";
+import { UNIFORMS } from "./soldiers.js";
+
+// Pixel effects drawn over a scene: drifting smoke, falling snow, and soldiers marching across the foot of the picture.
+const FX_FOR = {
+  crossing: ["snow", "march:continental"], winter: ["snow", "march:militia"], victory: ["smoke", "march:continental"],
+  defeat: ["smoke"], saratoga: ["smoke", "march:continental"], fireships: ["smoke"], declaration: [], fleet: [], lake: [], turtle: [],
+};
+function sceneFx(list = []) {
+  let s = "";
+  for (const fx of list) {
+    if (fx === "smoke") s += `<div class="cs-smoke">${Array.from({ length: 14 }, (_, i) => `<i style="left:${(i * 7.3) % 100}%;animation-delay:-${(i * 1.7) % 12}s;--sz:${18 + (i % 4) * 10}px"></i>`).join("")}</div>`;
+    if (fx === "snow") s += `<div class="cs-snow">${Array.from({ length: 40 }, (_, i) => `<i style="left:${(i * 13.7) % 100}%;animation-delay:-${(i * 0.9) % 9}s;animation-duration:${7 + (i % 5)}s"></i>`).join("")}</div>`;
+    if (fx.startsWith("march:")) {
+      const u = UNIFORMS[fx.slice(6)] || UNIFORMS.continental;
+      let men = "";
+      for (let i = 0; i < 9; i++) men += `<g transform="translate(${i * 26 + (i % 2) * 6},${(i % 2) * 6})"><g class="bf-a" style="animation-delay:-${(i * 0.13).toFixed(2)}s">${pixelSoldier(u, "walk1", 40)}</g><g class="bf-b" style="animation-delay:-${(i * 0.13).toFixed(2)}s">${pixelSoldier(u, "walk2", 40)}</g></g>`;
+      s += `<svg class="cs-march" viewBox="-20 -46 260 56" preserveAspectRatio="xMidYMax meet"><g>${men}</g></svg>`;
+    }
+  }
+  return s;
+}
 
 const W = 800, H = 500;
 
@@ -272,14 +294,19 @@ export const SCENE_TEXT = {
 };
 
 // Play a scene. `extra` adds lines at the end (for example, how a battle turned out). Calls `done` when finished.
-export function playScene(id, { extra = [], title } = {}, done = () => {}) {
-  const def = SCENE_TEXT[id];
-  noteScene(id);
+// custom: { art: an HTML string to use as the picture, lines, fx } for scenes made on the spot (after a battle).
+export function playScene(id, { extra = [], title, custom = null } = {}, done = () => {}) {
+  const def = custom || SCENE_TEXT[id];
+  if (!custom) noteScene(id);
   const lines = [...def.lines, ...extra];
   const el = document.createElement("div");
   el.className = "cutscene";
-  const img = SCENES[id];
-  el.innerHTML = `<div class="cs-art">${img ? `<img src="${img}" alt="">` : `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${ART[def.art]()}</svg>`}</div>
+  const img = custom ? null : SCENES[id];
+  // Marching figures only on drawn scenes: over a real painting they would float in the air.
+  const fx = (def.fx || FX_FOR[def.art] || []).filter((f) => !(img && f.startsWith("march:")));
+  el.innerHTML = `<div class="cs-art">${custom ? custom.art : img ? `<img src="${img}" alt="">` : `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${ART[def.art]()}</svg>`}</div>
+    <div class="cs-fx">${sceneFx(fx)}</div><div class="cs-dither"></div>
+    <div class="cs-bars"><i></i><i></i></div>
     <div class="cs-shade"></div>
     <div class="cs-text">${title ? `<h1>${title}</h1>` : ""}<p class="cs-line"></p><div class="cs-hint">Tap to continue</div></div>
     <button class="cs-skip">Skip ›</button>`;
@@ -287,14 +314,21 @@ export function playScene(id, { extra = [], title } = {}, done = () => {}) {
   let i = 0;
   const line = el.querySelector(".cs-line");
   const finish = () => { el.classList.add("out"); setTimeout(() => { el.remove(); done(); }, 400); };
+  // Each line types itself out, like a dispatch being written; a tap finishes it, the next tap moves on.
+  let typing = null, full = "";
+  const stopTyping = () => { clearInterval(typing); typing = null; line.textContent = full; };
   const show = () => {
+    if (typing) { stopTyping(); return; }
     if (i >= lines.length) { finish(); return; }
     line.classList.remove("in");
     void line.offsetWidth;
-    line.textContent = lines[i++];
+    full = lines[i++];
+    line.textContent = "";
     line.classList.add("in");
+    let n = 0;
+    typing = setInterval(() => { n += 2; line.textContent = full.slice(0, n); if (n >= full.length) stopTyping(); }, 24);
   };
-  el.addEventListener("click", (e) => { if (e.target.closest(".cs-skip")) finish(); else show(); });
+  el.addEventListener("click", (e) => { if (e.target.closest(".cs-skip")) { clearInterval(typing); finish(); } else show(); });
   requestAnimationFrame(() => el.classList.add("on"));
   if (lines.length) show();
 }

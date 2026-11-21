@@ -17,6 +17,7 @@ import { applyLegacy, recordLegacy, getLegacy } from "./legacy.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extraLand, mapLettering } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust, battleScene } from "./soldiers.js";
 import { playBattle } from "./battlefield.js";
+import { playSetPiece } from "./setpiece.js";
 import { applySeason, resetSeason, LIVING_DEFS, smokeColumn, SHIP, arrowPath } from "./living.js";
 import { assignRegiments, kindsFor, recordOf, levelOf, LEVELS } from "./regiments.js";
 import { STYLES, setupRival } from "./rival.js";
@@ -241,7 +242,11 @@ function doMove(regionId, tactic = null, outcome = null) {
   ui.split = false;
   ui.target = null;
   // A battle you commanded already showed its result on the field.
-  if (r.type === "battle") { markBattles([r]); if (!r.fought) setTimeout(() => showBattle(r), 750); }
+  if (r.type === "battle") {
+    markBattles([r]);
+    // A big battle gets its own short scene; small ones the plain report.
+    if (!r.fought) setTimeout(() => (r.attacker.men + r.defender.men >= 5000 ? battleCutscene(r, () => {}) : showBattle(r)), 750);
+  }
   const army = state.armies[r.armyId] || armyAt(state, regionId, "P");
   ui.army = army && army.side === "P" ? army.id : null;
   ui.region = regionId;
@@ -633,6 +638,13 @@ function showLetter(l, next, after) {
       const lv = card.querySelector("#leave"); if (lv) lv.onclick = () => { stopSpeaking(); showInbox(); };
       for (const b of card.querySelectorAll("[data-choice]")) b.onclick = () => {
         stopSpeaking();
+        // Some choices open a set piece first; its score goes into the letter for the choice to use.
+        const mg = EVENTS[l.event]?.choices?.[Number(b.dataset.choice)]?.minigame;
+        if (mg && l.ctx.minigame === undefined) {
+          $("#modal").hidden = true;
+          playSetPiece(mg, (score) => { l.ctx.minigame = score; $("#modal").hidden = false; b.onclick(); });
+          return;
+        }
         const outcome = answerLetter(state, l.id, Number(b.dataset.choice));
         renderPanel(); // keeps the "Answer N letters" button honest while the next letter is open
         save();
@@ -696,6 +708,29 @@ function battleHtml(b) {
   if (b.surrendered) s += ` The defenders were trapped and surrendered${b.generalCaptured ? `, and ${esc(b.generalCaptured)} was taken prisoner` : ""}.`;
   else if (b.retreatTo) s += ` The defenders ${b.brokeOut ? "broke out" : "fell back"} to ${esc(REGIONS[b.retreatTo].name)}.`;
   return s + `</div>`;
+}
+
+// A short cutscene after a big battle: the two lines in pixel art, smoke, and the story of the day.
+function battleCutscene(r, next) {
+  const reg = REGIONS[r.region];
+  const P = r.attacker.side === "P" ? r.attacker : r.defender, B = r.attacker.side === "P" ? r.defender : r.attacker;
+  const ours = (r.attackerWins ? r.attacker : r.defender).side === "P";
+  const foe = state.armies[B.id];
+  const art = battleScene({ left: "continental", right: foe && foe.hessian ? "hessian" : "british", terrain: reg.terrain || (reg.city || reg.fort ? "city" : "open"), leftFlag: "P", rightFlag: foe && foe.hessian ? "H" : "B" });
+  const ourLoss = ours ? r.winnerLoss : r.loserLoss, theirLoss = ours ? r.loserLoss : r.winnerLoss;
+  const who = (x, side) => `${x.general ? `${x.general}'s ` : ""}${menWords(x.men)} ${side === "P" ? "Continentals" : foe && foe.hessian ? "Hessians" : "redcoats"}`;
+  const held = ours ? Object.values(state.regiments || {}).filter((g) => g.honors.includes(reg.name)).slice(0, 2).map((g) => g.name) : [];
+  const lines = [
+    `${reg.name}, ${dateLabel(state)}.`,
+    r.attacker.side === "P" ? `${who(P, "P")} attacked ${who(B, "B")}.` : `${who(B, "B")} came on against ${who(P, "P")}.`,
+    r.surrendered ? (ours ? "By evening the enemy had laid down his arms." : "By evening the army had laid down its arms.") : ours ? (r.attacker.side === "P" ? "The enemy broke and was driven from the field." : "The line held, and the enemy fell back.") : (r.attacker.side === "P" ? "The attack was thrown back." : "The line gave way, and the army fell back."),
+    `We lost ${menWords(ourLoss)} men. The enemy lost ${menWords(theirLoss)}.`,
+  ];
+  if (held.length) lines.push(`${held.join(" and ")} stood firm through it all.`);
+  if (ours) music.victory(); else music.dirge();
+  $("#modal").hidden = true;
+  const fit = `<div class="cs-battle">${art.replace('preserveAspectRatio="xMidYMax slice"', 'preserveAspectRatio="xMidYMax meet"')}</div>`;
+  playScene(null, { title: `The Battle of ${esc(reg.name)}`, custom: { art: fit, lines, fx: ["smoke"] } }, () => { render(); next(); });
 }
 
 function showBattle(b) {
@@ -764,7 +799,11 @@ function afterBritish(summary, ctx) {
   setTimeout(() => {
     dawn();
     if (state.gameOver) { showGameOver(summary); return; }
-    const next = () => showReport(summary, fresh, voices);
+    const report = () => showReport(summary, fresh, voices);
+    // The biggest battle of the night that you didn't command yourself gets a scene before the newspaper.
+    const big = (summary ? summary.battles : []).filter((b) => !b.fought && (b.attacker.side === "P" || b.defender.side === "P") && b.attacker.men + b.defender.men >= 6000)
+      .sort((x, y) => (y.attacker.men + y.defender.men) - (x.attacker.men + x.defender.men))[0];
+    const next = big ? () => battleCutscene(big, report) : report;
     if (isWinter(state) && !wasWinter && !state.seenScenes?.winter) { (state.seenScenes ||= {}).winter = true; save(); music.dirge(); playScene("winter", {}, next); }
     else next();
   }, Math.max(2600, playTime + 700)); // long enough to watch the British move by night and read the quote
