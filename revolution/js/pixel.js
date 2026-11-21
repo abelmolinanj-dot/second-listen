@@ -63,8 +63,11 @@ export function pixelSoldier(u, pose = "stand", size = 40) {
 
 function draw(u, pose) {
   const g = grid();
-  const coat = u.coat, coatD = shade(u.coat, -0.35), coatL = shade(u.coat, 0.18);
-  const face = u.facing, skin = "#d9a37c", skinD = "#a8714f";
+  // worn: 0 smart, 1 weary (faded, no lace), 2 worn out (patched rags, bandages, bare feet).
+  const worn = u.worn || 0;
+  const coat = worn ? shade(u.coat, -0.16 * worn) : u.coat, coatD = shade(coat, -0.35), coatL = shade(coat, 0.18);
+  const face = worn ? shade(u.facing, -0.2 * worn) : u.facing, skin = "#d9a37c", skinD = "#a8714f";
+  if (worn) u = { ...u, lace: null, cockade: null };
   const legs = u.legs, legsD = shade(u.legs, -0.3), gait = u.gaiters;
   const steel = "#b8bec8", steelD = "#6d7480", wood = "#6b4220", woodD = "#45290f";
 
@@ -86,7 +89,8 @@ function draw(u, pose) {
   const leg = (x, lift) => {
     g.rect(x, 15 + bob, 2, 3 - lift, legs); g.set(x + 1, 16 + bob, legsD);
     g.rect(x, 18 + bob - lift, 2, 4 - (bob ? 1 : 0), gait);
-    g.rect(x - (x < 5 ? 1 : 0), 22 - lift, 3, 1, INK);
+    if (worn >= 2) { g.rect(x - (x < 5 ? 1 : 0), 22 - lift, 3, 1, "#c99a7a"); g.set(x, 22 - lift, "#8a1a1a"); } // bare feet in the snow
+    else g.rect(x - (x < 5 ? 1 : 0), 22 - lift, 3, 1, INK);
   };
   if (pose === "walk1") { leg(3, 0); leg(6, 1); }
   else if (pose === "walk2") { leg(3, 1); leg(6, 0); }
@@ -117,6 +121,7 @@ function draw(u, pose) {
     g.set(3, 10 + y0, "#e2c55a"); g.set(7, 10 + y0, "#e2c55a"); // buttons
   }
   g.rect(4, 8 + y0, 3, 1, INK); // black neck stock
+  if (worn >= 2) { g.set(3, 13 + y0, "#3a2a1c"); g.set(7, 12 + y0, "#5a4a3a"); g.set(6, 14 + y0, "#2a1d14"); } // patches and holes
 
   // ---- head ----
   g.rect(3, 4 + y0, 5, 4, skin);
@@ -124,6 +129,7 @@ function draw(u, pose) {
   g.set(4, 5 + y0, INK); g.set(6, 5 + y0, INK); // eyes
   g.rect(3, 4 + y0, 5, 1, u.hair); g.set(3, 5 + y0, u.hair); g.set(7, 5 + y0, u.hair); g.set(3, 6 + y0, u.hair);
   if (u.moustache) g.rect(4, 7 + y0, 3, 1, "#3a2414");
+  if (worn >= 2) { g.rect(3, 4 + y0, 5, 1, "#eae4d4"); g.set(6, 4 + y0, "#a3161c"); } // a bandage
 
   // ---- hat ----
   if (u.hat === "mitre") {

@@ -18,7 +18,7 @@ const xOf = (x) => 34 + x * 7.32;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 function uniformKey(u) {
-  if (u.flag === "P") return u.kind === "militia" || u.kind === "rifles" ? "militia" : "continental";
+  if (u.flag === "P") return (u.kind === "militia" || u.kind === "rifles" ? "militia" : "continental") + (u.worn ? `~${u.worn}` : "");
   if (u.flag === "H") return u.kind === "jagers" ? "jagers" : "hessian";
   return "british";
 }
@@ -89,7 +89,8 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
   const made = new Set();
   const sym = (key, pose) => {
     const id = `bf-${key}-${pose}`;
-    if (!made.has(id)) { made.add(id); defs.insertAdjacentHTML("beforeend", `<g id="${id}">${pixelSoldier(UNIFORMS[key], pose, 40)}</g>`); }
+    const [base, worn] = key.split("~");
+    if (!made.has(id)) { made.add(id); defs.insertAdjacentHTML("beforeend", `<g id="${id}">${pixelSoldier(worn ? { ...UNIFORMS[base], worn: Number(worn) } : UNIFORMS[base], pose, 40)}</g>`); }
     return id;
   };
 

@@ -3,7 +3,7 @@
 import { REGIONS } from "./data/regions.js";
 import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPath, MAINLAND, ISLANDS, LAKES, RIVERS, pointInPolygon } from "./geo.js";
 import {
-  armyList, armyAt, armyMen, militiaMen, generalOf, moveTargets, winChance, oddsLabel, moveArmy, digIn, recruit, canRecruit,
+  condOf, condLabel, marchInfo, armyList, armyAt, armyMen, militiaMen, generalOf, moveTargets, winChance, oddsLabel, moveArmy, digIn, recruit, canRecruit,
   regularsCost, militiaCost, printMoney, monthlyIncome, monthlyUpkeep, regionIncome, assignGeneral, reserveGenerals,
   dateLabel, isWinter, money, fmtMen, menWords, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES, WEATHER, season,
   supplyPath, buildDepot, SUPPLY_RANGE, DEPOT_COST, TACTICS, flankChance,
@@ -237,7 +237,8 @@ function onMapTap(target, clientX, clientY) {
 }
 
 function doMove(regionId, tactic = null, outcome = null) {
-  const r = moveArmy(state, ui.army, regionId, { share: ui.split ? 0.5 : 1, tactic, outcome });
+  const r = moveArmy(state, ui.army, regionId, { share: ui.split ? 0.5 : 1, tactic, outcome, forced: !!ui.forced });
+  ui.forced = false;
   if (typeof r === "string") { toast(r); return; }
   ui.split = false;
   ui.target = null;
@@ -320,6 +321,9 @@ function renderMap() {
   if (ui.army && state.armies[ui.army]) {
     for (const t of moveTargets(state, state.armies[ui.army])) {
       hl += `<path class="hl ${t.kind}${ui.target === t.region ? " target" : ""}" d="${polygonPath(shapes[t.region])}"/>`;
+      const md = marchInfo(state, state.armies[ui.army], state.armies[ui.army].region, t.region, { sea: t.sea, forced: ui.forced }).days;
+      const [dx, dy] = seeds[t.region];
+      hl += `<g class="march-days ${t.kind}" transform="translate(${dx - 30},${dy - 44})"><rect x="-14" y="-9" width="28" height="15" rx="3"/><text y="2.5" text-anchor="middle">${md}d</text></g>`;
     }
   }
   // The selected army's road back to its supply.
@@ -342,13 +346,14 @@ function renderMap() {
       if (fresh) { el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.dataset.army = a.id; el.style.transition = "none"; }
       el.dataset.region = rid;
       el.setAttribute("class", `token ${a.side}${a.moved && a.side === "P" ? " moved" : ""}${ui.army === a.id ? " selected" : ""}`);
-      const key = [armyMen(a), a.general, a.moved, a.dugIn, ui.army === a.id, a.hessian, militiaMen(a) > a.regulars, a.side === "P" && !supplyPath(state, a)].join("|");
+      const key = [armyMen(a), a.general, a.moved, a.dugIn, ui.army === a.id, a.hessian, militiaMen(a) > a.regulars, a.side === "P" && !supplyPath(state, a), Math.floor(condOf(a) / 5)].join("|");
       if (el.dataset.key !== key) {
         el.dataset.key = key;
-        el.innerHTML = armyFigure({ side: a.side, hessian: a.hessian, men: armyMen(a), regulars: a.regulars, militia: militiaMen(a), general: a.general, short: g ? g.short : "", moved: a.moved, dugIn: a.dugIn, selected: ui.army === a.id, label: fmtMen(armyMen(a)), unsupplied: a.side === "P" && !supplyPath(state, a) });
+        el.innerHTML = armyFigure({ side: a.side, hessian: a.hessian, men: armyMen(a), regulars: a.regulars, militia: militiaMen(a), general: a.general, short: g ? g.short : "", moved: a.moved, dugIn: a.dugIn, selected: ui.army === a.id, label: fmtMen(armyMen(a)), unsupplied: a.side === "P" && !supplyPath(state, a), cond: condOf(a) });
       }
       const pos = `translate(${x + ox}px, ${y}px)`;
       el.style.transitionDelay = ui.replay && ui.replay[a.id] ? `${ui.replay[a.id]}ms` : "";
+      el.style.transitionDuration = a.lastMarch && a.lastMarch.turn >= state.turn - 1 ? `${Math.min(2.2, 0.5 + a.lastMarch.days * 0.08).toFixed(2)}s` : "";
       // A token sliding to a new place marches while it moves.
       if (!fresh && el.style.transform && el.style.transform !== pos) { el.classList.add("marching"); clearTimeout(el._march); el._march = setTimeout(() => el.classList.remove("marching"), 950); }
       el.style.transform = pos;
@@ -419,7 +424,8 @@ function armySummary(a) {
     <div class="stat"><b>${fmtMen(a.regulars)}</b><span>Regulars</span></div>
     <div class="stat"><b>${fmtMen(mil)}</b><span>Militia${soonest !== null && a.side === "P" && soonest < 50 ? ` · ${soonest} mo` : ""}</span></div>
     ${a.side === "P" ? `<div class="stat"><b>${money(armyUpkeepFor(a))}</b><span>Pay / month</span></div>` : ""}
-  </div>`;
+    <div class="stat cond c${Math.floor(condOf(a) / 20)}"><b>${Math.round(condOf(a))}</b><span>${condLabel(condOf(a))}</span></div>
+  </div>${a.side === "P" && condOf(a) < 65 ? `<p class="hint">Condition: long marches, winter in the open, hunger and empty pockets wear an army down; a month's rest (or a city) restores it. Worn-out armies fight worse, and broken-down ones lose men.</p>` : ""}`;
 }
 function armyUpkeepFor(a) {
   const g = generalOf(state, a);
@@ -452,10 +458,12 @@ function renderPanel() {
       h += `<p><b>Attack ${esc(REGIONS[ui.target].name)}</b>: ${fmtMen(armyMen(foe))} ${foe.hessian ? "Hessians" : "British"}${fg ? ` under ${esc(fg.short)}` : ""}${foe.dugIn ? ", dug in" : ""}.</p>`;
       h += `<p class="odds ${pWin >= 0.6 ? "good" : pWin < 0.4 ? "bad" : ""}">${oddsLabel(pWin)}: about ${Math.round(pWin * 100)}% chance to win</p>`;
       h += `<p class="hint">${REGIONS[ui.target].fort ? "Fort: defenders much stronger. " : REGIONS[ui.target].city ? "City: defenders a bit stronger. " : ""}${REGIONS[ui.target].terrain === "hills" ? "Hills favor the defender. " : REGIONS[ui.target].terrain === "forest" ? "Forest favors the defender. " : ""}${isWinter(state) ? "Winter: attacking is harder. " : ""}${WEATHER[state.weather || "clear"].hint}</p>`;
+      if (t) { const m = marchInfo(state, att, a.region, ui.target, { sea: t.sea, forced: ui.forced }); h += `<p class="march">The march: <b>${m.days} day${m.days === 1 ? "" : "s"}</b>, about ${m.miles} miles (${esc(m.why.join(", "))}).${m.days >= 10 ? " The men will arrive tired." : ""}</p>`; }
       h += `<div class="row"><button class="btn danger" id="do-attack">${ui.split ? "Attack with half" : "Attack"}</button><button class="btn" id="cancel-attack">Cancel</button></div>`;
     } else if (!a.moved) {
       h += `<p class="hint">Tap a highlighted region to move there. Red outlines are attacks.</p>`;
-      h += `<div class="row"><button class="btn toggle small" id="split" aria-pressed="${ui.split}">${ui.split ? "Sending half (no general)" : "Send only half"}</button><button class="btn small" id="dig">Dig in</button></div>`;
+      h += `<p class="hint">The number on each region is how many days the march takes.</p>`;
+      h += `<div class="row"><button class="btn toggle small" id="split" aria-pressed="${ui.split}">${ui.split ? "Sending half (no general)" : "Send only half"}</button><button class="btn toggle small" id="forced" aria-pressed="${!!ui.forced}" title="Half again as fast, but stragglers drop out and the men arrive worn">${ui.forced ? "Forced march: on" : "Forced march"}</button><button class="btn small" id="dig">Dig in</button></div>`;
     }
     h += recruitButtons(a.region);
   } else if (ui.region) {
@@ -495,6 +503,7 @@ function renderPanel() {
   on("do-attack", () => (bigBattle() ? showCloseup() : doMove(ui.target)));
   on("cancel-attack", () => { ui.target = null; render(); });
   on("split", () => { ui.split = !ui.split; render(); });
+  on("forced", () => { ui.forced = !ui.forced; render(); });
   on("dig", () => { const e = digIn(state, ui.army); if (e) toast(e); else { sfx.tap(); tutorial.event("act"); } save(); render(); });
   on("end-turn", onEndTurn);
   on("open-letters", () => showLetters());

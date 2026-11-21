@@ -236,6 +236,54 @@ function detach(state, army, share) {
   return part;
 }
 
+// ---------- marching ----------
+// The post roads of the colonies, as pairs of neighboring regions. Armies march faster along them.
+const ROAD_PAIRS = [
+  ["boston", "springfield"], ["springfield", "connecticut"], ["connecticut", "westchester"], ["westchester", "manhattan"],
+  ["hackensack", "newark"], ["newark", "newbrunswick"], ["newbrunswick", "princeton"], ["princeton", "trenton"], ["trenton", "philadelphia"],
+  ["trenton", "bucks"], ["bucks", "philadelphia"], ["philadelphia", "chester"], ["chester", "wilmington"], ["wilmington", "baltimore"],
+  ["baltimore", "virginia"], ["baltimore", "frederick"], ["westchester", "highlands"], ["highlands", "kingston"], ["kingston", "albany"],
+  ["albany", "saratoga"], ["saratoga", "ticonderoga"], ["chester", "lancaster"], ["philadelphia", "lancaster"], ["newark", "morristown"],
+  ["morristown", "easton"], ["albany", "mohawk"], ["boston", "rhodeisland"], ["rhodeisland", "connecticut"],
+];
+const ROADS = new Set(ROAD_PAIRS.flatMap(([a, b]) => [`${a}|${b}`, `${b}|${a}`]));
+export const onRoad = (a, b) => ROADS.has(`${a}|${b}`);
+export function milesBetween(a, b) {
+  const [lon1, lat1] = REGIONS[a].seed, [lon2, lat2] = REGIONS[b].seed;
+  const R = 3959, toRad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * toRad, dLon = (lon2 - lon1) * toRad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h)) * 1.25; // roads wind: a quarter longer than the straight line
+}
+export const MAX_MARCH_DAYS = 22; // a march longer than this can't be made within the month
+
+// How many days a march takes, and why. A Continental army made about 12 miles a day on a good road.
+export function marchInfo(state, army, from, to, { sea = false, forced = false } = {}) {
+  const miles = milesBetween(from, to);
+  const why = [];
+  if (sea) { const days = Math.max(3, Math.round(miles / 45) + 3); return { days, miles, why: ["by sea: embarking, sailing and landing"] }; }
+  let mpd = 12;
+  if (onRoad(from, to)) why.push("on the post road"); else { mpd = 8; why.push("by country roads"); }
+  const t = REGIONS[to].terrain;
+  if (t === "hills") { mpd *= 0.8; why.push("through hills"); }
+  if (t === "forest") { mpd *= 0.72; why.push("through forest"); }
+  const men = armyMen(army);
+  if (men > 15000) { mpd *= 0.75; why.push("a very large army"); } else if (men > 8000) { mpd *= 0.87; why.push("a large army"); }
+  const w = state.weather || "clear";
+  if (w === "rain") { mpd *= 0.7; why.push("rain and mud"); }
+  if (w === "snow") { mpd *= 0.6; why.push("snow"); }
+  if (isWinter(state) && w !== "snow") { mpd *= 0.85; why.push("winter roads"); }
+  if (forced) { mpd *= 1.5; why.push("forced march"); }
+  let days = miles / mpd;
+  if (isWaterCrossing(from, to)) { days += 2; why.push("ferrying the river"); }
+  return { days: Math.max(1, Math.round(days)), miles: Math.round(miles), why };
+}
+
+// An army's condition (0 to 100): worn down by long marches, winter in the open, hunger and no pay; restored by rest.
+export const condOf = (a) => (a && a.cond !== undefined ? a.cond : 100);
+export const condLabel = (c) => (c >= 80 ? "Fresh" : c >= 60 ? "Fit" : c >= 40 ? "Weary" : c >= 20 ? "Worn out" : "Broken down");
+export const condFactor = (a) => 0.8 + 0.2 * (condOf(a) / 100);
+
 // Where an army can go this turn.
 export function moveTargets(state, army) {
   if (army.moved) return [];
@@ -252,8 +300,9 @@ export function moveTargets(state, army) {
     const foe = armyAt(state, t.region, enemy(army.side));
     const friend = armyAt(state, t.region, army.side);
     const kind = foe ? "attack" : friend ? "merge" : state.regions[t.region].owner === army.side ? "move" : "capture";
-    return { ...t, kind };
-  });
+    const m = marchInfo(state, army, army.region, t.region, { sea: t.sea });
+    return { ...t, kind, days: m.days, why: m.why, miles: m.miles };
+  }).filter((t) => t.days <= MAX_MARCH_DAYS || marchInfo(state, army, army.region, t.region, { sea: t.sea, forced: true }).days <= MAX_MARCH_DAYS);
 }
 
 // --- battle math ---
@@ -282,6 +331,10 @@ export function battleFactors(state, att, def, regionId, { surprise = false, sea
   if (r.terrain === "hills") D *= 1.2;
   else if (r.terrain === "forest") D *= 1.1;
   if (ag && ag.trait === "bold") A *= 1.15;
+  // Worn-out armies fight worse, and an army at the end of a long march attacks tired.
+  A *= condFactor(att);
+  D *= condFactor(def);
+  if (att.tired === state.turn) A *= 0.9;
   if (isWinter(state) && !surprise) A *= 0.8;
   if (state.weather === "rain") A *= 0.88;
   if (state.weather === "fog") A *= 1.1;
@@ -375,7 +428,7 @@ function captureRegion(state, regionId, side) {
 
 // Move an army (or part of it) into a target region, fighting if the enemy is there.
 // Returns a report describing what happened, or a string explaining why it can't.
-export function moveArmy(state, armyId, targetId, { share = 1, surprise = false, withGeneral = false, tactic = null, outcome = null } = {}) {
+export function moveArmy(state, armyId, targetId, { share = 1, surprise = false, withGeneral = false, tactic = null, outcome = null, forced = false } = {}) {
   let army = state.armies[armyId];
   if (!army) return "No such army.";
   const target = moveTargets(state, army).find((t) => t.region === targetId);
@@ -389,6 +442,18 @@ export function moveArmy(state, armyId, targetId, { share = 1, surprise = false,
   const from = army.region;
   army.moved = true;
   army.dugIn = false;
+  // The march: long ones wear the army down and leave it tired for a fight at the end; forcing the pace costs stragglers.
+  let m = marchInfo(state, army, from, targetId, { sea: target.sea, forced });
+  if (!forced && m.days > MAX_MARCH_DAYS) { forced = true; m = marchInfo(state, army, from, targetId, { sea: target.sea, forced: true }); }
+  army.lastMarch = { turn: state.turn, days: m.days };
+  army.marched = state.turn;
+  army.cond = Math.max(0, condOf(army) - Math.max(0, m.days - 4) * 2 - (forced ? 12 : 0));
+  if (forced) {
+    const lost = Math.round(army.regulars * 0.03);
+    army.regulars -= lost;
+    for (const b of army.militia) b.men = Math.round(b.men * 0.95);
+  }
+  army.tired = m.days >= 10 ? state.turn : army.tired;
   const foe = armyAt(state, targetId, enemy(army.side));
   if (army.side === "P") {
     if (foe) noteHabit(state, "attack");

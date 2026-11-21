@@ -8,7 +8,7 @@ import { REGIONS } from "./data/regions.js";
 import { SCENARIOS, DEFAULT_SCENARIO, scenarioOf } from "./data/scenarios.js";
 import {
   armyList, armyAt, armyMen, militiaMen, newArmy, monthlyIncome, armyUpkeep, earn, spend, changeCause, log,
-  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather, supplyPath, moveArmy,
+  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather, supplyPath, moveArmy, condOf,
 } from "./rules.js";
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, settleTray } from "./letters.js";
@@ -177,6 +177,24 @@ function closeMonth(state) {
       if (a.side === "P" && state.flags.marthaInCamp && a.general === "washington") rate *= 0.7;
       a.regulars = Math.round(a.regulars * (1 - rate));
       for (const b of a.militia) b.men = Math.round(b.men * (1 - rate * 1.5));
+    }
+  }
+
+  // Condition: rest restores an army; winter in the open, hunger and empty pockets wear it down.
+  for (const a of Object.values(state.armies)) {
+    let c = condOf(a);
+    c += a.marched === state.turn ? 4 : 15;
+    if (REGIONS[a.region].city) c += 5;
+    if (winter && !REGIONS[a.region].city) c -= a.side === "P" ? 9 : 6;
+    if (a.side === "P" && !supplyPath(state, a)) c -= 12;
+    if (a.side === "P" && state.arrears > 0) c -= 4;
+    if (a.side === "P" && state.flags.hospitals && winter) c += 4;
+    a.cond = Math.max(0, Math.min(100, Math.round(c)));
+    // A broken-down army sheds men: the sick, the shoeless and the hopeless go home.
+    if (a.side === "P" && a.cond < 25) {
+      const d = Math.round(a.regulars * 0.04);
+      a.regulars -= d;
+      if (d > 50) log(state, `${menWords(d)} men left the worn-out army at ${REGIONS[a.region].name}.`, "bad");
     }
   }
 

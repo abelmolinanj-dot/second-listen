@@ -95,6 +95,7 @@ function regiments(state, army, side, rand) {
     const level = levelOf(rec);
     return {
       id: side + i, side, flag, kind: u.kind, name: reg || name(u.kind), reg, level, vet: levelBonus(level), honors: rec ? rec.honors.length : 0,
+      worn: army.cond === undefined ? 0 : army.cond < 35 ? 2 : army.cond < 65 ? 1 : 0,
       men: u.men, start: u.men, morale: 100,
       lane: null, x: side === "P" ? 26 : 74, state: "ok", lastFire: -9, firing: false, moving: false, melee: false,
     };

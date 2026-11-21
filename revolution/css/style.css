@@ -671,3 +671,13 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .cs-battle { position: absolute; inset: 0; display: flex; align-items: center; padding-bottom: 14vh; background: linear-gradient(#41597e, #7d9bbd 45%, #e9dcc0 85%); }
 .cs-battle svg { width: 100%; height: auto; max-height: 100%; }
 @media (max-width: 700px) { .cs-battle { align-items: center; } }
+
+/* ---------- marching and condition ---------- */
+.march-days { pointer-events: none; }
+.march-days rect { fill: #0c1a38; stroke: #ffffff; stroke-width: 1.2; }
+.march-days.attack rect { fill: #c8102e; }
+.march-days text { font-family: "VT323", monospace; font-size: 13px; fill: #ffffff; }
+.march { font-size: 14px; color: var(--ink); background: #f3f6fc; border-left: 3px solid var(--patriot); padding: 6px 8px; }
+.stat.cond b { color: var(--patriot); }
+.stat.cond.c0 b, .stat.cond.c1 b { color: var(--british); }
+.stat.cond.c2 b { color: #b0601a; }

@@ -115,10 +115,13 @@ export function bust(coat, scale = 1) {
 export const SOLDIER_DEFS = `<clipPath id="medal-clip"><circle r="8"/></clipPath>`;
 
 // Build the inside of an army's map marker. Coordinates are relative to the region's center.
-export function armyFigure({ side, hessian, men, regulars, militia, general, short, moved, dugIn, selected, label, unsupplied }) {
+export function armyFigure({ side, hessian, men, regulars, militia, general, short, moved, dugIn, selected, label, unsupplied, cond = 100 }) {
   const kind = side === "P" ? "P" : hessian ? "H" : "B";
-  const main = side === "P" ? (militia > regulars ? UNIFORMS.militia : UNIFORMS.continental) : hessian ? UNIFORMS.hessian : UNIFORMS.british;
-  const second = side === "P" && militia > 0 && regulars > 0 ? (main === UNIFORMS.militia ? UNIFORMS.continental : UNIFORMS.militia) : main;
+  // The army's condition shows on its men: faded and shabby when weary, in rags and bandages when worn out.
+  const worn = cond < 35 ? 2 : cond < 65 ? 1 : 0;
+  const dress = (u) => (worn ? { ...u, worn } : u);
+  const main = dress(side === "P" ? (militia > regulars ? UNIFORMS.militia : UNIFORMS.continental) : hessian ? UNIFORMS.hessian : UNIFORMS.british);
+  const second = side === "P" && militia > 0 && regulars > 0 ? dress(militia > regulars ? UNIFORMS.continental : UNIFORMS.militia) : main;
   const count = men >= 8000 ? 3 : men >= 2500 ? 2 : 1;
   const spots = count === 3 ? [[-12, -3, 0.98, second], [12, -3, 0.98, main], [0, 0, 1.2, main]] : count === 2 ? [[-7, -2, 1.08, second], [7, 0, 1.2, main]] : [[0, 0, 1.2, main]];
 

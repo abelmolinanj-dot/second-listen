@@ -55,7 +55,8 @@ Next, in order:
    step 2 (battles you command, battle drums) are built. Defensive battles are in too: the British turn pauses
    (state.pendingDefense, resumeBritishAttack in turn.js) when it attacks an army of 3,000+. Step 3 (a map that lives, watching the British turn) is built too. Step 4 (named regiments with
    honors, a rival general who adapts) is built. Step 5 (set pieces: the Delaware crossing, the
-   Long Island escape, the Chew house; animated cutscenes and battle scenes) is built. Next is step 6: armies that
-   take days to march along roads, and army condition you can see on the figures. `node tools/battletest.mjs` checks battle balance.
+   Long Island escape, the Chew house; animated cutscenes and battle scenes) is built. Step 6 (march days along roads,
+   forced marches, army condition shown on the figures) is built. Next is step 7: the branching campaign map,
+   choosing your commander, the civilians' war, quick battles and replays. `node tools/battletest.mjs` checks battle balance.
 2. Phase 4: "An Officer's Road", a personal career mode inspired by Mount and Blade: Warband.
 3. Optional: a public-domain period map from Wikimedia Commons for the History Book (approved in principle).
