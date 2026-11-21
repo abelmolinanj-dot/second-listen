@@ -4,6 +4,7 @@
 
 import { PORTRAITS } from "./data/assets.js";
 import { pixelSoldier } from "./pixel.js";
+import { CAMPFIRE } from "./living.js";
 
 // A pixel soldier with its standing and marching frames; CSS shows the marching ones while the army moves or is selected.
 function figure(u, size = 40) {
@@ -123,7 +124,7 @@ export function armyFigure({ side, hessian, men, regulars, militia, general, sho
 
   let s = `<rect x="-26" y="-60" width="52" height="78" fill="transparent"/>`;
   if (selected) s += `<ellipse cx="0" cy="1" rx="23" ry="7" fill="#ffffff" stroke="#c8102e" stroke-width="1.5" opacity=".9"/>`;
-  s += `<ellipse cx="0" cy="1" rx="17" ry="4.2" fill="#000" opacity=".22"/>`;
+  s += `<ellipse cx="0" cy="1" rx="17" ry="4.2" fill="#000" opacity=".22"/>` + CAMPFIRE;
   if (general) s += `<path d="M-17,0 V-54" stroke="#4a3520" stroke-width="1.3"/><g class="flag" transform="translate(-17,-54)">${flag(kind)}</g>`;
   for (const [x, y, sc, u] of spots) s += `<g transform="translate(${x},${y}) scale(${sc})">${figure(u)}</g>`;
   if (dugIn) s += `<path d="M-21,2 Q-12,-9 0,-8 Q12,-9 21,2 Z" fill="#8a6d45" stroke="#4d3b28" stroke-width=".8"/><path d="M-15,-3 l-3,-5 M-7,-6 l-2,-5 M2,-7 l1,-5 M10,-5 l3,-5 M16,-2 l4,-4" stroke="#4d3b28" stroke-width="1.2"/>`;

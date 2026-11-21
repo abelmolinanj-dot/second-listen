@@ -385,7 +385,7 @@ export function moveArmy(state, armyId, targetId, { share = 1, surprise = false,
   if (!foe) {
     const merged = relocate(state, army, targetId);
     captureRegion(state, targetId, army.side);
-    return { type: "move", side: army.side, from, to: targetId, armyId: merged.id };
+    return { type: "move", side: army.side, from, to: targetId, armyId: merged.id, sea: !!target.sea };
   }
   return fight(state, army, foe, targetId, { surprise, sea: target.sea, tactic, outcome });
 }
@@ -401,7 +401,7 @@ function fight(state, att, def, regionId, opts) {
   const D = f.D * between(rand, 0.8, 1.2);
   const ag = generalOf(state, att), dg = generalOf(state, def);
   const report = {
-    type: "battle", region: regionId, from: att.region, surprise: !!opts.surprise,
+    type: "battle", region: regionId, from: att.region, surprise: !!opts.surprise, sea: !!opts.sea,
     attacker: { side: att.side, general: ag ? ag.short : null, men: armyMen(att), id: att.id },
     defender: { side: def.side, general: dg ? dg.short : null, men: armyMen(def), id: def.id },
   };

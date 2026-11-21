@@ -17,6 +17,7 @@ import { applyLegacy, recordLegacy, getLegacy } from "./legacy.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extraLand, mapLettering } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust, battleScene } from "./soldiers.js";
 import { playBattle } from "./battlefield.js";
+import { applySeason, resetSeason, LIVING_DEFS, smokeColumn, SHIP, arrowPath } from "./living.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
@@ -95,7 +96,8 @@ const view = { x: 0, y: 0, w: WIDTH, h: HEIGHT };
 
 function buildMap() {
   const regionPaths = (cls) => Object.entries(shapes).map(([id, poly]) => `<path class="${cls}" data-region="${id}" d="${polygonPath(poly)}"/>`).join("");
-  let s = `<defs>${TERRAIN_DEFS}${SOLDIER_DEFS}</defs>`;
+  let s = `<defs>${TERRAIN_DEFS}${SOLDIER_DEFS}${LIVING_DEFS}</defs>`;
+  resetSeason();
   s += `<rect x="-2000" y="-2000" width="${WIDTH + 4000}" height="${HEIGHT + 4000}" fill="var(--sea)"/>`;
   s += `<g id="land">${regionPaths("land")}${extraLand()}</g>`;
   s += `<g class="deco">${terrainLayer(shapes, seeds)}</g>`;
@@ -112,9 +114,9 @@ function buildMap() {
   s += `</g><rect id="season-tint" clip-path="url(#landclip)" x="0" y="0" width="${WIDTH}" height="${HEIGHT}"/>`;
   s += `<g id="ships">${[[-72.4, 40.35, 70], [-73.55, 39.55, 55], [-70.6, 41.95, 80], [-74.6, 38.9, 64]].map(([lon, lat, dur], i) => {
     const [x, y] = project([lon, lat]);
-    return `<g class="ship" style="--dur:${dur}s;--delay:-${i * 13}s" transform="translate(${x.toFixed(0)},${y.toFixed(0)})"><g class="ship-bob"><path d="M-9,0 L9,0 L6,4 L-6,4 Z" fill="#3a2a1c"/><path d="M-1,-1 V-15 M5,-1 V-11 M-6,-1 V-10" stroke="#3a2a1c" stroke-width=".9"/><path d="M-1,-14 Q4,-11 -1,-6 Z M5,-10 Q9,-8 5,-4 Z M-6,-9 Q-2,-7 -6,-3 Z" fill="#fbf7ee" stroke="#8a7a60" stroke-width=".4"/><path d="M-1,-15 l4,1 l-4,1" fill="#c8102e"/></g></g>`;
+    return `<g class="ship" style="--dur:${dur}s;--delay:-${i * 13}s" transform="translate(${x.toFixed(0)},${y.toFixed(0)})"><g class="ship-bob">${SHIP}</g></g>`;
   }).join("")}</g>`;
-  s += `<g id="highlights"></g><g id="booms"></g><g id="tokens"></g>`;
+  s += `<g id="highlights"></g><g id="fx"></g><g id="booms"></g><g id="tokens"></g><g id="replay"></g>`;
   svg.innerHTML = s;
   fitView();
 }
@@ -246,7 +248,62 @@ function doMove(regionId, tactic = null, outcome = null) {
   tutorial.event("act");
 }
 
+// Smoke over the fields where battles were fought this month or last, and fire where a town was fought over.
+function renderFx() {
+  const layer = $("#fx");
+  if (!layer) return;
+  const recent = state.battles.filter((b) => b.turn >= state.turn - 1);
+  const key = recent.map((b) => b.region + b.turn).join("|");
+  if (layer.dataset.key === key) return;
+  layer.dataset.key = key;
+  const seen = new Set();
+  layer.innerHTML = recent.filter((b) => !seen.has(b.region) && seen.add(b.region)).map((b) => {
+    const [x, y] = seeds[b.region];
+    const town = REGIONS[b.region].city || REGIONS[b.region].fort;
+    return smokeColumn(x + 24, y - 6, { fire: !!town, size: 1.7 });
+  }).join("");
+}
+
+// The British turn, replayed on the map: each march or attack in turn, with an arrow, a fleet for moves by sea,
+// and the battle where it happened. Tokens slide to their new places in the same order. Returns how long it takes.
+function replayTurn(summary) {
+  const seq = (summary && summary.seq) || [];
+  const layer = $("#replay");
+  if (!layer || !seq.length) { ui.replay = null; return 0; }
+  const step = Math.max(380, Math.min(700, 5200 / seq.length));
+  ui.replay = {};
+  layer.innerHTML = "";
+  seq.forEach((r, i) => {
+    const t = 600 + i * step;
+    const from = seeds[r.from], to = seeds[r.type === "battle" ? r.region : r.to];
+    if (!from || !to) return;
+    const side = r.type === "battle" ? r.attacker.side : r.side;
+    const d = arrowPath(from, to);
+    setTimeout(() => {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("class", `move-arrow ${side}`);
+      g.innerHTML = `<path class="arrow-under" d="${d}"/><path class="arrow-line" d="${d}" marker-end="url(#arrowhead-${side === "B" ? "b" : "p"})"/>`
+        + (r.sea ? `<g class="fleet">${SHIP}<animateMotion dur="${(step / 1000 + 0.3).toFixed(2)}s" path="${d}" fill="freeze" begin="indefinite"/></g>` : "");
+      layer.appendChild(g);
+      const anim = g.querySelector("animateMotion");
+      if (anim) try { anim.beginElement(); } catch { /* older browsers just show the arrow */ }
+      if (r.sea && i === 0) sfx.tap();
+      setTimeout(() => g.classList.add("fade"), 2600);
+      setTimeout(() => g.remove(), 3400);
+    }, t);
+    if (r.type === "battle") {
+      setTimeout(() => markBattles([r]), t + step * 0.6);
+      ui.replay[r.attacker.id] = t + step * 0.5;
+      ui.replay[r.defender.id] = t + step * 0.8;
+    } else if (r.armyId) ui.replay[r.armyId] = t;
+  });
+  const total = 600 + seq.length * step + 500;
+  setTimeout(() => { ui.replay = null; }, total + 1000);
+  return total;
+}
+
 function renderMap() {
+  renderFx();
   for (const el of svg.querySelectorAll(".region")) {
     const id = el.dataset.region;
     el.setAttribute("class", `region ${state.regions[id].owner}${ui.region === id && !ui.army ? " sel" : ""}`);
@@ -284,6 +341,7 @@ function renderMap() {
         el.innerHTML = armyFigure({ side: a.side, hessian: a.hessian, men: armyMen(a), regulars: a.regulars, militia: militiaMen(a), general: a.general, short: g ? g.short : "", moved: a.moved, dugIn: a.dugIn, selected: ui.army === a.id, label: fmtMen(armyMen(a)), unsupplied: a.side === "P" && !supplyPath(state, a) });
       }
       const pos = `translate(${x + ox}px, ${y}px)`;
+      el.style.transitionDelay = ui.replay && ui.replay[a.id] ? `${ui.replay[a.id]}ms` : "";
       // A token sliding to a new place marches while it moves.
       if (!fresh && el.style.transform && el.style.transform !== pos) { el.classList.add("marching"); clearTimeout(el._march); el._march = setTimeout(() => el.classList.remove("marching"), 950); }
       el.style.transform = pos;
@@ -318,6 +376,7 @@ function renderTop() {
   $("#date").title = wx.label;
   // The map shows the season and the weather.
   $("#mapwrap").dataset.season = season(state);
+  applySeason(svg, season(state));
   $("#mapwrap").dataset.weather = state.weather || "clear";
   $("#turnof").textContent = `Month ${state.turn + 1} of ${state.lastTurn + 1}`;
   $("#treasury").textContent = money(state.treasury);
@@ -689,10 +748,12 @@ function onEndTurn() {
 function afterBritish(summary, ctx) {
   const { before, startTurn, wasWinter } = ctx;
   save();
+  if (summary && summary.paused) { render(); askDefense(ctx); return; }
+  // Watch the British move, one march at a time.
+  const playTime = replayTurn(summary);
   render();
-  if (summary && summary.paused) { askDefense(ctx); return; }
   $("#end-turn") && ($("#end-turn").disabled = true);
-  if (summary) markBattles(summary.battles);
+  if (summary && !playTime) markBattles(summary.battles);
   const fresh = state.log.filter((l) => l.turn >= startTurn).slice(0, state.log.length - before);
   const voices = state.letters.filter((l) => l.voice && l.written === startTurn);
   // Let the British moves play out on the map before the report covers it.
@@ -702,7 +763,7 @@ function afterBritish(summary, ctx) {
     const next = () => showReport(summary, fresh, voices);
     if (isWinter(state) && !wasWinter && !state.seenScenes?.winter) { (state.seenScenes ||= {}).winter = true; save(); music.dirge(); playScene("winter", {}, next); }
     else next();
-  }, 2600); // long enough to watch the British move by night and read the quote
+  }, Math.max(2600, playTime + 700)); // long enough to watch the British move by night and read the quote
 }
 
 // The British are attacking one of your armies: command the defense, or leave it to the general.

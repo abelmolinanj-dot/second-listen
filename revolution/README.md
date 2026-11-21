@@ -36,6 +36,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 - **No two games alike**: key letters come in several wordings, each campaign has a pool of chance events (about one a month), and history shifts a little each game (in Saratoga: Burgoyne's strength, when Fort Stanwix is besieged, and whether Clinton comes up the Hudson early, late or on time).
 - **Supply lines**: armies need a friendly city, fort or depot within 3 regions; cut-off armies starve. Build depots to operate far afield.
 - **Battles you command**: big attacks, yours or the British army's, open a pixel-art battlefield. When the British attack one of your armies of 3,000 or more, the month stops: command the defense, or let your general fight it. Place your regiments (named after real ones, like the 1st Maryland and Glover's Marbleheaders) in three lanes, then give each lane its orders while the battle runs: leave it to your general, hold, advance, charge or fall back. Send in the reserve, and ride your general along the line to rally the men. Morale breaks regiments long before they are destroyed, and chance moments (a colonel shot, a drummer who keeps beating) can turn the day. You can still let the general fight it with one plan (bayonet charge, volleys, flank march or probe). Drums quicken as the fighting gets heavier, and volleys come from each side of the stereo field.
+- **A map that lives**: the trees turn in autumn and go bare in winter, snow lies on the hills, the rivers freeze, smoke and fire rise over recent battlefields, and armies light campfires at night (`js/living.js`). The British turn plays out move by move: red arrows march across the map, fleets sail along sea moves, and battles flash where they happen.
 - **Pixel-art soldiers** in the style of early-1990s games, drawn in code (`js/pixel.js`): marching, loading, firing and falling.
 - **Fewer letters**: one main letter a month; the rest wait in a dispatch tray, and their senders decide for themselves if you leave them. News arrives in the monthly paper.
 - **Naval moments**: the Turtle submarine, fire ships, sunken hulks, Brown's raid on Lake George and the Hudson chain.
@@ -70,6 +71,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/data/missions.js` | The campaign's missions and how stars are earned |
 | `js/battle.js` | The field battle simulation: regiments, lanes, morale, orders |
 | `js/battlefield.js` | The battlefield screen you command a battle from |
+| `js/living.js` | The living map: seasons, smoke, campfires, ships, and the replay of the British turn |
 | `js/pixel.js` | Pixel-art soldiers drawn in code |
 | `tools/battletest.mjs` | Checks field battles against the quick battle odds |
 | `js/sound.js` | Sound effects and music, synthesized with the Web Audio API |

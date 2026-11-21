@@ -73,7 +73,7 @@ export function endTurn(state) {
   if (state.pendingDefense) return { paused: true, battles: state.midTurn.battles, moves: state.midTurn.moves, notes: [] };
   // Any letter left unanswered is handled by the sender.
   settleTray(state);
-  state.midTurn = { battles: [], moves: [], before: state.log.length, startBattles: state.battles.length };
+  state.midTurn = { battles: [], moves: [], seq: [], before: state.log.length, startBattles: state.battles.length };
   return continueTurn(state);
 }
 
@@ -84,14 +84,14 @@ export function resumeBritishAttack(state, outcome = null) {
   state.pendingDefense = null;
   if (p && state.armies[p.armyId]) {
     const r = moveArmy(state, p.armyId, p.target, { share: p.share, withGeneral: true, outcome });
-    if (typeof r === "object") (r.type === "battle" ? state.midTurn.battles : state.midTurn.moves).push(r);
+    if (typeof r === "object") { (r.type === "battle" ? state.midTurn.battles : state.midTurn.moves).push(r); (state.midTurn.seq ||= []).push(r); }
   }
   return continueTurn(state);
 }
 
 function continueTurn(state) {
   const m = state.midTurn;
-  const summary = { battles: m.battles, moves: m.moves, notes: [] };
+  const summary = { battles: m.battles, moves: m.moves, seq: (m.seq ||= []), notes: [] };
   const before = m.before;
 
   // 2. The British move.
@@ -100,6 +100,7 @@ function continueTurn(state) {
   for (const r of reports) {
     if (r.type === "battle") summary.battles.push(r);
     else summary.moves.push(r);
+    summary.seq.push(r); // in the order they happened, so the map can replay them
   }
   if (reports.paused) { summary.paused = true; return summary; }
   state.midTurn = null;
