@@ -141,6 +141,40 @@ export const sfx = {
     snareAt(t + 14 * 0.045 + 0.05, 0.32);
   },
   tap() { if (ready()) noise(now(), { dur: 0.04, type: "bandpass", freq: 1600, gain: 0.06 }); },
+  // Field battles: a volley from n muskets on one side (pan -1 left to 1 right), a gun, and a charge with a cheer.
+  volley(n = 4, pan = 0) { if (ready()) volleyAt(now() + Math.random() * 0.15, Math.max(1, Math.min(8, n)), pan); },
+  gun(pan = 0) { if (ready()) cannonAt(now() + Math.random() * 0.2, 0.7, pan); },
+  charge(pan = 0) {
+    if (!ready()) return;
+    const t = now();
+    for (let i = 0; i < 12; i++) snareAt(t + i * 0.04, 0.05 + i * 0.015);
+    // The cheer: many voices, as a swell of band-limited noise.
+    noise(t + 0.4, { dur: 1.6, type: "bandpass", freq: 520, q: 1.4, gain: 0.32, attack: 0.35, pan });
+    noise(t + 0.45, { dur: 1.4, type: "bandpass", freq: 900, q: 2, gain: 0.16, attack: 0.3, pan });
+  },
+};
+
+// ---------- battle drums: a cadence under a field battle that quickens as the fighting gets heavier ----------
+let drumTimer = null, drumNext = 0, drumBeat = 0, drumLevel = 0.3;
+export const battleDrums = {
+  start() {
+    if (!ready() || !prefs.music) return;
+    this.stop();
+    drumNext = now() + 0.1; drumBeat = 0;
+    drumTimer = setInterval(() => {
+      if (!ready()) return;
+      const beat = 0.5 - drumLevel * 0.22; // seconds per beat
+      while (drumNext < now() + 0.25) {
+        const accent = drumBeat % 4 === 0;
+        snareAt(drumNext, (accent ? 0.15 : 0.08) * (0.7 + drumLevel * 0.6), musicBus);
+        if (drumLevel > 0.4 && drumBeat % 2 === 1) snareAt(drumNext + beat / 2, 0.05, musicBus);
+        if (accent && drumLevel > 0.55) thump(drumNext, { from: 90, to: 50, dur: 0.25, gain: 0.25, out: musicBus });
+        drumNext += beat; drumBeat++;
+      }
+    }, 90);
+  },
+  setIntensity(x) { drumLevel = Math.max(0, Math.min(1, x)); },
+  stop() { if (drumTimer) clearInterval(drumTimer); drumTimer = null; },
 };
 
 // ---------- music: fife and drum ----------

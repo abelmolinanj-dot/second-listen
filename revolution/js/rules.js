@@ -22,7 +22,7 @@ export const MILITIA_MONTHS = 3;
 export const SEA_RANGE = 3;
 export const RECRUIT_BATCH = 1000;
 
-const QUALITY = { P: 1.0, B: 1.15 };
+export const QUALITY = { P: 1.0, B: 1.15 };
 const MILITIA_QUALITY = 0.55;
 
 export const rng = (state) => makeRng(state);
@@ -269,7 +269,7 @@ export function flankChance(state, army, regionId) {
   return Math.max(0.25, Math.min(0.85, p));
 }
 
-function battleFactors(state, att, def, regionId, { surprise = false, sea = false, tactic = null } = {}) {
+export function battleFactors(state, att, def, regionId, { surprise = false, sea = false, tactic = null } = {}) {
   const ag = generalOf(state, att);
   const dg = generalOf(state, def);
   const r = REGIONS[regionId];
@@ -367,7 +367,7 @@ function captureRegion(state, regionId, side) {
 
 // Move an army (or part of it) into a target region, fighting if the enemy is there.
 // Returns a report describing what happened, or a string explaining why it can't.
-export function moveArmy(state, armyId, targetId, { share = 1, surprise = false, withGeneral = false, tactic = null } = {}) {
+export function moveArmy(state, armyId, targetId, { share = 1, surprise = false, withGeneral = false, tactic = null, outcome = null } = {}) {
   let army = state.armies[armyId];
   if (!army) return "No such army.";
   const target = moveTargets(state, army).find((t) => t.region === targetId);
@@ -387,7 +387,7 @@ export function moveArmy(state, armyId, targetId, { share = 1, surprise = false,
     captureRegion(state, targetId, army.side);
     return { type: "move", side: army.side, from, to: targetId, armyId: merged.id };
   }
-  return fight(state, army, foe, targetId, { surprise, sea: target.sea, tactic });
+  return fight(state, army, foe, targetId, { surprise, sea: target.sea, tactic, outcome });
 }
 
 function fight(state, att, def, regionId, opts) {
@@ -405,10 +405,12 @@ function fight(state, att, def, regionId, opts) {
     attacker: { side: att.side, general: ag ? ag.short : null, men: armyMen(att), id: att.id },
     defender: { side: def.side, general: dg ? dg.short : null, men: armyMen(def), id: def.id },
   };
-  const attackerWins = A > D;
-  const ratio = attackerWins ? A / D : D / A;
-  const loserFrac = Math.min(0.6, 0.16 + 0.18 * (ratio - 1));
-  const winnerFrac = Math.max(0.04, 0.12 - 0.05 * (ratio - 1));
+  // A battle fought on the field (battle.js) brings its own result and losses.
+  const O = opts.outcome;
+  const attackerWins = O ? O.attackerWins : A > D;
+  const ratio = O ? O.ratio : attackerWins ? A / D : D / A;
+  const loserFrac = O ? (attackerWins ? O.defLoss : O.attLoss) : Math.min(0.6, 0.16 + 0.18 * (ratio - 1));
+  const winnerFrac = O ? (attackerWins ? O.attLoss : O.defLoss) : Math.max(0.04, 0.12 - 0.05 * (ratio - 1));
   const loser = attackerWins ? def : att;
   const winner = attackerWins ? att : def;
   const lg = generalOf(state, loser);
@@ -420,8 +422,9 @@ function fight(state, att, def, regionId, opts) {
   const attackerMult = attackerWins ? T.winLoss ?? 1 : T.loseLoss ?? 1;
   const wl = attackerWins ? attackerMult : bloody;
   const ll = attackerWins ? bloody : attackerMult;
-  report.winnerLoss = applyLosses(winner, winnerFrac * wl, 1);
-  report.loserLoss = applyLosses(loser, loserFrac * ll * (lg && lg.trait === "rearguard" ? 0.65 : 1), 1.4);
+  report.fought = !!O;
+  report.winnerLoss = applyLosses(winner, O ? winnerFrac : winnerFrac * wl, 1);
+  report.loserLoss = applyLosses(loser, O ? loserFrac * (lg && lg.trait === "rearguard" ? 0.8 : 1) : loserFrac * ll * (lg && lg.trait === "rearguard" ? 0.65 : 1), O ? 1 : 1.4);
   if (attackerWins) {
     const to = retreatSpot(state, def, att.region);
     if (to) {

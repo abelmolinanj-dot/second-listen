@@ -35,7 +35,9 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 - **Letters** from generals and Founders (Franklin, both Adamses, Hamilton, Lafayette, Hancock, Morris, Jay, Paine), each opening with the writer's portrait and seal. Your answers have consequences, and later letters remember them. Councils of war let several officers argue their plans; spy reports may be wrong. Letters from far away arrive a month late.
 - **No two games alike**: key letters come in several wordings, each campaign has a pool of chance events (about one a month), and history shifts a little each game (in Saratoga: Burgoyne's strength, when Fort Stanwix is besieged, and whether Clinton comes up the Hudson early, late or on time).
 - **Supply lines**: armies need a friendly city, fort or depot within 3 regions; cut-off armies starve. Build depots to operate far afield.
-- **Battle close-ups**: big attacks open a battle scene where you choose a tactic (bayonet charge, volleys, flank march or probe), each with its real odds.
+- **Battles you command**: big attacks open a pixel-art battlefield. Place your regiments (named after real ones, like the 1st Maryland and Glover's Marbleheaders) in three lanes, then give each lane its orders while the battle runs: leave it to your general, hold, advance, charge or fall back. Send in the reserve, and ride your general along the line to rally the men. Morale breaks regiments long before they are destroyed, and chance moments (a colonel shot, a drummer who keeps beating) can turn the day. You can still let the general fight it with one plan (bayonet charge, volleys, flank march or probe). Drums quicken as the fighting gets heavier, and volleys come from each side of the stereo field.
+- **Pixel-art soldiers** in the style of early-1990s games, drawn in code (`js/pixel.js`): marching, loading, firing and falling.
+- **Fewer letters**: one main letter a month; the rest wait in a dispatch tray, and their senders decide for themselves if you leave them. News arrives in the monthly paper.
 - **Naval moments**: the Turtle submarine, fire ships, sunken hulks, Brown's raid on Lake George and the Hudson chain.
 - **Daily Dispatch**: the same Saratoga for everyone each day, with a score to share and a streak.
 - **A newspaper each month**: the monthly report is the front page of a period paper, with a headline for the month's biggest news.
@@ -66,6 +68,10 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/scenes.js` | Cutscenes and their drawn artwork |
 | `js/frontend.js` | Main menu, campaign map, mission briefings, generals roster, settings, credits |
 | `js/data/missions.js` | The campaign's missions and how stars are earned |
+| `js/battle.js` | The field battle simulation: regiments, lanes, morale, orders |
+| `js/battlefield.js` | The battlefield screen you command a battle from |
+| `js/pixel.js` | Pixel-art soldiers drawn in code |
+| `tools/battletest.mjs` | Checks field battles against the quick battle odds |
 | `js/sound.js` | Sound effects and music, synthesized with the Web Audio API |
 | `js/tutorial.js` | The aide-de-camp's guided tutorial |
 | `js/data/facts.js` | The "Did you know?" history notes |

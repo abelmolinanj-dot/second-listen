@@ -51,5 +51,8 @@ Next, in order:
    council, Paoli, Germantown in the fog, the Delaware forts, the Liberty Bell, Lydia Darragh, the Conway Cabal and
    Valley Forge. Wayne, Knyphausen and Grey have portraits. Next mission after it:
    Valley Forge and Monmouth (Steuben is waiting in the data).
+   Phase 5 ("make it a game", see ROADMAP) is under way: step 1 (fewer letters, pixel soldiers) and the first half of
+   step 2 (battles you command, battle drums) are built. Battles only open when you attack; British attacks on you
+   still resolve instantly, and that is the next thing to add. `node tools/battletest.mjs` checks battle balance.
 2. Phase 4: "An Officer's Road", a personal career mode inspired by Mount and Blade: Warband.
 3. Optional: a public-domain period map from Wikimedia Commons for the History Book (approved in principle).

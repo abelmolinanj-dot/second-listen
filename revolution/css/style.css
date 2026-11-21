@@ -531,6 +531,7 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .closeup-title h2 { color: #ffffff !important; margin: 0 !important; font-size: 28px !important; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
 .closeup-forces { font-family: var(--text); font-size: 15.5px; }
 .tactics { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-top: 10px; }
+.fight-it { width: 100%; margin: 10px 0 4px; font-size: 17px; padding: 12px; }
 .tactic { text-align: left; border: 1px solid rgba(31,53,102,.35); border-radius: 10px; background: #ffffff; color: var(--ink); padding: 10px 12px; transition: transform .12s, border-color .12s; }
 .tactic:hover { transform: translateY(-1px); border-color: var(--accent); }
 .tactic.rec { border: 2px solid var(--accent); }
@@ -545,3 +546,49 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .daily-box { margin: 14px 0; padding: 12px 14px; background: #ffffff; border: 1px solid rgba(31,53,102,.3); border-left: 5px solid var(--accent); border-radius: 8px; }
 .daily-box h3 { margin-top: 0 !important; }
 .daily-box textarea { width: 100%; font: 13px var(--sans); color: var(--ink); border: 1px solid rgba(31,53,102,.3); border-radius: 6px; padding: 6px 8px; resize: none; margin: 6px 0 8px; background: #f4f6fb; }
+
+/* ---------- field battles (battlefield.js): retro VGA look ---------- */
+#battlefield { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: #0d0a12; color: #f4efe2; font-family: "VT323", ui-monospace, monospace; font-size: 19px; line-height: 1.1; }
+#battlefield button { font-family: inherit; }
+.bf-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 14px 4px; background: #0c1a38; border-bottom: 2px solid #c8102e; }
+.bf-title { font-size: 27px; letter-spacing: .5px; text-transform: uppercase; }
+.bf-clock { font-size: 19px; color: #dfe6f6; }
+.bf-strength { display: flex; height: 8px; background: #120d10; }
+.bf-strength span { display: block; transition: width .6s; }
+.bf-p { background: #3b62c4; } .bf-b { background: #c8102e; }
+.bf-stage { position: relative; flex: 0 0 auto; overflow: hidden; background: #000; }
+#bf-svg { display: block; width: 100%; height: min(50vh, 56vw); image-rendering: pixelated; }
+.bf-unit { transition: transform .85s linear, opacity .4s; }
+.bf-tag text { font-family: "VT323", monospace; font-size: 13px; fill: #f4efe2; paint-order: stroke; stroke: #120d10; stroke-width: 2.4px; }
+.bf-a { animation: px-a .5s steps(1) infinite; } .bf-b { animation: px-b .5s steps(1) infinite; }
+.bf-puff { fill: #e9e4d8; opacity: .8; animation: bf-puff 2.4s linear forwards; transform-box: fill-box; }
+@keyframes bf-puff { to { transform: translate(var(--dx, 6px), -26px) scale(2.2); opacity: 0; } }
+.bf-ticker { padding: 6px 14px; min-height: 56px; background: #120d10; border-top: 1px solid #2a2030; border-bottom: 1px solid #2a2030; }
+.bf-ev { font-size: 18px; color: #e8e2d0; }
+.bf-ev:first-child { color: #fff; }
+.bf-ev.good { color: #9fbaf5; } .bf-ev.bad { color: #ff7a6b; } .bf-ev.warn { color: #f2c26b; }
+.bf-controls { flex: 1 1 auto; overflow-y: auto; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.bf-h { color: #dfe6f6; font-size: 18px; }
+.bf-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 5px 8px; background: #161226; border-left: 3px solid #3b62c4; }
+.bf-unitname { min-width: 180px; flex: 1 1 200px; }
+.bf-unitname b { display: block; font-size: 20px; font-weight: 400; color: #fff; }
+.bf-unitname small { font-size: 16px; color: #c9d3ea; }
+.bf-vs { color: #ff7a6b; }
+.bf-btns { display: flex; flex-wrap: wrap; gap: 4px; }
+.bf-btn { background: #0c1a38; color: #f4efe2; border: 2px solid #3b62c4; padding: 3px 10px; font-size: 18px; cursor: pointer; }
+.bf-btn:hover { border-color: #fff; }
+.bf-btn.on { background: #f4efe2; color: #0c1a38; border-color: #f4efe2; }
+.bf-btn.red { border-color: #c8102e; }
+.bf-btn.red.on { background: #c8102e; color: #fff; border-color: #c8102e; }
+.bf-btn:disabled { opacity: .45; cursor: default; }
+.bf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.bf-big { background: #c8102e; color: #fff; border: 2px solid #fff; padding: 6px 18px; font-size: 22px; cursor: pointer; }
+.bf-result { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 6, 12, .55); }
+.bf-card { background: #0c1a38; border: 3px solid #f4efe2; padding: 16px 22px; max-width: 520px; margin: 12px; box-shadow: 6px 6px 0 #000; }
+.bf-card.lost { border-color: #c8102e; }
+.bf-verdict { font-size: 40px; text-transform: uppercase; color: #fff; }
+.bf-card.lost .bf-verdict { color: #ff7a6b; }
+.bf-card p { margin: 6px 0; font-size: 20px; }
+.bf-card ul { margin: 6px 0 12px; padding-left: 18px; font-size: 18px; color: #dfe6f6; }
+@media (max-width: 600px) { #battlefield { font-size: 17px; } .bf-title { font-size: 21px; } .bf-unitname { min-width: 0; } .bf-btn { padding: 3px 7px; font-size: 17px; } }
+@media (prefers-reduced-motion: reduce) { .bf-unit { transition: none; } .bf-puff { animation-duration: .8s; } }

@@ -11,10 +11,11 @@ function figure(u, size = 40) {
 }
 
 // Uniforms of 1776 to 1777. coat and facings (lapels, cuffs, turnbacks), waistcoat, breeches, and the hat.
-const UNIFORMS = {
+export const UNIFORMS = {
   continental: { coat: "#24407a", facing: "#e3cf9a", vest: "#efe6cc", legs: "#efe6cc", gaiters: "#1b1a1f", hat: "tricorne", lace: "#f1ead6", hair: "#ece6d6", belts: true, bayonet: true },
   militia: { coat: "#cdb98a", facing: "#cdb98a", vest: "#cdb98a", legs: "#6b5638", gaiters: "#5a472e", hat: "slouch", hair: "#5a3e24", belts: false, bayonet: false, hunting: true },
   british: { coat: "#b8241e", facing: "#f3ecd8", vest: "#f3ecd8", legs: "#f3ecd8", gaiters: "#1b1a1f", hat: "tricorne", lace: "#f3ecd8", hair: "#ece6d6", belts: true, bayonet: true },
+  jagers: { coat: "#2f4a2a", facing: "#a3161c", vest: "#2f4a2a", legs: "#3a3226", gaiters: "#1b1a1f", hat: "tricorne", lace: "#2f4a2a", hair: "#3a2414", belts: false, bayonet: false, moustache: true },
   hessian: { coat: "#1f2f57", facing: "#b8241e", vest: "#e8cf6c", legs: "#e8cf6c", gaiters: "#1b1a1f", hat: "mitre", hair: "#ece6d6", belts: true, bayonet: true, moustache: true },
 };
 
@@ -77,7 +78,7 @@ function soldier(u) {
 }
 
 // Flags as carried in 1776.
-function flag(kind) {
+export function flag(kind) {
   if (kind === "P") {
     // The Grand Union Flag: thirteen stripes, with the old British union in the corner.
     let stripes = "";

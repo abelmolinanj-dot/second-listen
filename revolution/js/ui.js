@@ -16,6 +16,7 @@ import { awardHonors, noteFact, noteLetter, recordDaily } from "./book.js";
 import { applyLegacy, recordLegacy, getLegacy } from "./legacy.js";
 import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extraLand, mapLettering } from "./terrain.js";
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust, battleScene } from "./soldiers.js";
+import { playBattle } from "./battlefield.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
@@ -230,12 +231,13 @@ function onMapTap(target, clientX, clientY) {
   if (ui.army && state.armies[ui.army].general === "washington") tutorial.event("select");
 }
 
-function doMove(regionId, tactic = null) {
-  const r = moveArmy(state, ui.army, regionId, { share: ui.split ? 0.5 : 1, tactic });
+function doMove(regionId, tactic = null, outcome = null) {
+  const r = moveArmy(state, ui.army, regionId, { share: ui.split ? 0.5 : 1, tactic, outcome });
   if (typeof r === "string") { toast(r); return; }
   ui.split = false;
   ui.target = null;
-  if (r.type === "battle") { markBattles([r]); setTimeout(() => showBattle(r), 750); }
+  // A battle you commanded already showed its result on the field.
+  if (r.type === "battle") { markBattles([r]); if (!r.fought) setTimeout(() => showBattle(r), 750); }
   const army = state.armies[r.armyId] || armyAt(state, regionId, "P");
   ui.army = army && army.side === "P" ? army.id : null;
   ui.region = regionId;
@@ -946,11 +948,24 @@ function showCloseup() {
   modal(`<div class="closeup-art">${art}<div class="closeup-title"><span>${esc(dateLabel(state))}</span><h2>The Battle of ${esc(r.name)}</h2></div></div>
     <p class="closeup-forces"><b>${menWords(armyMen(att))}</b> ${g ? `under ${esc(g.short)}` : "Continentals"} against <b>${menWords(armyMen(foe))}</b> ${foe.hessian ? "Hessians" : "British"}${generalOf(state, foe) ? ` under ${esc(generalOf(state, foe).short)}` : ""}${foe.dugIn ? ", dug in" : ""}.</p>
     ${g ? `<div class="voice">${portraitOf(a.general)}<div><div class="voice-name">${esc(g.name)}</div><p>“${esc(TACTIC_ADVICE[rec])}”</p></div></div>` : ""}
+    <button class="btn primary fight-it" id="cu-command">Command the battle yourself ›</button>
+    <p class="meta">Or let ${g ? esc(g.short) : "the colonel"} fight it, with one plan for the whole day:</p>
     <div class="tactics">${opts}</div>
     <div class="modal-actions"><button class="btn" id="cu-cancel">Call off the attack</button></div>`, (c) => {
     sfx.drumroll();
     for (const b of c.querySelectorAll("[data-tactic]")) b.onclick = () => { $("#modal").hidden = true; doMove(target, b.dataset.tactic); };
     c.querySelector("#cu-cancel").onclick = () => { ui.target = null; closeModal(); };
+    c.querySelector("#cu-command").onclick = () => {
+      $("#modal").hidden = true;
+      playBattle({
+        state, att, def: foe, regionId: target, opts: { sea: t && t.sea },
+        onDone: (res) => {
+          if (res === null) { ui.target = null; render(); return; }
+          if (res === "quick") { showCloseup(); return; }
+          doMove(target, null, res);
+        },
+      });
+    };
   });
 }
 
