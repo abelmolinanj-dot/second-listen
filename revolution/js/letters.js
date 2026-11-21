@@ -82,6 +82,7 @@ export function answerLetter(state, letterId, choiceIndex) {
 
 export const unanswered = (state) => state.letters.filter((l) => !l.resolved);
 // Letters that must be answered before the month can end: at most one a month. The rest wait in the dispatch tray.
+export const MAX_LETTERS = 3;
 export const urgent = (state) => state.letters.filter((l) => !l.resolved && !l.tray);
 export const trayLetters = (state) => state.letters.filter((l) => !l.resolved && l.tray);
 
@@ -108,9 +109,20 @@ export function triageMail(state) {
     if (onlyNews) { answerLetter(state, l.id, 0); l.read = false; l.news = true; continue; }
     open.push(l);
   }
-  if (urgent(state).some((l) => !fresh.includes(l))) { for (const l of open) l.tray = true; return; }
+  // A hard cap: never more than three letters a month to read. The most important one must be answered, two more
+  // can wait in the tray, and anything beyond that the sender settles himself, the cautious way (it goes in the paper).
   open.sort((a, b) => weightOf(b) - weightOf(a));
-  open.forEach((l, i) => { if (i > 0) l.tray = true; });
+  const waiting = unanswered(state).filter((l) => !fresh.includes(l)).length;
+  const room = Math.max(0, MAX_LETTERS - waiting);
+  for (const l of open.slice(room)) {
+    const e = EVENTS[l.event] || {};
+    const pick = e.autoChoice ?? (e.choices ? e.choices.length - 1 : 0);
+    if (e.choices && e.choices[pick]) answerLetter(state, l.id, pick); else l.resolved = true;
+    l.read = false; l.news = true; l.settled = true;
+  }
+  const kept = open.slice(0, room);
+  const mainTaken = urgent(state).some((l) => !fresh.includes(l));
+  kept.forEach((l, i) => { if (i > 0 || mainTaken) l.tray = true; });
 }
 
 // The end of the month: tray letters nobody answered. The sender uses his own judgment (autoChoice), or lets it pass.

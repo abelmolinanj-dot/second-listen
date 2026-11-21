@@ -385,7 +385,7 @@ Burgoyne promised that his Native allies would not harm civilians, and now every
     ],
   },
   {
-    id: "sar_stanwix", scripted: true, fromTurn: 1, untilTurn: 2, from: "colonel",
+    id: "sar_stanwix", main: true, scripted: true, fromTurn: 1, untilTurn: 2, from: "colonel",
     when: (state) => state.regions.mohawk.owner === "P" && state.turn === (state.flags.history?.stanwixTurn ?? 2),
     title: "Fort Stanwix is besieged",
     body: () => `Sir,
@@ -429,7 +429,7 @@ The colonel commanding at German Flatts`,
     ],
   },
   {
-    id: "sar_bennington", scripted: true, turn: 2, from: "stark",
+    id: "sar_bennington", main: true, scripted: true, turn: 2, from: "stark",
     when: (state) => !!findGeneralArmy(state, "stark") && !!burgoyne(state) && burgoyne(state).region !== "stjohns",
     place: "Bennington",
     title: ["Germans are marching on Bennington", "They want our horses"],
@@ -612,7 +612,7 @@ I. Putnam`,
     ],
   },
   {
-    id: "sar_terms", scripted: true, repeat: true, from: (state) => commander(state),
+    id: "sar_terms", main: true, scripted: true, repeat: true, from: (state) => commander(state),
     when: (state) => burgoyneCornered(state),
     ctx: (state) => ({ men: armyMen(burgoyne(state)) }),
     title: "Burgoyne asks for terms",
@@ -660,7 +660,7 @@ I could refuse and demand unconditional surrender. He might accept. Or he might 
 
   // ---------- a council of war: the officers argue, and you decide ----------
   {
-    id: "sar_council", scripted: true, kind: "council", fromTurn: 2, untilTurn: 4, from: (state) => commander(state),
+    id: "sar_council", main: true, scripted: true, kind: "council", fromTurn: 2, untilTurn: 4, from: (state) => commander(state),
     battleScene: null,
     when: (state) => { const b = burgoyne(state); const a = commandArmy(state); return b && a && b.region !== "stjohns" && distance(a.region, b.region) <= 1 && armyMen(a) >= 3000; },
     place: "Headquarters, near Stillwater",

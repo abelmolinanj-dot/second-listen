@@ -49,7 +49,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 - **Animated cutscenes**: letterbox bars, typed-out narration, drifting smoke, falling snow and pixel soldiers marching across the drawn scenes, and a short scene after every big battle you don't command yourself.
 - **A map that lives**: the trees turn in autumn and go bare in winter, snow lies on the hills, the rivers freeze, smoke and fire rise over recent battlefields, and armies light campfires at night (`js/living.js`). The British turn plays out move by move: red arrows march across the map, fleets sail along sea moves, and battles flash where they happen.
 - **Pixel-art soldiers** in the style of early-1990s games, drawn in code (`js/pixel.js`): marching, loading, firing and falling.
-- **Fewer letters**: one main letter a month; the rest wait in a dispatch tray, and their senders decide for themselves if you leave them. News arrives in the monthly paper.
+- **Three letters a month, at most**: one main letter to answer and up to two in a dispatch tray, which their senders settle themselves if you leave them. Anything more is settled the cautious way and reported in the monthly paper, and the letters that decide a campaign always get through.
 - **Naval moments**: the Turtle submarine, fire ships, sunken hulks, Brown's raid on Lake George and the Hudson chain.
 - **Daily Dispatch**: the same Saratoga for everyone each day, with a score to share and a streak.
 - **A newspaper each month**: the monthly report is the front page of a period paper, with a headline for the month's biggest news.

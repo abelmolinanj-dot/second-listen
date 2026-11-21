@@ -224,7 +224,7 @@ B. Franklin`,
     ],
   },
   {
-    id: "bt_frozen", scripted: true, turn: 4, from: "colonel", fromName: "Colonel Kosciuszko, engineer",
+    id: "bt_frozen", main: true, scripted: true, turn: 4, from: "colonel", fromName: "Colonel Kosciuszko, engineer",
     when: (state) => state.regions.albany.owner === "B" && !!burg(state),
     title: "The Hudson is frozen",
     body: () => `Sir,

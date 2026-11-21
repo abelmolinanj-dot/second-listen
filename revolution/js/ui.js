@@ -397,11 +397,11 @@ function renderTop() {
   $("#cause-bar").style.width = Math.round(state.cause) + "%";
   $("#cause-bar").style.background = state.cause < 25 ? "var(--british)" : "var(--stripes)";
   $("#cause-num").textContent = Math.round(state.cause);
+  // The badge counts only letters waiting for an answer (never more than three a month).
   const open = unanswered(state).length;
-  const unread = state.letters.filter((l) => !l.read).length;
   const badge = $("#letters-badge");
-  badge.hidden = !(open || unread);
-  badge.textContent = open || unread;
+  badge.hidden = !open;
+  badge.textContent = open;
   $("#btn-letters").classList.toggle("pulse", urgent(state).length > 0);
 }
 

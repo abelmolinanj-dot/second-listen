@@ -175,7 +175,7 @@ G. Washington`,
     ],
   },
   {
-    id: "declaration", scripted: true, turn: 0, from: "congress",
+    id: "declaration", main: true, scripted: true, turn: 0, from: "congress",
     title: "Independence",
     body: () => `Sir,
 
@@ -373,7 +373,7 @@ Charles Lee`,
     ],
   },
   {
-    id: "crossing", scripted: true, fromTurn: 5, untilTurn: 6, from: "washington",
+    id: "crossing", main: true, scripted: true, fromTurn: 5, untilTurn: 6, from: "washington",
     when: (state) => !!crossingTarget(state),
     ctx: (state) => ({ target: crossingTarget(state) }),
     title: "A bold stroke",
@@ -418,7 +418,7 @@ G. Washington`;
   },
   {
     // The night retreat from Long Island, August 29 to 30, 1776: a set piece when an army is trapped there.
-    id: "longisland_escape", scripted: true, fromTurn: 1, untilTurn: 3, from: "washington", place: "Brooklyn Heights",
+    id: "longisland_escape", main: true, scripted: true, fromTurn: 1, untilTurn: 3, from: "washington", place: "Brooklyn Heights",
     when: (state) => { const a = armyAt(state, "longisland", "P"); return !!a && armyMen(a) >= 2000 && threatTo(state, "longisland", "P") > power(state, a) * 1.3; },
     title: "Trapped on Long Island",
     body: (state) => `Gentlemen,

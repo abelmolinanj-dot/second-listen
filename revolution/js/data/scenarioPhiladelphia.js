@@ -244,7 +244,7 @@ B. Franklin`,
     ],
   },
   {
-    id: "phl_congress", scripted: true, from: "congress",
+    id: "phl_congress", main: true, scripted: true, from: "congress",
     when: (state) => state.regions.philadelphia.owner === "P" && armyList(state, "B").some((a) => distance(a.region, "philadelphia") <= 1),
     title: "The enemy is near the capital",
     body: () => `Sir,
@@ -260,7 +260,7 @@ John Hancock, President`,
     ],
   },
   {
-    id: "phl_brandywine", scripted: true, kind: "council", fromTurn: 1, untilTurn: 3, from: "washington", place: "Chadds Ford, on the Brandywine",
+    id: "phl_brandywine", main: true, scripted: true, kind: "council", fromTurn: 1, untilTurn: 3, from: "washington", place: "Chadds Ford, on the Brandywine",
     when: (state) => { const w = wash(state), h = howe(state); return w && h && distance(w.region, h.region) <= 1 && armyMen(w) >= 4000; },
     title: "Council of war on the Brandywine",
     body: (state) => `Howe's army, about ${menWords(armyMen(howe(state)))} men, is within a day's march. The general officers met at headquarters to decide how to meet him. They did not agree.`,
@@ -338,7 +338,7 @@ It is a heavy blow. But a capital is only a city, and the King's army must now f
     choices: [{ label: "The war goes on", hint: "", apply: () => "Congress settled into the courthouse at York." }],
   },
   {
-    id: "phl_germantown", scripted: true, fromTurn: 2, untilTurn: 4, from: "washington", place: "Skippack Creek",
+    id: "phl_germantown", main: true, scripted: true, fromTurn: 2, untilTurn: 4, from: "washington", place: "Skippack Creek",
     when: (state) => { const w = wash(state); return w && state.regions.philadelphia.owner === "B" && !!armyAt(state, "philadelphia", "B") && distance(w.region, "philadelphia") === 1; },
     title: "A dawn attack on Germantown",
     body: [
