@@ -184,6 +184,7 @@ function closeMonth(state) {
   for (const a of Object.values(state.armies)) {
     let c = condOf(a);
     c += a.marched === state.turn ? 4 : 15;
+    if (a.side === "P" && state.role && state.role.id === "greene") c += 5;
     if (REGIONS[a.region].city) c += 5;
     if (winter && !REGIONS[a.region].city) c -= a.side === "P" ? 9 : 6;
     if (a.side === "P" && !supplyPath(state, a)) c -= 12;

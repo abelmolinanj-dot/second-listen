@@ -681,3 +681,38 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .stat.cond b { color: var(--patriot); }
 .stat.cond.c0 b, .stat.cond.c1 b { color: var(--british); }
 .stat.cond.c2 b { color: #b0601a; }
+
+/* ---------- choose who you are ---------- */
+.roles { display: grid; gap: 6px; margin: 6px 0 10px; }
+.role-card { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border: 1px solid rgba(31,53,102,.3); border-left: 4px solid var(--patriot); background: #fff; cursor: pointer; }
+.role-card:has(input:checked) { border-color: var(--accent); border-left-color: var(--accent); background: #fff6f7; }
+.role-card input { margin-top: 4px; accent-color: var(--accent); }
+.role-card b { display: block; font-size: 15px; color: var(--ink); }
+.role-card small { display: block; font-size: 13px; color: var(--ink-soft); margin: 2px 0; }
+.role-card em { display: block; font-style: normal; font-size: 12.5px; }
+.role-card em.good { color: var(--patriot); } .role-card em.bad { color: var(--british); }
+
+/* ---------- what-if branches on the campaign map ---------- */
+.camp-branch { fill: none; stroke: #c8102e; stroke-width: 3; stroke-dasharray: 3 7; stroke-linecap: round; opacity: .75; }
+.mnode.whatif .mn-seal { fill: #ffffff; stroke: #c8102e; stroke-width: 2; }
+.mnode.whatif .mn-ring { fill: none; stroke: #c8102e; stroke-dasharray: 4 3; }
+.mnode.whatif .mn-num { fill: #c8102e; font-size: 20px; }
+.mnode.whatif.locked { opacity: .7; }
+.mnode.whatif.locked .mn-seal { fill: #e9ecf3; stroke: #1f3566; }
+.mnode.whatif.locked .mn-num { font-size: 15px; }
+.mn-label.small { font-size: 17px; }
+
+/* ---------- quick battles ---------- */
+.qb-list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.qb-card { text-align: left; background: #ffffff; border: 1px solid rgba(31,53,102,.3); border-left: 4px solid var(--accent); padding: 10px 12px; cursor: pointer; color: var(--ink); }
+.qb-card:hover { border-color: var(--accent); }
+.qb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.qb-head b { font-family: var(--serif); font-size: 21px; font-weight: 400; }
+.qb-head span { font-size: 12.5px; color: var(--ink-soft); }
+.qb-card p { font-size: 14px; margin: 6px 0; color: var(--ink); }
+.qb-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-soft); }
+.qb-att { color: var(--accent); font-weight: 600; } .qb-def { color: var(--patriot); font-weight: 600; }
+.qb-last { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 10px; background: #fff; border: 2px solid var(--patriot); }
+.qb-last.lost { border-color: var(--accent); }
+.qb-last b { font-family: var(--serif); font-size: 22px; font-weight: 400; }
+.qb-last textarea { flex: 1 1 260px; height: 40px; font-size: 13px; resize: none; }

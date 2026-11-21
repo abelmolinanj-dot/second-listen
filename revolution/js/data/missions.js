@@ -73,6 +73,52 @@ export const MISSIONS = [
   },
 ];
 
+// What-if missions: alternate histories that branch off the main trail, unlocked by how a campaign ends.
+// parent: the mission they branch from. requires: { mission, best (stars at least), worst (stars at most, in any finished game) }.
+export const WHAT_IFS = [
+  {
+    id: "burgoyne", status: "ready", scenario: "burgoyne", parent: "saratoga",
+    requires: { mission: "saratoga", worst: 2 }, unlock: "Finish Saratoga without forcing Burgoyne's surrender (2 stars or fewer).",
+    year: "1777–78", title: "What If: Burgoyne Breaks Through", place: "Albany", at: [-72.75, 43.45], label: "right",
+    image: null,
+    summary: "In this history, Burgoyne won in the woods above Saratoga and marched into Albany, while Clinton took the Highlands below. If they join hands, New England is cut off. Hold Kingston, close the river, and starve Burgoyne out through the winter.",
+    objectives: ["3 stars: retake Albany and break Burgoyne's army, with the Cause at 45 or more", "2 stars: never let the British hold the whole Hudson from Albany to the Highlands", "1 star: keep the Cause at 25 or more until March ends"],
+    difficulty: 3, length: "6 months · about 20 minutes",
+  },
+  {
+    id: "capital", status: "soon", eta: "Coming in 2027", parent: "philadelphia",
+    requires: { mission: "philadelphia", best: 3 }, unlock: "Hold Philadelphia (3 stars) in the Philadelphia campaign.",
+    year: "1777–78", title: "What If: Winter in the Capital", place: "Philadelphia", at: [-74.55, 39.35], label: "right",
+    summary: "Philadelphia never fell. Instead of starving at Valley Forge, the army winters in the capital, with Howe's army camped outside, Congress quarreling indoors, and the spring campaign to plan.",
+    objectives: ["Keep the army fed and paid in the city", "Keep Congress from meddling", "Strike first in the spring"], difficulty: 2,
+  },
+  {
+    id: "mountains", status: "soon", eta: "Coming in 2027", parent: "1776",
+    requires: { mission: "1776", worst: 0 }, unlock: "Lose the Campaign of 1776 (no stars).",
+    year: "1777", title: "What If: Retreat Across the Mountains", place: "The Alleghenies", at: [-76.9, 40.6], label: "left",
+    summary: "Philadelphia is gone and the army is broken. Washington once said that if all else failed, he would retreat over the mountains and fight on from the backcountry. This is that war.",
+    objectives: ["Get the army over the mountains", "Keep Congress alive", "Return in the spring"], difficulty: 3,
+  },
+  {
+    id: "loyalarnold", status: "soon", eta: "Coming in 2027", parent: "saratoga",
+    requires: { arnoldLoyal: 80 }, unlock: "Finish any campaign with Arnold's loyalty at 80 or more.",
+    year: "1780", title: "What If: Arnold Stays Loyal", place: "Canada", at: [-71.9, 44.6], label: "right",
+    summary: "Arnold was never passed over, never insulted, never bought. In 1780 he asks for one more chance at the prize he missed in 1775: Canada.",
+    objectives: ["March up the Champlain valley", "Take Montreal", "Bring Canada into the Union"], difficulty: 3,
+  },
+];
+
+// Whether a what-if is unlocked, from the player's progress (stars per mission) and the generals' records.
+export function whatIfUnlocked(w, progress, legacy) {
+  const r = w.requires || {};
+  if (r.arnoldLoyal) return (legacy?.arnold?.loyalty ?? 0) >= r.arnoldLoyal;
+  const p = progress[r.mission];
+  if (!p || !p.plays) return false;
+  if (r.best !== undefined && (p.stars || 0) < r.best) return false;
+  if (r.worst !== undefined && (p.low ?? p.stars ?? 3) > r.worst) return false;
+  return true;
+}
+
 // Stars for a finished campaign, from how it ended.
 export function starsFor(gameOver) {
   if (!gameOver) return 0;

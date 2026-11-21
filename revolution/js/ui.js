@@ -21,6 +21,7 @@ import { playSetPiece } from "./setpiece.js";
 import { applySeason, resetSeason, LIVING_DEFS, smokeColumn, SHIP, arrowPath } from "./living.js";
 import { assignRegiments, kindsFor, recordOf, levelOf, LEVELS } from "./regiments.js";
 import { STYLES, setupRival } from "./rival.js";
+import { ROLES } from "./roles.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
@@ -479,7 +480,8 @@ function renderPanel() {
     h += depotButton(ui.region);
     h += recruitButtons(ui.region);
   } else {
-    h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">You are the Board of War: you run the army and pay for it.</p>`;
+    const R = state.role && ROLES[state.role.id] && state.role.id !== "board" ? ROLES[state.role.id] : null;
+    h += `<h2>${esc(scenarioOf(state).SCENARIO.title)}</h2><p class="sub">${R ? `You are ${esc(R.who(state.generals[state.role.gen]?.name || ""))}. ${esc(R.perks.join(". "))}. ${esc(R.problems.join(". "))}.` : "You are the Board of War: you run the army and pay for it."}</p>`;
     // Your orders: what each star needs, a live check beside each, and the aide's advice for this month.
     const SC = scenarioOf(state).SCENARIO;
     if (SC.objectives) {
@@ -995,11 +997,14 @@ function showMenu() {
   });
 }
 
-function startNew(scenarioId = "1776", guide = false, { daily = null } = {}) {
+function startNew(scenarioId = "1776", guide = false, { daily = null, role = "board", mission = null } = {}) {
   // The Daily Dispatch uses a seed made from the date, so everyone gets the same game that day.
   state = newGame(daily ? dailySeed(daily) : undefined, scenarioId);
-  state.mission = scenarioId;
+  state.mission = mission || scenarioId;
   state.daily = daily;
+  // Who you play as: the Board of War, the commander in the field, Greene or Arnold (roles.js).
+  const SC0 = scenarioOf(state).SCENARIO;
+  state.role = { id: role, gen: role === "commander" ? SC0.commander : role === "greene" ? "greene" : role === "arnold" ? "arnold" : null };
   if (!daily) applyLegacy(state); // generals remember earlier campaigns (not in the daily, to keep it fair)
   const S = scenarioOf(state).SCENARIO;
   ui.army = null; ui.region = null; ui.target = null;

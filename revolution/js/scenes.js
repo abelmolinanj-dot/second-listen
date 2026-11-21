@@ -286,6 +286,16 @@ export const SCENE_TEXT = {
       "You are the Board of War. Guess right, and make him pay for every mile.",
     ],
   },
+  breakthrough: {
+    art: "lake",
+    lines: [
+      "October, 1777. A different history.",
+      "In this telling, Burgoyne's army won in the woods above Saratoga. Its bands played as it marched into Albany.",
+      "Seventy miles down the Hudson, General Clinton has taken the forts in the Highlands.",
+      "If the two armies meet, New England is cut off from the other states, and the Revolution may be cut in half.",
+      "Between them lies Kingston, and a river that will soon freeze.",
+    ],
+  },
   saratoga: { art: "victory", lines: ["Saratoga, October 1777."] },
   fireships: { art: "fireships", lines: ["Night on the Hudson."] },
   turtle: { art: "turtle", lines: ["New York harbor, after midnight."] },

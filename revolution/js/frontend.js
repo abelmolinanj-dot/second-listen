@@ -3,7 +3,7 @@
 
 import { REGIONS } from "./data/regions.js";
 import { GENERALS } from "./data/generals.js";
-import { MISSIONS, starsFor } from "./data/missions.js";
+import { MISSIONS, WHAT_IFS, whatIfUnlocked, starsFor } from "./data/missions.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { PORTRAITS, SCENES } from "./data/assets.js";
 import { WIDTH, HEIGHT, project, buildRegionShapes, polygonPath, linePath, seaPath, MAINLAND, ISLANDS, LAKES, RIVERS } from "./geo.js";
@@ -14,6 +14,9 @@ import { askConfirm } from "./confirm.js";
 import { getBook, getDaily, todayKey } from "./book.js";
 import { getLegacy } from "./legacy.js";
 import { ROSTER, levelOf, LEVELS } from "./regiments.js";
+import { ROLES, ROLES_FOR } from "./roles.js";
+import { QUICK_BATTLES, runQuickBattle, quickRecord } from "./quickbattle.js";
+import { GENERALS as GEN } from "./data/generals.js";
 import { ACHIEVEMENTS } from "./data/achievements.js";
 import { FACTS } from "./data/facts.js";
 import { EVENTS } from "./letters.js";
@@ -29,7 +32,7 @@ export function recordResult(missionId, gameOver) {
   const p = getProgress();
   const stars = starsFor(gameOver);
   const prev = p[missionId] || { stars: 0, plays: 0 };
-  p[missionId] = { stars: Math.max(prev.stars, stars), plays: prev.plays + 1, last: gameOver.title };
+  p[missionId] = { stars: Math.max(prev.stars, stars), low: Math.min(prev.low ?? 3, stars), plays: prev.plays + 1, last: gameOver.title };
   try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); } catch { /* ignore */ }
   return stars;
 }
@@ -93,6 +96,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
           <button class="mm-btn ${saved ? "" : "primary"}" id="mm-campaign"><b>Campaign</b><span>The War for Independence · ${stars} ★</span></button>
           <button class="mm-btn locked" id="mm-conquest"><b>Conquest</b><span>Take the continent, then the world · Coming 2027</span></button>
           <button class="mm-btn" id="mm-daily"><b>Daily Dispatch</b><span>${dailyLine()}</span></button>
+          <button class="mm-btn" id="mm-quick"><b>Quick Battle</b><span>Fight a famous battle right now: Trenton, Brandywine, Saratoga and more</span></button>
           <button class="mm-btn" id="mm-generals"><b>Who's Who</b><span>Generals, Founders and the King's men</span></button>
           <button class="mm-btn" id="mm-book"><b>History Book</b><span>Honors, paintings and notes you've found</span></button>
           <div class="mm-row">
@@ -112,6 +116,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       hide();
       onBegin("saratoga", false, { daily: todayKey() });
     });
+    on("#mm-quick", showQuick);
     on("#mm-settings", showSettings);
     on("#mm-credits", showCredits);
   }
@@ -148,11 +153,28 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
         ${m.edge ? `<text class="mn-edge" y="56" text-anchor="middle">↓ ${esc(m.edge)}</text>` : ""}
       </g>`;
     }).join("");
+    // What-ifs: smaller nodes on dashed branches off their parent mission.
+    const legacy = getLegacy();
+    const branches = WHAT_IFS.map((w) => {
+      const [x, y] = markerPos(w);
+      const [px0, py0] = markerPos(MISSIONS.find((m) => m.id === w.parent));
+      const open = whatIfUnlocked(w, p, legacy);
+      const st = p[w.id]?.stars || 0;
+      const side = w.label || "right";
+      const [lx, ly, anchor] = { right: [30, -4, "start"], left: [-30, -4, "end"] }[side] || [30, -4, "start"];
+      return `<path class="camp-branch" d="M${px0},${py0} Q${(px0 + x) / 2 + (y - py0) * 0.2},${(py0 + y) / 2 - (x - px0) * 0.2} ${x},${y}"/>
+        <g class="mnode whatif ${open ? w.status : "locked"}${st ? " done" : ""}${selected === w.id ? " sel" : ""}" data-mission="${w.id}" transform="translate(${x},${y})">
+        <circle class="mn-hit" r="40"/><circle class="mn-ring" r="24"/><circle class="mn-seal" r="18"/>
+        <text class="mn-num" y="7">${open ? "?" : "🔒"}</text>
+        <g transform="translate(${lx},${ly})"><text class="mn-label small" text-anchor="${anchor}">${esc(w.title)}</text>
+        <text class="mn-year" y="19" text-anchor="${anchor}">${esc(w.year)}${st ? "  " + "★".repeat(st) : ""}</text></g></g>`;
+    }).join("");
     show("scr-campaign", `${backBar("Campaign", `<span class="scr-stars">${got} / ${total} ★</span>`)}
       <div class="camp-wrap">
         <svg class="camp-map" viewBox="0 0 ${WIDTH} ${HEIGHT}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
           ${campaignMapSvg()}
           <path class="camp-trail" d="${trail}"/>
+          ${branches}
           ${markers}
         </svg>
         <div class="camp-hint" id="camp-hint">Tap a mission to read your orders</div>
@@ -167,20 +189,28 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     root.querySelector("#camp-hint")?.remove();
     selected = id;
     for (const g of root.querySelectorAll("[data-mission]")) g.classList.toggle("sel", g.dataset.mission === id);
-    const m = MISSIONS.find((x) => x.id === id);
+    const m = MISSIONS.find((x) => x.id === id) || WHAT_IFS.find((x) => x.id === id);
     const i = MISSIONS.indexOf(m);
+    const isWhatIf = WHAT_IFS.includes(m);
+    const unlocked = !isWhatIf || whatIfUnlocked(m, getProgress(), getLegacy());
     const p = getProgress()[id];
     const saved = savedGame();
     const savedHere = saved && saved.mission === id;
     const diff = ["", "Easier", "Moderate", "Hard"][m.difficulty];
     let h = `<button class="brief-close" id="brief-close" aria-label="Close">×</button>`;
     if (m.image) h += `<div class="brief-img" style="background-image:url('${m.image}')"></div>`;
-    h += `<div class="brief-body"><div class="brief-kicker">Mission ${i + 1} · ${esc(m.year)} · ${esc(m.place)}</div>
+    h += `<div class="brief-body"><div class="brief-kicker">${isWhatIf ? "What if · an alternate history" : `Mission ${i + 1}`} · ${esc(m.year)} · ${esc(m.place)}</div>
       <h2>${esc(m.title)}</h2>
       <p>${esc(m.summary)}</p>
       <h3>Your orders</h3><ul class="brief-goals">${m.objectives.map((o) => `<li>${esc(o)}</li>`).join("")}</ul>
       <div class="brief-meta"><span>Difficulty: <b>${diff}</b></span>${m.length ? `<span>${esc(m.length)}</span>` : ""}${m.status === "ready" ? `<span>Best: ${starRow(p?.stars || 0)}</span>` : ""}</div>`;
-    if (m.status === "ready") {
+    if (!unlocked) {
+      h += `<div class="brief-soon">🔒 ${esc(m.unlock)}</div>`;
+    } else if (m.status === "ready") {
+      // Choose who you are.
+      const roles = ROLES_FOR[m.scenario] || ["board"];
+      const cmdName = (id) => (id === "commander" ? GEN[{ "1776": "washington", philadelphia: "washington", saratoga: "schuyler", burgoyne: "gates" }[m.scenario]]?.name : null);
+      if (roles.length > 1) h += `<h3>Play as</h3><div class="roles">${roles.map((r, k) => { const R = ROLES[r]; const name = r === "commander" ? cmdName(r) : R.title; return `<label class="role-card"><input type="radio" name="role" value="${r}" ${k === 0 ? "checked" : ""}><span><b>${esc(name)}</b><small>${esc(R.blurb)}</small>${R.perks.length ? `<em class="good">+ ${esc(R.perks.join("; "))}</em>` : ""}${R.problems.length ? `<em class="bad">− ${esc(R.problems.join("; "))}</em>` : ""}</span></label>`; }).join("")}</div>`;
       h += m.guide ? `<label class="check"><input type="checkbox" id="guide" ${hasPlayed() ? "" : "checked"}> Guide me through the first two months</label>` : "";
       h += `
         <div class="brief-actions">${savedHere ? `<button class="btn" id="b-continue">Continue · ${esc(saved.label)}</button>` : ""}<button class="btn primary" id="b-begin">${savedHere ? "Start over" : "Begin the campaign"}</button></div>`;
@@ -196,13 +226,33 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
     if (b) b.onclick = async () => {
       if (saved && !(await askConfirm(savedHere ? "Start this campaign over? Your saved game will be lost." : `This replaces your saved game (${saved.label}). Start anyway?`, { ok: "Start", danger: true }))) return;
       const guide = !!brief.querySelector("#guide")?.checked;
+      const role = brief.querySelector('input[name="role"]:checked')?.value || "board";
       hide();
-      onBegin(m.scenario, guide);
+      onBegin(m.scenario, guide, { role, mission: m.id });
     };
     const c = brief.querySelector("#b-continue");
     if (c) c.onclick = () => { hide(); onContinue(); };
     brief.querySelector("#brief-close").onclick = () => brief.classList.remove("open");
     if (!quiet) sfx.letter();
+  }
+
+  // ----- quick battles -----
+  function showQuick(last = null) {
+    const rec = quickRecord();
+    const cards = QUICK_BATTLES.map((q) => { const r = rec[q.id]; return `<button class="qb-card" data-qb="${q.id}"><div class="qb-head"><b>${esc(q.title)}</b><span>${esc(q.date)}</span></div><p>${esc(q.note)}</p><div class="qb-meta"><span class="${q.side === "attack" ? "qb-att" : "qb-def"}">${q.side === "attack" ? "You attack" : "You defend"}</span><span>${((q.you.regulars || 0) + (q.you.militia || 0)).toLocaleString("en-US")} against ${q.them.regulars.toLocaleString("en-US")}</span>${r ? `<span>Your record: ${r.won} won, ${r.lost} lost</span>` : ""}</div></button>`; }).join("");
+    show("scr-page", `${backBar("Quick Battle")}<div class="page">
+      ${last ? `<div class="qb-last ${last.won ? "won" : "lost"}"><b>${last.won ? "Victory" : "Defeat"}</b><textarea readonly id="qb-share">${esc(last.line)}</textarea><button class="btn small" id="qb-copy">Copy to share</button></div>` : ""}
+      <p class="page-lead">Famous battles of the war with about the real numbers on each side. Command them yourself and see if you can do better than history. Nothing here affects your campaign.</p>
+      <div class="qb-list">${cards}</div></div>`);
+    on("#back", showMain);
+    const copy = root.querySelector("#qb-copy");
+    if (copy) copy.onclick = async () => { try { await navigator.clipboard.writeText(last.line); copy.textContent = "Copied"; } catch { root.querySelector("#qb-share").select(); copy.textContent = "Select and copy the text"; } };
+    for (const b of root.querySelectorAll("[data-qb]")) b.onclick = () => {
+      sfx.drumroll();
+      const q = QUICK_BATTLES.find((x) => x.id === b.dataset.qb);
+      root.style.display = "none";
+      runQuickBattle(q, (res) => { root.style.display = ""; music.march(); showQuick(res); });
+    };
   }
 
   // ----- conquest (coming) -----

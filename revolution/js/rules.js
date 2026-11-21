@@ -83,6 +83,8 @@ export function log(state, text, kind = "info") {
 
 // --- Cause and loyalties ---
 export function changeCause(state, delta, why) {
+  // Playing as Arnold: Congress gives him little credit, and blames him freely.
+  if (state.role && state.role.id === "arnold") delta = delta > 0 ? delta * 0.67 : delta * 1.25;
   const before = state.cause;
   state.cause = Math.max(0, Math.min(100, state.cause + delta));
   if (why && Math.round(state.cause - before) !== 0) log(state, `Cause ${delta > 0 ? "+" : ""}${Math.round(state.cause - before)}: ${why}`, delta > 0 ? "good" : "bad");
@@ -110,12 +112,13 @@ export function regionIncome(state, id) {
   return REGIONS[id].income * COST.incomeScale * (1 - r.loyalist / 100);
 }
 export function monthlyIncome(state) {
-  return Object.keys(state.regions).reduce((s, id) => s + regionIncome(state, id), 0);
+  const far = state.role && state.role.id === "commander" ? 0.85 : 1; // the commander is far from Congress
+  return Object.keys(state.regions).reduce((s, id) => s + regionIncome(state, id), 0) * far;
 }
 export function armyUpkeep(state, army) {
   const g = generalOf(state, army);
   const base = (army.regulars / 1000) * COST.upkeepRegulars + (militiaMen(army) / 1000) * COST.upkeepMilitia;
-  return base * state.priceLevel * (g && g.trait === "quartermaster" ? 0.5 : 1);
+  return base * state.priceLevel * (g && g.trait === "quartermaster" ? 0.5 : 1) * (army.side === "P" && state.role && state.role.id === "greene" ? 0.75 : 1);
 }
 export function monthlyUpkeep(state) {
   return armyList(state, "P").reduce((s, a) => s + armyUpkeep(state, a), 0);
@@ -335,6 +338,13 @@ export function battleFactors(state, att, def, regionId, { surprise = false, sea
   A *= condFactor(att);
   D *= condFactor(def);
   if (att.tired === state.turn) A *= 0.9;
+  // Who the player is playing as.
+  const role = state.role;
+  if (role) {
+    if (role.id === "commander" && role.gen) { if (att.general === role.gen) A *= 1.1; if (def.general === role.gen) D *= 1.1; }
+    if (role.id === "arnold" && att.side === "P") A *= 1.12;
+    if (role.id === "greene" && att.side === "P") A *= 0.95;
+  }
   if (isWinter(state) && !surprise) A *= 0.8;
   if (state.weather === "rain") A *= 0.88;
   if (state.weather === "fog") A *= 1.1;
@@ -639,7 +649,8 @@ export function supplyPath(state, army) {
   if (isSupplySource(state, side, army.region)) return [army.region];
   const prev = { [army.region]: null };
   let frontier = [army.region];
-  for (let d = 1; d <= SUPPLY_RANGE && frontier.length; d++) {
+  const reach = SUPPLY_RANGE + (side === "P" && state.role && state.role.id === "greene" ? 1 : 0);
+  for (let d = 1; d <= reach && frontier.length; d++) {
     const next = [];
     for (const id of frontier) for (const n of ADJ[id]) {
       if (n in prev) continue;
