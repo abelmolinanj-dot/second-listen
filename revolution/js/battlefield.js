@@ -1,14 +1,15 @@
-// The battlefield screen: a field battle you command, drawn in pixel art.
+// The battlefield screen: a field battle you command, drawn as a battle plan of the period, the kind of map officers
+// engraved after a battle: white paper, navy ink, regiments as red and blue blocks, hachured hills and stippled woods.
 // You place your regiments in three lanes, then give each lane its orders while the battle runs:
 // leave it to your general, hold, advance, charge or fall back. Send in the reserve, and ride the general
 // along the line to rally the men. The simulation itself is in battle.js.
 
 import { setupBattle, step, aiOrders, commitReserve, rally, finish, outcomeOf, LANES, LANE_NAMES, ORDERS, KINDS, TICKS } from "./battle.js";
-import { pixelSoldier } from "./pixel.js";
-import { UNIFORMS, flag } from "./soldiers.js";
+import { flag } from "./soldiers.js";
 import { REGIONS } from "./data/regions.js";
 import { sfx, music, battleDrums, stopMusic } from "./sound.js";
 import { menWords, noteHabit, dateLabel } from "./rules.js";
+
 
 // ---------- replays ----------
 // Every battle you command is recorded tick by tick; the last five are kept in this browser for the History Book.
@@ -34,65 +35,85 @@ function fromRecord(rec) {
 }
 
 const W = 800, H = 400;
-const LANE_Y = { left: 196, center: 272, right: 356 };
-const LANE_S = { left: 0.8, center: 0.94, right: 1.08 };
-const RESERVE_Y = 236;
-const xOf = (x) => 34 + x * 7.32;
+// The three lanes as bands across the plan, seen from above like the period maps.
+const LANE_Y = { left: 134, center: 224, right: 314 };
+const LANE_S = { left: 1, center: 1, right: 1 };
+const RESERVE_Y = 224;
+const xOf = (x) => 70 + x * 6.6;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const INK = "#0c1a38";
+// Colors of the period plans: Americans in blue, British in red, the Germans in a darker blue-black.
+const FILL = { P: "#1d3f8f", B: "#c8102e", H: "#2e2a4a" };
 
-function uniformKey(u) {
-  if (u.flag === "P") return (u.kind === "militia" || u.kind === "rifles" ? "militia" : "continental") + (u.worn ? `~${u.worn}` : "");
-  if (u.flag === "H") return u.kind === "jagers" ? "jagers" : "hessian";
-  return "british";
-}
 
-// ---------- the scenery ----------
-function backdrop(b) {
-  const r = REGIONS[b.region];
+// ---------- the plan ----------
+function backdrop(b, rec) {
   let rr = 11;
   const rand = () => { rr = (rr * 16807) % 2147483647; return rr / 2147483647; };
-  // A dusky VGA sky in bands, dithered where the bands meet.
-  const bands = ["#1b1424", "#2a1b2e", "#3d2433", "#5a3238", "#7c4438", "#a65e3c"];
   let s = `<defs>
-    <pattern id="bf-dith" width="2" height="2" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="#000" opacity=".18"/><rect x="1" y="1" width="1" height="1" fill="#000" opacity=".18"/></pattern>
-    <pattern id="bf-grass" width="6" height="4" patternUnits="userSpaceOnUse"><rect width="6" height="4" fill="#4b5a2c"/><rect x="1" y="1" width="1" height="1" fill="#5d6e35"/><rect x="4" y="3" width="1" height="1" fill="#3c4823"/></pattern>
+    <pattern id="bp-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#ffffff"/><line x1="0" y1="0" x2="0" y2="5" stroke="${FILL.P}" stroke-width="1.6"/></pattern>
+    <pattern id="bp-town" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="4" stroke="${INK}" stroke-width=".8"/></pattern>
+    <filter id="bp-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
   </defs>`;
-  bands.forEach((c, i) => { s += `<rect y="${i * 22}" width="${W}" height="23" fill="${c}"/>`; });
-  s += `<rect y="0" width="${W}" height="132" fill="url(#bf-dith)"/>`;
-  // Distant hills, then the field.
-  s += `<path d="M0,132 L60,118 L130,126 L210,108 L300,122 L380,112 L470,124 L560,104 L650,120 L730,110 L800,118 L800,150 L0,150 Z" fill="#2c2a2e"/>`;
-  s += `<path d="M0,146 L90,136 L180,144 L270,132 L370,142 L460,134 L560,144 L660,130 L760,140 L800,138 L800,160 L0,160 Z" fill="#383a30"/>`;
-  s += `<rect y="156" width="${W}" height="${H - 156}" fill="url(#bf-grass)"/>`;
-  // The lanes, with a faint line between them.
-  for (const y of [232, 312]) s += `<rect y="${y}" width="${W}" height="2" fill="#3c4823" opacity=".7"/>`;
-  // Ground features.
-  for (const l of LANES) {
-    const g = b.lanes[l].ground, y = LANE_Y[l], k = LANE_S[l];
-    const defX = b.defender === "P" ? 0.25 : 0.75;
-    if (g === "woods") for (let i = 0; i < 26; i++) {
-      const x = rand() * W, h = (16 + rand() * 14) * k, yy = y - 26 * k - rand() * 10;
-      s += `<rect x="${(x - 1).toFixed(0)}" y="${(yy).toFixed(0)}" width="${Math.max(2, 3 * k).toFixed(0)}" height="${(h * 0.5).toFixed(0)}" fill="#2b1d12"/><path d="M${x.toFixed(0)},${(yy - h).toFixed(0)} l${(-8 * k).toFixed(0)},${(h * 0.8).toFixed(0)} h${(16 * k).toFixed(0)} Z" fill="${rand() < 0.5 ? "#1f3320" : "#2a4428"}"/>`;
-    }
-    if (g === "hill") s += `<path d="M${W * defX - 190},${y + 16} Q${W * defX},${y - 40} ${W * defX + 190},${y + 16} Z" fill="#5b6a34"/><path d="M${W * defX - 150},${y + 16} Q${W * defX},${y - 30} ${W * defX + 150},${y + 16} Z" fill="url(#bf-dith)"/>`;
-    if (g === "town") for (let i = 0; i < 5; i++) {
-      const x = W * defX - 120 + i * 52, hh = (22 + rand() * 18) * k;
-      s += `<rect x="${x}" y="${y - 30 - hh}" width="${40 * k}" height="${hh}" fill="#6d4a3a" stroke="#120d10" stroke-width="2"/><path d="M${x - 4},${y - 30 - hh} L${x + 20 * k},${y - 46 - hh} L${x + 44 * k},${y - 30 - hh} Z" fill="#3b2620" stroke="#120d10" stroke-width="2"/><rect x="${x + 8}" y="${y - 22 - hh}" width="6" height="6" fill="#e8b84a" opacity=".8"/>`;
-    }
-    if (g === "works") s += `<rect x="${W * defX - (b.defender === "P" ? -60 : 60)}" y="${y - 10}" width="${14}" height="34" fill="#6b5230" stroke="#120d10" stroke-width="2"/>`;
+  // The sheet, with a double ruled border.
+  s += `<rect width="${W}" height="${H}" fill="#fbfaf6"/><rect x="6" y="6" width="${W - 12}" height="${H - 12}" fill="none" stroke="${INK}" stroke-width="2"/><rect x="11" y="11" width="${W - 22}" height="${H - 22}" fill="none" stroke="${INK}" stroke-width=".7"/>`;
+  // Fields and fences, faint, to give the ground some life.
+  for (let i = 0; i < 14; i++) {
+    const x = 60 + rand() * (W - 140), y = 80 + rand() * (H - 140), len = 40 + rand() * 70, bend = (rand() - 0.5) * 16;
+    s += `<path d="M${x.toFixed(0)},${y.toFixed(0)} q${(len / 2).toFixed(0)},${bend.toFixed(0)} ${len.toFixed(0)},${(rand() * 8 - 4).toFixed(0)}" fill="none" stroke="#b9c2d3" stroke-width=".9" stroke-dasharray="1 2.5"/>`;
   }
+  // The lanes, with dotted lines between them and their names in the margin.
+  for (const y of [179, 269]) s += `<line x1="20" y1="${y}" x2="${W - 20}" y2="${y}" stroke="${INK}" stroke-width=".7" stroke-dasharray="1 4" opacity=".6"/>`;
+  // A road across the field.
+  s += `<path d="M20,${LANE_Y.center + 26} C220,${LANE_Y.center + 14} 420,${LANE_Y.center + 40} ${W - 20},${LANE_Y.center + 22}" fill="none" stroke="${INK}" stroke-width="3.2"/><path d="M20,${LANE_Y.center + 26} C220,${LANE_Y.center + 14} 420,${LANE_Y.center + 40} ${W - 20},${LANE_Y.center + 22}" fill="none" stroke="#fbfaf6" stroke-width="1.8"/>`;
+  // The ground of each lane.
+  for (const l of LANES) {
+    const g = b.lanes[l].ground, y = LANE_Y[l];
+    const defX = b.defender === "P" ? xOf(18) : xOf(82);
+    if (g === "woods") for (let i = 0; i < 70; i++) {
+      const x = 60 + rand() * (W - 120), yy = y - 38 + rand() * 76;
+      s += `<circle cx="${x.toFixed(0)}" cy="${yy.toFixed(0)}" r="${(2.4 + rand() * 1.6).toFixed(1)}" fill="#eef2e8" stroke="${INK}" stroke-width=".6"/><circle cx="${x.toFixed(0)}" cy="${yy.toFixed(0)}" r=".7" fill="${INK}"/>`;
+    }
+    if (g === "hill") for (let ring = 0; ring < 3; ring++) {
+      const rx = 120 - ring * 34, ry = 34 - ring * 9;
+      for (let a = 0; a < 360; a += 9 + ring * 3) {
+        const t = (a * Math.PI) / 180, x1 = defX + Math.cos(t) * rx, y1 = y + Math.sin(t) * ry;
+        s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${(x1 + Math.cos(t) * 6).toFixed(1)}" y2="${(y1 + Math.sin(t) * 3).toFixed(1)}" stroke="${INK}" stroke-width=".7" opacity=".7"/>`;
+      }
+    }
+    if (g === "town") for (let i = 0; i < 9; i++) {
+      const x = defX - 70 + (i % 3) * 48 + rand() * 6, yy = y - 30 + Math.floor(i / 3) * 22;
+      s += `<rect x="${x.toFixed(0)}" y="${yy.toFixed(0)}" width="30" height="14" fill="url(#bp-town)" stroke="${INK}" stroke-width=".8"/>`;
+    }
+    if (g === "works") {
+      const x = defX + (b.defender === "P" ? 34 : -34);
+      let d = `M${x},${y - 40}`;
+      for (let k = 0; k < 8; k++) d += ` L${x + (k % 2 ? 8 : -8) * (b.defender === "P" ? 1 : -1)},${y - 40 + (k + 1) * 10}`;
+      s += `<path d="${d}" fill="none" stroke="${INK}" stroke-width="2.2"/>`;
+    }
+  }
+  // The cartouche, the references, the compass and the scale.
+  s += `<g transform="translate(18,16)"><rect width="230" height="34" fill="#ffffff" stroke="${INK}" stroke-width="1.2"/><rect x="3" y="3" width="224" height="28" fill="none" stroke="${INK}" stroke-width=".5"/>
+    <text x="115" y="15" text-anchor="middle" class="bp-title">Plan of the Battle of ${esc(rec.place)}</text>
+    <text x="115" y="27" text-anchor="middle" class="bp-sub">${esc(rec.date)}</text></g>`;
+  s += `<g transform="translate(${W - 170},20)" class="bp-ref"><text x="0" y="0">References</text>
+    <rect x="0" y="6" width="14" height="6" fill="${FILL.P}"/><text x="19" y="12">American</text>
+    <rect x="80" y="6" width="14" height="6" fill="${FILL.B}"/><text x="99" y="12">British</text>
+    <rect x="0" y="18" width="14" height="6" fill="url(#bp-hatch)" stroke="${FILL.P}" stroke-width=".6"/><text x="19" y="24">Militia</text>
+    <rect x="80" y="18" width="14" height="6" fill="${FILL.H}"/><text x="99" y="24">Hessian</text></g>`;
+  s += `<g transform="translate(${W - 46},${H - 50})"><circle r="16" fill="none" stroke="${INK}" stroke-width=".6"/><path d="M0,-18 L4,0 L0,18 L-4,0 Z" fill="${INK}"/><path d="M-18,0 L0,3 L18,0 L0,-3 Z" fill="none" stroke="${INK}" stroke-width=".6"/><text y="-21" text-anchor="middle" class="bp-ref">N</text></g>`;
+  s += `<g transform="translate(36,${H - 30})" class="bp-ref"><line x1="0" y1="0" x2="120" y2="0" stroke="${INK}" stroke-width="1.2"/>${[0, 30, 60, 90, 120].map((x) => `<line x1="${x}" y1="-3" x2="${x}" y2="3" stroke="${INK}"/>`).join("")}<text x="0" y="-6">Scale of yards</text><text x="0" y="13">0</text><text x="120" y="13" text-anchor="middle">500</text></g>`;
   return s;
 }
 
-// A field gun, in pixels.
-const CANNON = `<g shape-rendering="crispEdges"><rect x="-2" y="-9" width="18" height="4" fill="#2a2a30"/><rect x="14" y="-10" width="3" height="6" fill="#1a1a1e"/><rect x="-6" y="-6" width="12" height="3" fill="#5a3a1e"/><rect x="-4" y="-7" width="8" height="8" fill="#120d10"/><rect x="-3" y="-6" width="6" height="6" fill="#7a5226"/><rect x="-1" y="-4" width="2" height="2" fill="#120d10"/></g>`;
 
 // ---------- the screen ----------
-export function playBattle({ state, att, def, regionId, opts = {}, onDone, replay = null, dateText = null }) {
+export function playBattle({ state, att, def, regionId, opts = {}, onDone, replay = null, dateText = null, placeName = null }) {
   if (replay) regionId = replay.region;
   const b = replay ? fromRecord(replay) : setupBattle(state, att, def, regionId, opts, ((state.gameSeed ?? 1) * 7919 + state.turn * 131 + regionId.length * 17) >>> 0);
   // The recording of this battle, for replays.
   const rec = replay || {
-    v: 1, region: regionId, place: REGIONS[regionId].name, date: dateText || dateLabel(state), attacker: b.attacker, defender: b.defender, lanes: b.lanes,
+    v: 1, region: regionId, place: placeName || REGIONS[regionId].name, date: dateText || dateLabel(state), attacker: b.attacker, defender: b.defender, lanes: b.lanes,
     gName: b.generals.P ? b.generals.P.short : "The colonel", armyMen: b.armyMen,
     units: b.units.map((u) => ({ id: u.id, side: u.side, flag: u.flag, kind: u.kind, name: u.name, start: u.start, level: u.level || 0, honors: u.honors || 0, worn: u.worn || 0, men: u.men, morale: u.morale, x: u.x, lane: u.lane, state: u.state })),
     frames: [], events: [], fallen: [],
@@ -107,105 +128,98 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone, repla
   const root = document.createElement("div");
   root.id = "battlefield";
   root.innerHTML = `
-    <div class="bf-top"><div class="bf-title">The Battle of ${esc(REGIONS[regionId].name)}</div><div class="bf-clock" id="bf-clock"></div></div>
+    <div class="bf-top"><div class="bf-title">The Battle of ${esc(rec.place)}</div><div class="bf-clock" id="bf-clock"></div></div>
     <div class="bf-strength"><span class="bf-p" id="bf-sp"></span><span class="bf-b" id="bf-sb"></span></div>
     <div class="bf-stage"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" id="bf-svg" xmlns="http://www.w3.org/2000/svg">
-      <defs id="bf-defs"></defs><g id="bf-back">${backdrop(b)}</g><g id="bf-fallen"></g><g id="bf-units"></g><g id="bf-smoke"></g></svg>
+      <defs id="bf-defs"></defs><g id="bf-back">${backdrop(b, rec)}</g><g id="bf-fallen"></g><g id="bf-units"></g><g id="bf-smoke"></g></svg>
       <div class="bf-result" id="bf-result" hidden></div></div>
     <div class="bf-ticker" id="bf-ticker"></div>
     <div class="bf-controls" id="bf-controls"></div>`;
   document.body.appendChild(root);
   const $ = (id) => root.querySelector("#" + id);
-  const defs = $("bf-defs");
-  const made = new Set();
-  const sym = (key, pose) => {
-    const id = `bf-${key}-${pose}`;
-    const [base, worn] = key.split("~");
-    if (!made.has(id)) { made.add(id); defs.insertAdjacentHTML("beforeend", `<g id="${id}">${pixelSoldier(worn ? { ...UNIFORMS[base], worn: Number(worn) } : UNIFORMS[base], pose, 40)}</g>`); }
-    return id;
-  };
 
-  // ---- drawing the regiments ----
-  function unitPose(u) {
-    if (u.state === "routed") return "routed";
-    if (u.melee || u.firing) return "fire";
-    if (u.moving) return "walk";
-    return "stand";
-  }
+  // ---- drawing the regiments, as blocks on the plan ----
   function unitBody(u) {
-    const key = uniformKey(u), dir = u.side === "P" ? 1 : -1, pose = unitPose(u);
-    const n = Math.max(1, Math.min(8, Math.ceil(u.men / 220)));
+    const dir = u.side === "P" ? 1 : -1;
+    const col = u.flag === "H" ? FILL.H : FILL[u.side];
+    const front = Math.max(14, Math.min(52, 10 + Math.sqrt(Math.max(1, u.men)) * 0.95));
+    const op = (0.35 + 0.65 * Math.max(0, u.morale) / 100).toFixed(2);
     let s = "";
-    if (u.kind === "guns") {
-      s += `<g transform="scale(${dir * 1.6},1.6)">${CANNON}</g>`;
-      for (let i = 0; i < Math.min(3, n + 1); i++) s += `<use href="#${sym(key, pose === "fire" ? (i % 2 ? "load" : "stand") : pose === "walk" ? "walk1" : "stand")}" transform="translate(${-dir * (14 + i * 9)},${2 + (i % 2) * 4}) scale(${dir},1)"/>`;
-    } else for (let i = 0; i < n; i++) {
-      const col = Math.floor(i / 2), row = i % 2;
-      const x = -dir * col * 10 + (row ? -dir * 4 : 0), y = row ? 6 : 0;
-      const face = pose === "routed" ? -dir : dir;
-      const delay = ((i * 0.41 + u.id.length * 0.3) % 1.6).toFixed(2);
-      if (pose === "fire") s += `<g transform="translate(${x},${y}) scale(${face},1)"><use class="bs-load" style="animation-delay:-${delay}s" href="#${sym(key, "load")}"/><use class="bs-fire" style="animation-delay:-${delay}s" href="#${sym(key, "fire")}"/></g>`;
-      else if (pose === "walk" || pose === "routed") s += `<g transform="translate(${x},${y}) scale(${face},1)"><use class="bf-a" style="animation-delay:-${(i * 0.13).toFixed(2)}s" href="#${sym(key, "walk1")}"/><use class="bf-b" style="animation-delay:-${(i * 0.13).toFixed(2)}s" href="#${sym(key, "walk2")}"/></g>`;
-      else s += `<use transform="translate(${x},${y}) scale(${face},1)" href="#${sym(key, "stand")}"/>`;
+    if (u.state === "routed") {
+      // A broken regiment: scattered fragments, and an arrow back the way they came.
+      for (let i = 0; i < 4; i++) s += `<rect x="${-dir * (i * 7) - 3}" y="${(i % 2 ? 6 : -8) - 2 + i * 2}" width="5" height="${4 + (i % 3) * 2}" fill="${col}" opacity=".6" transform="rotate(${(i * 37) % 60 - 30})"/>`;
+      s += `<path d="M${-dir * 4},0 H${-dir * 30} M${-dir * 24},-4 L${-dir * 30},0 L${-dir * 24},4" fill="none" stroke="${col}" stroke-width="1.4"/>`;
+    } else if (u.kind === "guns") {
+      // A battery: the gun's carriage, its barrel and wheels.
+      s += `<rect x="-7" y="-5" width="10" height="10" fill="${col}" fill-opacity="${op}" stroke="${INK}" stroke-width=".8"/><line x1="0" y1="0" x2="${dir * 16}" y2="0" stroke="${INK}" stroke-width="2.4"/><circle cx="-2" cy="-7" r="2.6" fill="#fff" stroke="${INK}" stroke-width=".8"/><circle cx="-2" cy="7" r="2.6" fill="#fff" stroke="${INK}" stroke-width=".8"/>`;
+    } else if (u.kind === "rifles" || u.kind === "jagers") {
+      // Riflemen in open order: a dotted skirmish line.
+      for (let y = -front / 2; y <= front / 2; y += 5) s += `<rect x="-2" y="${y.toFixed(1)}" width="3.4" height="3.4" fill="${col}" fill-opacity="${op}"/>`;
+    } else {
+      // A line regiment in two ranks; militia hatched instead of solid.
+      const fill = u.kind === "militia" ? "url(#bp-hatch)" : col;
+      s += `<rect x="${dir > 0 ? -9 : 2}" y="${-front / 2}" width="5" height="${front}" fill="${fill}" fill-opacity="${op}" stroke="${col}" stroke-width=".8"/>`;
+      s += `<rect x="${dir > 0 ? -2 : -5}" y="${-front / 2}" width="5" height="${front}" fill="${fill}" fill-opacity="${op}" stroke="${col}" stroke-width=".8"/>`;
+      if (u.kind === "grenadiers") s += `<rect x="-11" y="${-front / 2 - 3}" width="22" height="2" fill="${INK}"/>`;
     }
-    // The regiment's colors, carried at the back.
+    // Fire: fine lines toward the enemy while the regiment fires; crossed swords in close combat.
+    if (u.state === "ok" && u.firing) for (let i = -1; i <= 1; i++) s += `<line class="bp-fire" x1="${dir * 6}" y1="${i * front / 3}" x2="${dir * 26}" y2="${i * front / 3 + i * 2}" stroke="${col}" stroke-width=".9" stroke-dasharray="3 2"/>`;
+    if (u.state === "ok" && u.melee) s += `<path d="M${dir * 8},-7 l10,14 M${dir * 8 + 10},-7 l-10,14" stroke="${INK}" stroke-width="1.6"/>`;
+    // The colors on a staff at the rear, with a streamer for each battle honor.
     if (u.state === "ok") {
-      const back = -dir * (Math.ceil(n / 2) * 10 + 4);
-      s += `<path d="M${back},4 V-46" stroke="#2b1d12" stroke-width="1.6"/><g class="flag" transform="translate(${back},-46) scale(${1.05})">${flag(u.flag)}</g>`;
-      // Battle honors: a streamer on the colors for each one.
-      for (let i = 0; i < Math.min(4, u.honors || 0); i++) s += `<rect x="${back + 1}" y="${-46 + 11 + i * 2}" width="${7 - i}" height="1.4" fill="${i % 2 ? "#c8102e" : "#f4efe2"}"/>`;
+      const back = -dir * 12;
+      s += `<path d="M${back},${-front / 2} V${-front / 2 - 16}" stroke="${INK}" stroke-width="1"/><g transform="translate(${back},${-front / 2 - 16}) scale(.7)">${flag(u.flag)}</g>`;
+      for (let i = 0; i < Math.min(4, u.honors || 0); i++) s += `<rect x="${back + 1}" y="${-front / 2 - 8 + i * 1.6}" width="${6 - i}" height="1" fill="${i % 2 ? "#c8102e" : INK}"/>`;
     }
-    // Name, strength and morale.
-    const w = 46;
+    // Name, strength and morale, in the engraver's hand.
+    const w = 54;
     const men = Math.max(0, u.men / u.start), mor = Math.max(0, u.morale / 100);
-    s += `<g transform="translate(${-w / 2},${-62})" class="bf-tag"><text x="${w / 2}" y="-3" text-anchor="middle">${esc(u.name)}${u.level ? " " + "★".repeat(u.level) : ""}</text>
-      <rect width="${w}" height="4" fill="#120d10"/><rect width="${(w * men).toFixed(1)}" height="4" fill="${u.side === "P" ? "#6f8fd6" : "#d8564a"}"/>
-      <rect y="5" width="${w}" height="3" fill="#120d10"/><rect y="5" width="${(w * mor).toFixed(1)}" height="3" fill="${mor > 0.5 ? "#e8d9a8" : mor > 0.25 ? "#e8a14a" : "#e0442f"}"/></g>`;
+    s += `<g transform="translate(${-w / 2},${-front / 2 - 28})" class="bf-tag"><text x="${w / 2}" y="-2" text-anchor="middle">${esc(u.name)}${u.level ? " " + "★".repeat(u.level) : ""}</text>
+      <rect width="${w}" height="3" fill="#dfe4ee"/><rect width="${(w * men).toFixed(1)}" height="3" fill="${col}"/>
+      <rect y="4" width="${w}" height="2" fill="#dfe4ee"/><rect y="4" width="${(w * mor).toFixed(1)}" height="2" fill="${mor > 0.5 ? INK : mor > 0.25 ? "#b0601a" : "#c8102e"}"/></g>`;
     return s;
   }
-  // Where a regiment stands on screen. Several in one lane stand one behind the other, a little staggered.
+  // Where a regiment stands on the plan. Several in one lane form one behind the other.
   function placeOf(u) {
-    if (u.lane === "reserve") return [u.side === "P" ? xOf(3) : xOf(97), RESERVE_Y, 0.74];
+    if (u.lane === "reserve") return [u.side === "P" ? xOf(-4) : xOf(104), RESERVE_Y + (u.side === "P" ? 0 : 0), 0.85];
     const mates = b.units.filter((v) => v.side === u.side && v.lane === u.lane && v.state !== "withdrawn");
     const i = mates.indexOf(u), dir = u.side === "P" ? 1 : -1;
-    return [xOf(u.x) - dir * i * 22, LANE_Y[u.lane] + (i % 2 ? 14 : 0) - (mates.length > 1 && i === 0 ? 8 : 0), LANE_S[u.lane]];
+    return [xOf(u.x) - dir * i * 26, LANE_Y[u.lane] + (i % 2 ? 18 : 0) - (mates.length > 1 ? 9 : 0), 1];
   }
   function drawUnits() {
     const layer = $("bf-units");
-    const order = b.units.slice().sort((p, q) => placeOf(p)[1] - placeOf(q)[1]);
-    for (const u of order) {
+    for (const u of b.units) {
       let el = layer.querySelector(`[data-u="${u.id}"]`);
-      if (!el) { el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.dataset.u = u.id; el.classList.add("bf-unit"); }
-      if (u.state === "withdrawn" || (u.state === "routed" && (u.x < -6 || u.x > 106))) { el.remove(); continue; }
-      const key = [unitPose(u), Math.ceil(u.men / 220), Math.round(u.men / u.start * 20), Math.round(u.morale / 5), u.lane, u.state].join("|");
+      if (!el) { el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.dataset.u = u.id; el.classList.add("bf-unit"); layer.appendChild(el); }
+      if (u.state === "withdrawn" || (u.state === "routed" && (u.x < -12 || u.x > 112))) { el.remove(); continue; }
+      const key = [u.state, u.firing, u.melee, Math.round(u.men / 50), Math.round(u.morale / 5), u.lane].join("|");
       if (el.dataset.key !== key) { el.dataset.key = key; el.innerHTML = unitBody(u); }
       const [x, y, k] = placeOf(u);
       el.style.transform = `translate(${x.toFixed(1)}px, ${y}px) scale(${k})`;
-      el.style.opacity = u.lane === "reserve" ? 0.8 : u.state === "routed" ? 0.75 : 1;
-      layer.appendChild(el); // nearer lanes drawn over farther ones
+      el.style.opacity = u.lane === "reserve" ? 0.75 : 1;
     }
-    // Men who fell, left on the field.
+    // Where men fell, marked on the plan with small crosses.
     const fl = $("bf-fallen");
     for (; fallenShown < b.fallen.length; fallenShown++) {
       const [fx, lane, side] = b.fallen[fallenShown];
-      const key = side === "P" ? "continental" : "british";
-      fl.insertAdjacentHTML("beforeend", `<use href="#${sym(key, "fallen")}" transform="translate(${xOf(fx).toFixed(0)},${LANE_Y[lane] + 8}) scale(${LANE_S[lane] * (side === "P" ? 1 : -1)},${LANE_S[lane]})" opacity=".85"/>`);
+      const x = xOf(fx), y = LANE_Y[lane] + (Math.random() - 0.5) * 40;
+      fl.insertAdjacentHTML("beforeend", `<path d="M${(x - 2).toFixed(1)},${(y - 2).toFixed(1)} l4,4 m0,-4 l-4,4" stroke="${side === "P" ? FILL.P : FILL.B}" stroke-width=".8" opacity=".55"/>`);
     }
   }
-  // Powder smoke drifting up from every firing line.
+  // Powder smoke: soft grey clouds drifting off each firing line.
   function puffs() {
     const layer = $("bf-smoke");
     for (const u of b.units) {
       if (!(u.firing || u.melee) || u.state !== "ok") continue;
-      const [x, y, k] = placeOf(u), dir = u.side === "P" ? 1 : -1;
-      for (let i = 0; i < (u.kind === "guns" ? 3 : 2); i++) {
-        const px = x + dir * (18 + Math.random() * 14) * k, py = y - (14 + Math.random() * 12) * k, sz = (6 + Math.random() * 8) * k;
-        const p = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        p.setAttribute("x", px.toFixed(0)); p.setAttribute("y", py.toFixed(0));
-        p.setAttribute("width", sz.toFixed(0)); p.setAttribute("height", sz.toFixed(0));
-        p.setAttribute("class", "bf-puff");
+      const [x, y] = placeOf(u), dir = u.side === "P" ? 1 : -1;
+      for (let i = 0; i < (u.kind === "guns" ? 2 : 1); i++) {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+        p.setAttribute("cx", (x + dir * (16 + Math.random() * 16)).toFixed(0)); p.setAttribute("cy", (y + (Math.random() - 0.5) * 30).toFixed(0));
+        p.setAttribute("rx", (12 + Math.random() * 10).toFixed(0)); p.setAttribute("ry", (8 + Math.random() * 6).toFixed(0));
+        p.setAttribute("class", "bf-cloud");
+        p.setAttribute("filter", "url(#bp-soft)");
         layer.appendChild(p);
-        setTimeout(() => p.remove(), 2400);
+        setTimeout(() => p.remove(), 3000);
       }
     }
   }
@@ -377,7 +391,7 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone, repla
     try {
       const svgEl = $("bf-svg").cloneNode(true);
       svgEl.setAttribute("width", W); svgEl.setAttribute("height", H);
-      svgEl.insertAdjacentHTML("afterbegin", `<style>.bf-tag text{font-family:monospace;font-size:11px;fill:#f4efe2;paint-order:stroke;stroke:#120d10;stroke-width:2.4px}.bf-puff{fill:#e9e4d8;opacity:.6}.bs-fire,.bf-b{display:none}</style>`);
+      svgEl.insertAdjacentHTML("afterbegin", `<style>.bf-tag text{font-family:Georgia,serif;font-size:10px;fill:#0c1a38;paint-order:stroke;stroke:#fbfaf6;stroke-width:3px}.bp-title{font-family:Georgia,serif;font-size:13px;fill:#0c1a38}.bp-sub,.bp-ref,.bp-lane{font-family:Georgia,serif;font-size:9px;fill:#0c1a38;font-style:italic}.bf-cloud{fill:#9aa0aa;opacity:.35}</style>`);
       // CSS transforms don't survive the trip into an image, so write each regiment's place as an attribute.
       for (const el of svgEl.querySelectorAll(".bf-unit")) {
         const m = (el.style.transform || "").match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)\s*scale\(([-\d.]+)\)/);

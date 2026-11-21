@@ -112,24 +112,29 @@ export function bust(coat, scale = 1) {
   </g>`;
 }
 
-export const SOLDIER_DEFS = `<clipPath id="medal-clip"><circle r="8"/></clipPath>`;
+export const SOLDIER_DEFS = `<clipPath id="medal-clip"><circle r="8"/></clipPath>
+  <pattern id="plan-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="#ffffff"/><line x1="0" y1="0" x2="0" y2="4" stroke="#1d3f8f" stroke-width="1.5"/></pattern>`;
 
 // Build the inside of an army's map marker. Coordinates are relative to the region's center.
 export function armyFigure({ side, hessian, men, regulars, militia, general, short, moved, dugIn, selected, label, unsupplied, cond = 100 }) {
   const kind = side === "P" ? "P" : hessian ? "H" : "B";
-  // The army's condition shows on its men: faded and shabby when weary, in rags and bandages when worn out.
+  // Drawn like the period battle plans: each brigade a block, Americans blue (militia hatched), British red,
+  // Hessians blue-black. A worn-out army's blocks fade and break up.
   const worn = cond < 35 ? 2 : cond < 65 ? 1 : 0;
-  const dress = (u) => (worn ? { ...u, worn } : u);
-  const main = dress(side === "P" ? (militia > regulars ? UNIFORMS.militia : UNIFORMS.continental) : hessian ? UNIFORMS.hessian : UNIFORMS.british);
-  const second = side === "P" && militia > 0 && regulars > 0 ? dress(militia > regulars ? UNIFORMS.continental : UNIFORMS.militia) : main;
-  const count = men >= 8000 ? 3 : men >= 2500 ? 2 : 1;
-  const spots = count === 3 ? [[-12, -3, 0.98, second], [12, -3, 0.98, main], [0, 0, 1.2, main]] : count === 2 ? [[-7, -2, 1.08, second], [7, 0, 1.2, main]] : [[0, 0, 1.2, main]];
+  const blocks = Math.max(1, Math.min(4, Math.round(men / 2600)));
+  const milBlocks = side === "P" && militia > 0 ? Math.max(militia >= regulars ? blocks - (regulars > 300 ? 1 : 0) : Math.round(blocks * militia / Math.max(1, men)), 0) : 0;
+  const color = side === "P" ? "#1d3f8f" : hessian ? "#2e2a4a" : "#c8102e";
 
   let s = `<rect x="-26" y="-60" width="52" height="78" fill="transparent"/>`;
   if (selected) s += `<ellipse cx="0" cy="1" rx="23" ry="7" fill="#ffffff" stroke="#c8102e" stroke-width="1.5" opacity=".9"/>`;
   s += `<ellipse cx="0" cy="1" rx="17" ry="4.2" fill="#000" opacity=".22"/>` + CAMPFIRE;
   if (general) s += `<path d="M-17,0 V-54" stroke="#4a3520" stroke-width="1.3"/><g class="flag" transform="translate(-17,-54)">${flag(kind)}</g>`;
-  for (const [x, y, sc, u] of spots) s += `<g transform="translate(${x},${y}) scale(${sc})">${figure(u)}</g>`;
+  const bw = 7, gap = 3, total = blocks * bw + (blocks - 1) * gap;
+  for (let i = 0; i < blocks; i++) {
+    const x = -total / 2 + i * (bw + gap), mil = i >= blocks - milBlocks;
+    const h = 24 - (worn === 2 && i % 2 ? 6 : 0);
+    s += `<rect x="${x}" y="${-2 - h}" width="${bw}" height="${h}" fill="${mil ? "url(#plan-hatch)" : color}" fill-opacity="${worn === 2 ? 0.5 : worn ? 0.75 : 1}" stroke="${mil ? color : "#ffffff"}" stroke-width="1"${worn ? ' stroke-dasharray="3 1.5"' : ""}/>`;
+  }
   if (dugIn) s += `<path d="M-21,2 Q-12,-9 0,-8 Q12,-9 21,2 Z" fill="#8a6d45" stroke="#4d3b28" stroke-width=".8"/><path d="M-15,-3 l-3,-5 M-7,-6 l-2,-5 M2,-7 l1,-5 M10,-5 l3,-5 M16,-2 l4,-4" stroke="#4d3b28" stroke-width="1.2"/>`;
   if (general) s += medallion(general, short, side);
   // Cut off from supply: a red warning badge.

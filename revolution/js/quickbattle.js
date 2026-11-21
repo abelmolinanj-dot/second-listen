@@ -45,7 +45,7 @@ export function runQuickBattle(q, onDone) {
   for (const g of [q.you.general, q.them.general]) if (g && state.generals[g]) state.generals[g].status = "active";
   const att = q.side === "attack" ? mine : theirs, def = q.side === "attack" ? theirs : mine;
   playBattle({
-    state, att, def, regionId: q.region, opts: { surprise: !!q.surprise }, dateText: q.date,
+    state, att, def, regionId: q.region, opts: { surprise: !!q.surprise }, dateText: q.date, placeName: q.title,
     onDone: (res) => {
       if (!res || typeof res !== "object") { onDone(null); return; }
       const won = (q.side === "attack") === res.attackerWins;

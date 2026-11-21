@@ -51,7 +51,7 @@ export function smokeColumn(x, y, { fire = false, size = 1 } = {}) {
   let s = `<g class="smoke-col" transform="translate(${x.toFixed(0)},${y.toFixed(0)}) scale(${size})">`;
   for (let i = 0; i < 7; i++) {
     const d = (i * 0.55).toFixed(2), w = 4 + (i % 3) * 2;
-    s += `<rect class="puff" x="${(-w / 2 + ((i * 7) % 5) - 2).toFixed(0)}" y="-6" width="${w}" height="${w}" style="animation-delay:-${d}s"/>`;
+    s += `<circle class="puff" cx="${(((i * 7) % 5) - 2).toFixed(0)}" cy="-6" r="${(w / 1.6).toFixed(1)}" style="animation-delay:-${d}s"/>`;
   }
   if (fire) s += `<g class="flames"><rect x="-4" y="-4" width="3" height="4" fill="#e8501f"/><rect x="-1" y="-6" width="3" height="6" fill="#ffb02e"/><rect x="2" y="-3" width="3" height="3" fill="#e8501f"/><rect x="-0" y="-4" width="1" height="2" fill="#fff2a8"/></g>`;
   return s + `</g>`;
@@ -62,7 +62,8 @@ export const CAMPFIRE = `<g class="campfire" transform="translate(13,6)" shape-r
 
 // ---------- watching the British turn ----------
 // A pixel ship for fleets on the move.
-export const SHIP = `<g class="fleet-ship" shape-rendering="crispEdges"><rect x="-10" y="0" width="20" height="3" fill="#3a2a1c"/><rect x="-8" y="3" width="16" height="2" fill="#2a1d12"/><rect x="-1" y="-15" width="1" height="15" fill="#3a2a1c"/><rect x="5" y="-11" width="1" height="11" fill="#3a2a1c"/><rect x="-6" y="-10" width="1" height="10" fill="#3a2a1c"/><rect x="-4" y="-13" width="6" height="7" fill="#f4efe2"/><rect x="2" y="-9" width="5" height="5" fill="#f4efe2"/><rect x="-9" y="-8" width="5" height="5" fill="#f4efe2"/><rect x="0" y="-16" width="4" height="2" fill="#c8102e"/></g>`;
+// A ship of the line as the engravers drew them on period maps: dark hull, three masts, white sails, a red pennant.
+export const SHIP = `<g class="fleet-ship"><path d="M-11,0 L11,0 L8,4 L-8,4 Z" fill="#0c1a38"/><path d="M-1,-1 V-17 M6,-1 V-13 M-7,-1 V-12" stroke="#0c1a38" stroke-width=".9"/><path d="M-1,-16 Q4,-12 -1,-6 Z M-1,-6 Q4,-3 -1,-1 Z M6,-12 Q10,-9 6,-5 Z M-7,-11 Q-3,-8 -7,-4 Z" fill="#ffffff" stroke="#0c1a38" stroke-width=".5"/><path d="M-1,-17 l5,1.2 l-5,1.2" fill="#c8102e"/></g>`;
 
 // The path of an arrow between two map points, bowed a little so overlapping moves stay readable.
 export function arrowPath([x0, y0], [x1, y1], bow = 0.18) {

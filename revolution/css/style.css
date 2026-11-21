@@ -606,7 +606,7 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 @keyframes flicker { 50% { transform: scaleY(.7) translateX(.5px); opacity: .85; } }
 /* Smoke rising over battlefields, in pixel puffs. */
 .smoke-col { pointer-events: none; }
-.smoke-col .puff { fill: #8f8a84; stroke: #4a4440; stroke-width: .4; animation: puff-rise 3.8s linear infinite; transform-box: fill-box; }
+.smoke-col .puff { fill: #8f949e; opacity: .55; filter: blur(1.2px); animation: puff-rise 3.8s linear infinite; transform-box: fill-box; }
 @keyframes puff-rise { 0% { transform: translate(0, 0) scale(.6); opacity: 0; } 12% { opacity: .85; } 100% { transform: translate(9px, -46px) scale(2.1); opacity: 0; } }
 /* The British turn: arrows drawn across the map, fleets sailing along them. */
 #replay { pointer-events: none; }
@@ -727,3 +727,27 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .closeup-art .painting { position: absolute; inset: 0; background-size: cover; background-position: center 35%; animation: kenburns 24s ease-out forwards; }
 .closeup-art .painting::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgba(0,0,0,.65)); }
 .sp-art { height: 150px; margin: -16px -20px 12px; background-size: cover; background-position: center 40%; border-bottom: 3px solid #c8102e; }
+
+/* ---------- the battlefield as a period battle plan ---------- */
+#battlefield { font-family: var(--sans); font-size: 15px; }
+#battlefield .bf-title { font-family: var(--serif); font-size: 23px; text-transform: none; letter-spacing: 0; }
+#battlefield .bf-clock { font-size: 14px; }
+#battlefield .bf-ev { font-size: 14.5px; line-height: 1.35; }
+#battlefield .bf-h { font-size: 14px; }
+#battlefield .bf-unitname b { font-family: var(--serif); font-size: 17px; }
+#battlefield .bf-unitname small { font-size: 13px; }
+#battlefield .bf-btn { font-size: 13.5px; padding: 5px 10px; border-radius: 4px; }
+#battlefield .bf-big { font-size: 16px; border-radius: 4px; font-weight: 600; }
+#battlefield .bf-verdict { font-family: var(--serif); font-size: 32px; text-transform: none; }
+#battlefield .bf-card p { font-size: 15px; }
+#battlefield .bf-card ul { font-size: 14px; }
+#bf-svg { image-rendering: auto; background: #fbfaf6; }
+.bf-tag text { font-family: "IM Fell English", Georgia, serif; font-size: 10.5px; fill: #0c1a38; paint-order: stroke; stroke: #fbfaf6; stroke-width: 3px; }
+.bp-title { font-family: "IM Fell English SC", "IM Fell English", Georgia, serif; font-size: 14px; fill: #0c1a38; }
+.bp-sub, .bp-ref, .bp-lane { font-family: "IM Fell English", Georgia, serif; font-style: italic; font-size: 10px; fill: #0c1a38; }
+.bp-lane { font-size: 11px; }
+.bf-cloud { fill: #8e95a3; opacity: 0; animation: bp-cloud 3s ease-out forwards; }
+@keyframes bp-cloud { 0% { opacity: 0; } 20% { opacity: .38; } 100% { opacity: 0; transform: translate(10px, -14px); } }
+.bp-fire { animation: bp-fire .45s steps(2) infinite; }
+@keyframes bp-fire { 50% { opacity: .15; } }
+@media (prefers-reduced-motion: reduce) { .bf-cloud, .bp-fire { animation: none; } }
