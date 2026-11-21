@@ -33,6 +33,10 @@ export const PORTRAITS = {
   fraser:     "img/portraits/fraser.jpg",     // engraving (New York Public Library)
   riedesel:   "img/portraits/riedesel.jpg",   // engraving, 1856
   stleger:    "img/portraits/stleger.jpg",    // engraving, 1794
+  // Philadelphia, 1777
+  wayne:      "img/portraits/wayne.jpg",      // Charles Willson Peale, 1783
+  knyphausen: "img/portraits/knyphausen.jpg", // engraving (New York Public Library)
+  grey:       "img/portraits/grey.jpg",       // Joseph Collyer after Thomas Lawrence, 1797
   // Founders
   congress:   "img/portraits/congress.jpg",   // John Hancock, by John Singleton Copley, 1765
   franklin:   "img/portraits/franklin.jpg",   // Joseph-Siffred Duplessis, about 1785

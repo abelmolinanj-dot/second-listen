@@ -49,7 +49,7 @@ Phases 1, 2 and 3 of the roadmap are done.
 Next, in order:
 1. The Philadelphia campaign of 1777 is built (`js/data/scenarioPhiladelphia.js`): Howe's voyage, the Brandywine
    council, Paoli, Germantown in the fog, the Delaware forts, the Liberty Bell, Lydia Darragh, the Conway Cabal and
-   Valley Forge. Portraits for Wayne, Knyphausen and Grey still need downloading (ask first). Next mission after it:
+   Valley Forge. Wayne, Knyphausen and Grey have portraits. Next mission after it:
    Valley Forge and Monmouth (Steuben is waiting in the data).
 2. Phase 4: "An Officer's Road", a personal career mode inspired by Mount and Blade: Warband.
 3. Optional: a public-domain period map from Wikimedia Commons for the History Book (approved in principle).

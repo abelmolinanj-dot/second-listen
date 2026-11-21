@@ -50,6 +50,9 @@ Portraits were cropped to head and shoulders and resized to 256×256. Scenes wer
 | `portraits/fraser.jpg` | Simon Fraser | Engraving, between 1777 and 1890 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gen._Simon_Fraser.jpg) (New York Public Library) | Public domain |
 | `portraits/riedesel.jpg` | Baron Friedrich Adolf von Riedesel | Engraving from Max von Eelking's biography, 1856 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Friedrich_Adolf_Riedesel.jpg) | Public domain |
 | `portraits/stleger.jpg` | Barry St. Leger | Engraving, 1794 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Barry_St._Leger_(NYPL_b12349140-421807).jpg) (New York Public Library) | Public domain |
+| `portraits/wayne.jpg` | Anthony Wayne | Charles Willson Peale, 1783 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Anthony_Wayne_Portrait.jpg) (Museum of the American Revolution) | Public domain |
+| `portraits/knyphausen.jpg` | Wilhelm von Knyphausen | Engraving | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wilhelm_von_Knyphausen.jpg) (New York Public Library) | Public domain |
+| `portraits/grey.jpg` | Charles Grey, later 1st Earl Grey | Joseph Collyer the Younger, after Thomas Lawrence, 1797 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:1stEarlGrey.jpg) (Anne S. K. Brown Collection, Brown University) | Public domain |
 
 ## Portraits of the Founders
 
