@@ -55,6 +55,15 @@ export const PORTRAITS = {
   // heister: no public-domain portrait found yet; the drawn bust is used.
 };
 
+// Period paintings of battles, by region, for the battle scenes and the attack screens. Any region without one
+// uses the general victory or defeat painting. Add more as they are downloaded (credit them in img/CREDITS.md).
+export const BATTLE_PAINTINGS = {
+  trenton: "img/scenes/victory.jpg",
+};
+export function battlePainting(regionId, won) {
+  return BATTLE_PAINTINGS[regionId] || (won ? SCENES.victory : SCENES.defeat || SCENES.victory);
+}
+
 export const SCENES = {
   fleet:       "img/scenes/fleet.jpg",       // Archibald Robertson, the fleet at the Narrows, 12 July 1776
   declaration: "img/scenes/declaration.jpg", // John Trumbull, Declaration of Independence (1819)

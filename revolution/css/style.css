@@ -642,9 +642,9 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .cs-bars i:first-child { top: 0; } .cs-bars i:last-child { bottom: 0; }
 @keyframes bars { to { height: 7vh; } }
 .cs-fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.cs-dither { position: absolute; inset: 0; pointer-events: none; background-image: conic-gradient(rgba(0,0,0,.12) 25%, transparent 0 50%, rgba(0,0,0,.12) 0 75%, transparent 0); background-size: 3px 3px; }
-.cs-smoke i { position: absolute; bottom: 30%; width: var(--sz); height: var(--sz); background: rgba(225, 220, 208, .55); box-shadow: 6px -6px 0 rgba(225,220,208,.4); animation: cs-smoke 12s linear infinite; image-rendering: pixelated; }
-@keyframes cs-smoke { 0% { transform: translate(0, 0) scale(.6); opacity: 0; } 15% { opacity: .9; } 100% { transform: translate(14vw, -55vh) scale(2.4); opacity: 0; } }
+.cs-dither { display: none; }
+.cs-smoke i { position: absolute; bottom: 18%; width: calc(var(--sz) * 5); height: calc(var(--sz) * 3.5); border-radius: 50%; background: radial-gradient(closest-side, rgba(232, 228, 218, .5), rgba(232, 228, 218, 0)); filter: blur(6px); animation: cs-smoke 16s linear infinite; }
+@keyframes cs-smoke { 0% { transform: translate(-6vw, 0) scale(.7); opacity: 0; } 20% { opacity: .85; } 100% { transform: translate(16vw, -40vh) scale(1.9); opacity: 0; } }
 .cs-snow i { position: absolute; top: -10px; width: 4px; height: 4px; background: #fff; animation: cs-snow 8s linear infinite; }
 @keyframes cs-snow { to { transform: translate(-6vw, 110vh); } }
 .cs-march { position: absolute; left: 0; bottom: 33%; width: 46vw; max-width: 520px; animation: cs-march 26s linear infinite; image-rendering: pixelated; }
@@ -722,3 +722,7 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .civ-kicker { font-family: var(--caps); font-size: 13px; color: var(--accent); letter-spacing: .03em; }
 .civ h2 { margin: 2px 0 6px; }
 .civ-choices { display: grid; gap: 6px; margin: 10px 0; }
+
+/* Period paintings on the attack and defense screens: a slow pan across the canvas. */
+.closeup-art .painting { position: absolute; inset: 0; background-size: cover; background-position: center 35%; animation: kenburns 24s ease-out forwards; }
+.closeup-art .painting::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgba(0,0,0,.65)); }

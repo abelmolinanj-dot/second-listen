@@ -24,7 +24,7 @@ import { assignRegiments, kindsFor, recordOf, levelOf, LEVELS } from "./regiment
 import { STYLES, setupRival } from "./rival.js";
 import { ROLES, roleGeneral } from "./roles.js";
 import { playScene } from "./scenes.js";
-import { PORTRAITS } from "./data/assets.js";
+import { PORTRAITS, battlePainting } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
 import { sfx, music, soundPrefs, setSfx, setMusic, setVolume, setVoice, speak, stopSpeaking } from "./sound.js";
 import { askConfirm } from "./confirm.js";
@@ -728,7 +728,7 @@ function battleCutscene(r, next) {
   const P = r.attacker.side === "P" ? r.attacker : r.defender, B = r.attacker.side === "P" ? r.defender : r.attacker;
   const ours = (r.attackerWins ? r.attacker : r.defender).side === "P";
   const foe = state.armies[B.id];
-  const art = battleScene({ left: "continental", right: foe && foe.hessian ? "hessian" : "british", terrain: reg.terrain || (reg.city || reg.fort ? "city" : "open"), leftFlag: "P", rightFlag: foe && foe.hessian ? "H" : "B" });
+  const art = `<img src="${battlePainting(r.region, ours)}" alt="">`;
   const ourLoss = ours ? r.winnerLoss : r.loserLoss, theirLoss = ours ? r.loserLoss : r.winnerLoss;
   const who = (x, side) => `${x.general ? `${x.general}'s ` : ""}${menWords(x.men)} ${side === "P" ? "Continentals" : foe && foe.hessian ? "Hessians" : "redcoats"}`;
   const held = ours ? Object.values(state.regiments || {}).filter((g) => g.honors.includes(reg.name)).slice(0, 2).map((g) => g.name) : [];
@@ -741,8 +741,7 @@ function battleCutscene(r, next) {
   if (held.length) lines.push(`${held.join(" and ")} stood firm through it all.`);
   if (ours) music.victory(); else music.dirge();
   $("#modal").hidden = true;
-  const fit = `<div class="cs-battle">${art.replace('preserveAspectRatio="xMidYMax slice"', 'preserveAspectRatio="xMidYMax meet"')}</div>`;
-  playScene(null, { title: `The Battle of ${esc(reg.name)}`, custom: { art: fit, lines, fx: ["smoke"] } }, () => { render(); next(); });
+  playScene(null, { title: `The Battle of ${esc(reg.name)}`, custom: { art, lines, fx: ["smoke"] } }, () => { render(); next(); });
 }
 
 function showBattle(b) {
@@ -829,7 +828,7 @@ function askDefense(ctx) {
   const attNow = p.share < 1 ? { ...att, regulars: Math.round(att.regulars * p.share), militia: att.militia.map((m) => ({ ...m, men: Math.round(m.men * p.share) })) } : att;
   const ag = generalOf(state, att), dg = generalOf(state, def), r = REGIONS[p.target];
   const hold = 1 - winChance(state, attNow, def, p.target, { sea: p.sea });
-  const art = battleScene({ left: militiaMen(def) > def.regulars ? "militia" : "continental", right: att.hessian ? "hessian" : "british", terrain: r.terrain || (r.city || r.fort ? "city" : "open"), leftFlag: "P", rightFlag: att.hessian ? "H" : "B" });
+  const art = `<div class="painting" style="background-image:url('${battlePainting(p.target, false)}')"></div>`;
   const who = dg ? `${dg.short}'s army` : "your troops";
   $("#modal").hidden = false;
   modal(`<div class="closeup-art">${art}<div class="closeup-title"><span>${esc(dateLabel(state))}</span><h2>The British are attacking!</h2></div></div>
@@ -1139,7 +1138,7 @@ function showCloseup() {
   const t = moveTargets(state, a).find((x) => x.region === target);
   const g = ui.split ? null : generalOf(state, a);
   const rec = recommendedTactic(g);
-  const art = battleScene({ left: militiaMen(att) > att.regulars ? "militia" : "continental", right: foe.hessian ? "hessian" : "british", terrain: r.terrain || (r.city || r.fort ? "city" : "open"), leftFlag: "P", rightFlag: foe.hessian ? "H" : "B" });
+  const art = `<div class="painting" style="background-image:url('${battlePainting(target, true)}')"></div>`;
   const desc = {
     charge: "A stronger attack, but heavy losses on both sides.",
     volley: "The ordinary attack.",

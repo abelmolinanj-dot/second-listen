@@ -8,8 +8,8 @@ import { UNIFORMS } from "./soldiers.js";
 
 // Pixel effects drawn over a scene: drifting smoke, falling snow, and soldiers marching across the foot of the picture.
 const FX_FOR = {
-  crossing: ["snow", "march:continental"], winter: ["snow", "march:militia"], victory: ["smoke", "march:continental"],
-  defeat: ["smoke"], saratoga: ["smoke", "march:continental"], fireships: ["smoke"], declaration: [], fleet: [], lake: [], turtle: [],
+  crossing: ["snow"], winter: ["snow"], victory: ["smoke"],
+  defeat: ["smoke"], saratoga: [], fireships: ["smoke"], declaration: [], fleet: [], lake: [], turtle: [],
 };
 function sceneFx(list = []) {
   let s = "";
