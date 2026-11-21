@@ -13,6 +13,7 @@ import { sfx, music, soundPrefs, setSfx, setMusic, setVolume, setVoice, speak, s
 import { askConfirm } from "./confirm.js";
 import { getBook, getDaily, todayKey } from "./book.js";
 import { getLegacy } from "./legacy.js";
+import { ROSTER, levelOf, LEVELS } from "./regiments.js";
 import { ACHIEVEMENTS } from "./data/achievements.js";
 import { FACTS } from "./data/facts.js";
 import { EVENTS } from "./letters.js";
@@ -262,6 +263,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       paintings: [Object.keys(SCENE_CAPTIONS).filter((k) => b.scenes.includes(k)).length, Object.keys(SCENE_CAPTIONS).length],
       notes: [b.facts.length, FACTS.length],
       letters: [letterIds.filter((id) => b.letters.includes(id)).length, letterIds.length],
+      regiments: [Object.keys(getLegacy().regiments || {}).length, ROSTER.length],
     };
     let body = "";
     if (tab === "honors") {
@@ -270,13 +272,17 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       body = `<div class="book-gallery">${Object.entries(SCENE_CAPTIONS).map(([id, [t, who]]) => b.scenes.includes(id) && SCENES[id]
         ? `<figure><div class="bg-img" style="background-image:url('${SCENES[id]}')"></div><figcaption><b>${esc(t)}</b><span>${esc(who)}</span></figcaption></figure>`
         : `<figure class="locked"><div class="bg-img"></div><figcaption><b>Not yet found</b><span>Keep playing</span></figcaption></figure>`).join("")}</div>`;
+    } else if (tab === "regiments") {
+      const L = getLegacy().regiments || {};
+      const list = Object.values(L).sort((x, y) => y.xp - x.xp);
+      body = list.length ? list.map((r) => { const lvl = levelOf(r); return `<div class="honor"><div class="honor-medal">${lvl ? "★".repeat(lvl) : "·"}</div><div><b>${esc(r.name)}</b><span>${esc(r.home)} · ${LEVELS[lvl]} · ${r.battles} battle${r.battles === 1 ? "" : "s"}, ${r.won} won${r.broke ? `, broke ${r.broke} time${r.broke === 1 ? "" : "s"}` : ""}</span>${r.honors.length ? `<p>Battle honors: ${r.honors.map(esc).join(", ")}</p>` : ""}${(r.notes || []).length ? `<small>${r.notes.map(esc).join(". ")}</small>` : ""}</div></div>`; }).join("") : `<p class="page-lead">Your regiments' records are kept here once a campaign ends: every battle they fought, the honors they won, and the times they broke.</p>`;
     } else if (tab === "notes") {
       body = b.facts.length ? b.facts.slice().sort((x, y) => x - y).map((i) => FACTS[i] ? `<div class="didyouknow"><b>Did you know?</b> ${esc(FACTS[i].text)}</div>` : "").join("") : `<p class="page-lead">Notes you read in the monthly newspaper and on the map will be collected here.</p>`;
     } else {
       const seen = letterIds.filter((id) => b.letters.includes(id));
       body = seen.length ? `<ul class="book-letters">${seen.map((id) => { const e = EVENTS[id]; const t = Array.isArray(e.title) ? e.title[0] : typeof e.title === "function" ? id : e.title; return `<li><b>${esc(t)}</b><span>${esc(e.fromName || FIGURES[typeof e.from === "string" ? e.from : ""]?.name || "")}</span></li>`; }).join("")}</ul>` : `<p class="page-lead">Every different letter you receive is listed here.</p>`;
     }
-    const tabs = [["honors", "Honors"], ["paintings", "Paintings"], ["notes", "Notes"], ["letters", "Letters"]];
+    const tabs = [["honors", "Honors"], ["regiments", "Regiments"], ["paintings", "Paintings"], ["notes", "Notes"], ["letters", "Letters"]];
     show("scr-page", `${backBar("History Book")}<div class="page">
       <div class="tabs">${tabs.map(([id, label]) => `<button class="tab ${tab === id ? "on" : ""}" data-tab="${id}">${label} <small>${counts[id][0]}/${counts[id][1]}</small></button>`).join("")}</div>
       <div class="book-body">${body}</div></div>`);

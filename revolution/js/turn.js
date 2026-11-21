@@ -12,6 +12,7 @@ import {
 } from "./rules.js";
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, settleTray } from "./letters.js";
+import { setupRival, updateRival } from "./rival.js";
 
 // Each scenario's scripted letters only fire in that scenario.
 for (const [id, s] of Object.entries(SCENARIOS)) registerEvents(s.SCENARIO_EVENTS, id);
@@ -60,6 +61,9 @@ export function newGame(seed = Date.now() % 2147483647, scenarioId = DEFAULT_SCE
     winterNow: false,
   };
   setupScenario(state);
+  state.regiments ||= {};
+  state.habits ||= {};
+  setupRival(state);
   openMonth(state, { first: true });
   return state;
 }
@@ -256,6 +260,7 @@ function openMonth(state, { first }) {
   // Reinforcements land.
   for (const r of scenarioOf(state).REINFORCEMENTS.filter((x) => x.turn === state.turn)) landReinforcement(state, r);
   scenarioOf(state).SCENARIO.onOpenMonth?.(state);
+  updateRival(state);
 
   deliverMail(state);
   log(state, dateLabel(state), "date");

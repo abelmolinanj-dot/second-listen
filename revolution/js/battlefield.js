@@ -8,7 +8,7 @@ import { pixelSoldier } from "./pixel.js";
 import { UNIFORMS, flag } from "./soldiers.js";
 import { REGIONS } from "./data/regions.js";
 import { sfx, music, battleDrums, stopMusic } from "./sound.js";
-import { menWords } from "./rules.js";
+import { menWords, noteHabit } from "./rules.js";
 
 const W = 800, H = 400;
 const LANE_Y = { left: 196, center: 272, right: 356 };
@@ -120,11 +120,13 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
     if (u.state === "ok") {
       const back = -dir * (Math.ceil(n / 2) * 10 + 4);
       s += `<path d="M${back},4 V-46" stroke="#2b1d12" stroke-width="1.6"/><g class="flag" transform="translate(${back},-46) scale(${1.05})">${flag(u.flag)}</g>`;
+      // Battle honors: a streamer on the colors for each one.
+      for (let i = 0; i < Math.min(4, u.honors || 0); i++) s += `<rect x="${back + 1}" y="${-46 + 11 + i * 2}" width="${7 - i}" height="1.4" fill="${i % 2 ? "#c8102e" : "#f4efe2"}"/>`;
     }
     // Name, strength and morale.
     const w = 46;
     const men = Math.max(0, u.men / u.start), mor = Math.max(0, u.morale / 100);
-    s += `<g transform="translate(${-w / 2},${-62})" class="bf-tag"><text x="${w / 2}" y="-3" text-anchor="middle">${esc(u.name)}</text>
+    s += `<g transform="translate(${-w / 2},${-62})" class="bf-tag"><text x="${w / 2}" y="-3" text-anchor="middle">${esc(u.name)}${u.level ? " " + "★".repeat(u.level) : ""}</text>
       <rect width="${w}" height="4" fill="#120d10"/><rect width="${(w * men).toFixed(1)}" height="4" fill="${u.side === "P" ? "#6f8fd6" : "#d8564a"}"/>
       <rect y="5" width="${w}" height="3" fill="#120d10"/><rect y="5" width="${(w * mor).toFixed(1)}" height="3" fill="${mor > 0.5 ? "#e8d9a8" : mor > 0.25 ? "#e8a14a" : "#e0442f"}"/></g>`;
     return s;
@@ -226,6 +228,8 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
       <div class="bf-actions"><button class="bf-btn" id="bf-pause">${paused ? "Resume" : "Pause"}</button><button class="bf-btn" id="bf-speed">Speed ${speed}x</button><button class="bf-btn" id="bf-retreat">${defending ? "Give up the field" : "Retreat the army"}</button></div>`;
     for (const x of c.querySelectorAll("[data-order]")) x.onclick = () => {
       lanePick[x.dataset.order] = x.dataset.o; sfx.tap();
+      if (x.dataset.o === "charge") noteHabit(state, "charge");
+      if (x.dataset.o === "fallback") noteHabit(state, "retreat");
       if (x.dataset.o === "charge") sfx.charge({ left: -0.3, center: 0, right: 0.3 }[x.dataset.order]);
       applyOrders(); controls();
     };

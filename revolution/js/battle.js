@@ -9,6 +9,7 @@
 
 import { REGIONS } from "./data/regions.js";
 import { armyMen, militiaMen, generalOf, battleFactors, power, QUALITY } from "./rules.js";
+import { assignRegiments, recordOf, levelOf, levelBonus } from "./regiments.js";
 
 export const LANES = ["left", "center", "right"];
 export const LANE_NAMES = { left: "Left", center: "Center", right: "Right" };
@@ -85,10 +86,19 @@ function regiments(state, army, side, rand) {
   const lineUnits = regs > 300 ? Math.max(1, Math.min(slots - milUnits, Math.round(regs / 1300))) : 0;
   for (let i = 0; i < lineUnits; i++) out.push({ kind: "line", men: Math.round(regs / lineUnits) });
   for (let i = 0; i < milUnits; i++) out.push({ kind: "militia", men: Math.round(mil / milUnits) });
-  return out.filter((u) => u.men > 0).map((u, i) => ({
-    id: side + i, side, flag, kind: u.kind, name: name(u.kind), men: u.men, start: u.men, morale: 100,
-    lane: null, x: side === "P" ? 26 : 74, state: "ok", lastFire: -9, firing: false, moving: false, melee: false,
-  }));
+  const list = out.filter((u) => u.men > 0);
+  // Continental units are the army's own named regiments, with their experience and honors.
+  const named = side === "P" && state.armies[army.id] ? assignRegiments(state, state.armies[army.id], list.map((u) => u.kind)) : [];
+  return list.map((u, i) => {
+    const reg = named[i] || null;
+    const rec = reg ? recordOf(state, reg) : null;
+    const level = levelOf(rec);
+    return {
+      id: side + i, side, flag, kind: u.kind, name: reg || name(u.kind), reg, level, vet: levelBonus(level), honors: rec ? rec.honors.length : 0,
+      men: u.men, start: u.men, morale: 100,
+      lane: null, x: side === "P" ? 26 : 74, state: "ok", lastFire: -9, firing: false, moving: false, melee: false,
+    };
+  });
 }
 
 // Spread units over the lanes: guns in the center, the strongest on the flanks, and a reserve if there are four or more.
@@ -128,6 +138,7 @@ export function setupBattle(state, att, def, regionId, opts = {}, seed = 1) {
     fallen: [], // where men fell, for the drawing: [x, lane, side]
     events: [], // things worth saying: { tick, text, kind }
     startMen: { P: armyMen(P), B: armyMen(B) },
+    counterCharge: state.rival && state.rival.style === "counter" ? "B" : null,
     armyMen: { P: armyMen(P), B: armyMen(B) },
   };
   autoDeploy(b.units.filter((u) => u.side === "P"));
@@ -237,7 +248,7 @@ export function step(b) {
       if (g2 <= 4) {
         u.melee = true;
         const shock = (order === "charge" ? 1.6 : 1) * k.melee;
-        hits.push({ to: nearest, men: Math.sqrt(u.men * nearest.men) * shock * K * 1.6 * b.q[side] * depth, morale: 7 * shock / KINDS[nearest.kind].resist * (u.morale / 100), from: u });
+        hits.push({ to: nearest, men: Math.sqrt(u.men * nearest.men) * shock * K * 1.6 * b.q[side] * depth * (u.vet || 1), morale: 7 * shock / KINDS[nearest.kind].resist * (u.morale / 100), from: u });
         continue;
       }
       // Volleys.
@@ -249,7 +260,9 @@ export function step(b) {
         const cover = b.lanes[l].ground === "woods" || b.orders[foe][l] === "hold" || !nearest.moving ? (b.lanes[l].cover[foe] || 1) : 1;
         const woods = k.sharp && b.lanes[l].ground === "woods" ? 1.2 : 1;
         // Casualties grow with both lines' frontage, so piling men into one lane helps, but not without limit.
-        hits.push({ to: nearest, men: Math.sqrt(u.men * nearest.men) * depth * k.fire * K * rangeF * sharp * woods * cover * b.q[side] * (u.morale > 40 ? 1 : 0.75), morale: 0, from: u });
+        // A commander who has learned you love the bayonet keeps his men steady and shoots down a charge.
+        const counter = b.counterCharge === side && b.orders[foe][l] === "charge" ? 1.25 : 1;
+        hits.push({ to: nearest, men: Math.sqrt(u.men * nearest.men) * depth * (u.vet || 1) * counter * k.fire * K * rangeF * sharp * woods * cover * b.q[side] * (u.morale > 40 ? 1 : 0.75), morale: 0, from: u });
       }
     }
   }
@@ -261,7 +274,7 @@ export function step(b) {
     const lost = Math.min(t.men, Math.round(h.men * (0.85 + b.rand() * 0.3)));
     t.men -= lost;
     const gl = b.generalLane[t.side] === t.lane && b.generals[t.side] ? 0.85 : 1;
-    t.morale -= (lost / t.start) * 250 / KINDS[t.kind].resist * gl + h.morale * gl;
+    t.morale -= ((lost / t.start) * 250 / KINDS[t.kind].resist * gl + h.morale * gl) / (t.vet || 1);
     if (lost > 25 && b.rand() < 0.5) b.fallen.push([t.x + (b.rand() - 0.5) * 6, t.lane, t.side]);
   }
 
@@ -337,5 +350,8 @@ export function finish(b, withdrawSide = null) {
 
 // The result in the form rules.js expects (fractions of each army lost).
 export function outcomeOf(b) {
-  return { attackerWins: b.attackerWins, ratio: b.ratio, attLoss: b[`loss${b.attacker}`], defLoss: b[`loss${b.defender}`] };
+  return {
+    attackerWins: b.attackerWins, ratio: b.ratio, attLoss: b[`loss${b.attacker}`], defLoss: b[`loss${b.defender}`],
+    units: b.units.filter((u) => u.side === "P" && u.reg && u.lane !== "reserve" || u.side === "P" && u.reg && u.state !== "ok").map((u) => ({ reg: u.reg, routed: u.state === "routed" })),
+  };
 }

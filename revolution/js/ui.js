@@ -18,6 +18,8 @@ import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extra
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust, battleScene } from "./soldiers.js";
 import { playBattle } from "./battlefield.js";
 import { applySeason, resetSeason, LIVING_DEFS, smokeColumn, SHIP, arrowPath } from "./living.js";
+import { assignRegiments, kindsFor, recordOf, levelOf, LEVELS } from "./regiments.js";
+import { STYLES, setupRival } from "./rival.js";
 import { playScene } from "./scenes.js";
 import { PORTRAITS } from "./data/assets.js";
 import { FACTS } from "./data/facts.js";
@@ -430,6 +432,7 @@ function renderPanel() {
     h += `<h2>${esc(describeArmy(state, a))}</h2><p class="sub">at ${esc(REGIONS[a.region].name)}${a.moved ? " · has acted this month" : ""}${a.dugIn ? " · dug in" : ""}</p>`;
     h += armySummary(a);
     h += supplyNote(a);
+    h += regimentsHtml(a);
     if (g) h += generalCard(g, a.general);
     else {
       const spare = reserveGenerals(state, "P");
@@ -472,6 +475,7 @@ function renderPanel() {
         ${o.goals.map((g) => `<div class="goal ${g.done ? "done" : g.failed ? "failed" : ""}"><span class="goal-stars">${"★".repeat(g.stars)}</span><span class="goal-text">${esc(g.text)}</span><span class="goal-mark">${g.done ? "✓" : g.failed ? "✗" : ""}</span></div>`).join("")}
         ${SC.advice ? `<div class="aide"><b>Your aide suggests:</b> ${esc(SC.advice(state))}</div>` : ""}</div>`;
     }
+    h += rivalHtml();
     h += `<p>Tap an army below or on the map to give it orders, or tap any region to learn about it. When you're done, end the month and the British move.</p>`;
     const mine = armyList(state, "P").sort((x, y) => armyMen(y) - armyMen(x));
     h += `<h3 class="panel-h">Your armies</h3><div class="army-list">${mine.map((a) => `<button class="army-chip${a.moved ? " moved" : ""}" data-pick="${a.id}">${a.general ? portraitOf(a.general, "tiny") : `<span class="chip-flag"></span>`}<span><b>${esc(describeArmy(state, a))}</b><small>${esc(REGIONS[a.region].name)} · ${fmtMen(armyMen(a))}${a.moved ? " · done this month" : ""}</small></span></button>`).join("")}</div>`;
@@ -910,6 +914,8 @@ function continueGame() {
   const saved = loadSave();
   if (!saved) { frontend.showCampaign(); return; }
   state = saved;
+  state.regiments ||= {};
+  if (!state.rival) setupRival(state); // saves from before the rival existed
   ui.army = null; ui.region = null; ui.target = null;
   $("#modal").hidden = true;
   fitView();
@@ -993,6 +999,30 @@ function noteWounds(battles) {
 }
 
 // ---------- supply in the panel ----------
+// The army's named regiments, with their experience and honors.
+function regimentsHtml(a) {
+  if (a.side !== "P") return "";
+  const names = assignRegiments(state, a, kindsFor(a)).filter(Boolean);
+  if (!names.length) return "";
+  return `<div class="regs"><div class="regs-h">Regiments</div>${names.map((n) => {
+    const r = recordOf(state, n), lvl = levelOf(r);
+    return `<div class="reg"><span class="reg-name">${esc(n)}</span><span class="reg-lvl lvl${lvl}">${LEVELS[lvl]}${lvl ? " " + "★".repeat(lvl) : ""}</span>${r.honors.length ? `<span class="reg-honors">${r.honors.map(esc).join(" · ")}</span>` : ""}</div>`;
+  }).join("")}</div>`;
+}
+
+// Your rival: the British commander of this campaign, what he has learned about you, and your record against him.
+function rivalHtml() {
+  const R = state.rival;
+  if (!R) return "";
+  const g = state.generals[R.id];
+  if (!g) return "";
+  const st = R.style && STYLES[R.style];
+  const past = R.history && (R.history.won || R.history.lost) ? ` Earlier campaigns: you won ${R.history.won}, he won ${R.history.lost}.` : "";
+  return `<div class="rival">${portraitOf(R.id)}<div><div class="rival-h">Your rival: ${esc(g.name)}</div>
+    <div class="rival-rec">This campaign: you have won ${R.won}, he has won ${R.lost}.${esc(past)}</div>
+    ${st ? `<div class="rival-read"><b>He has learned:</b> ${esc(st.learned)} ${esc(st.answer)}</div>` : `<div class="rival-read">He is still taking your measure. Fight the same way every time, and he will learn it.</div>`}</div></div>`;
+}
+
 function supplyNote(a) {
   const sp = supplyPath(state, a);
   if (!sp) return `<p class="supply bad"><b>Out of supply.</b> This army loses men every month until it is within ${SUPPLY_RANGE} friendly regions of a city, fort or depot.</p>`;

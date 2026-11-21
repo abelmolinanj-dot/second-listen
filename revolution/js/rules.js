@@ -1,6 +1,7 @@
 // Core rules: armies, movement, battles, money and Cause. Nothing here touches the page,
 // so the same code runs in the browser and in the headless test in tools/simulate.mjs.
 
+import { creditRegiments } from "./regiments.js";
 import { REGIONS, ADJ, isWaterCrossing } from "./data/regions.js";
 import { makeRng, between } from "./rng.js";
 
@@ -189,6 +190,7 @@ function removeArmy(state, army) {
 
 function mergeInto(state, from, to) {
   to.regulars += from.regulars;
+  if (from.regs) to.regs = [...(to.regs || []), ...from.regs];
   to.militia.push(...from.militia);
   if (from.general) {
     const fg = state.generals[from.general];
@@ -229,6 +231,8 @@ function detach(state, army, share) {
   }
   army.militia = army.militia.filter((b) => b.men > 0);
   part.hessian = army.hessian;
+  // The detachment takes its share of the named regiments.
+  if (army.regs && army.regs.length > 1) part.regs = army.regs.splice(0, Math.max(1, Math.round(army.regs.length * share)));
   return part;
 }
 
@@ -298,6 +302,10 @@ export function battleFactors(state, att, def, regionId, { surprise = false, sea
   const fb = state.flags && state.flags.flankBonus;
   if (fb && fb.side === att.side && fb.turn === state.turn) A *= 1.3;
   if (tactic && TACTICS[tactic] && TACTICS[tactic].A) A *= TACTICS[tactic].A;
+  // The rival British general adapts to the player's habits (rival.js sets state.rival.style each month).
+  const style = state.rival && state.rival.style;
+  if (style === "wary" && def.side === "B") D *= 1.12; // he expects attacks, and his camps are fortified
+  if (style === "siege" && att.side === "B" && def.dugIn && !REGIONS[regionId].city) D /= 1.06; // heavy guns against field works (towns hold better)
   return { A, D };
 }
 
@@ -382,6 +390,12 @@ export function moveArmy(state, armyId, targetId, { share = 1, surprise = false,
   army.moved = true;
   army.dugIn = false;
   const foe = armyAt(state, targetId, enemy(army.side));
+  if (army.side === "P") {
+    if (foe) noteHabit(state, "attack");
+    // Marching away from an enemy next door counts as falling back.
+    else if (ADJ[from].some((n) => armyAt(state, n, "B")) && ADJ[from].filter((n) => armyAt(state, n, "B")).every((n) => distance(targetId, n) > 1)) noteHabit(state, "retreat");
+    if (tactic === "charge") noteHabit(state, "charge");
+  }
   if (!foe) {
     const merged = relocate(state, army, targetId);
     captureRegion(state, targetId, army.side);
@@ -454,6 +468,9 @@ function fight(state, att, def, regionId, opts) {
     if (a.general) state.generals[a.general].status = "reserve";
     removeArmy(state, a);
   }
+  // The Continental regiments in the battle gain experience and, in a victory, an honor.
+  const pArmy = att.side === "P" ? att : def;
+  creditRegiments(state, pArmy, { won: patriotWon, place: REGIONS[regionId].name, units: opts.outcome && opts.outcome.units ? opts.outcome.units : null, captured: !!report.surrendered && loser.side === "P" });
   state.battles.push({ turn: state.turn, ...report });
   if (patriotWon || loser.side === "P") state.stats[patriotWon ? "won" : "lost"]++;
   return report;
@@ -472,11 +489,23 @@ function surrender(state, army, report) {
 }
 
 // Dig in: skip moving to make the position harder to attack until your next turn.
+// The player's habits, which the rival British general studies (rival.js). Plain counts kept in the save.
+// Each habit counts at most twice a month, so it reflects the player's style rather than how many armies he has.
+export function noteHabit(state, kind, n = 1) {
+  const h = (state.habits ||= {});
+  const key = `_${kind}`;
+  const seen = h[key] && h[key][0] === state.turn ? h[key][1] : 0;
+  if (seen >= 2) return;
+  h[key] = [state.turn, seen + 1];
+  h[kind] = (h[kind] || 0) + n;
+}
+
 export function digIn(state, armyId) {
   const a = state.armies[armyId];
   if (!a || a.moved) return "This army already acted this month.";
   a.moved = true;
   a.dugIn = true;
+  if (a.side === "P") noteHabit(state, "digin");
   // An engineer fortifies the ground for good.
   const eg = generalOf(state, a);
   if (eg && eg.trait === "engineer" && a.side === "P") state.regions[a.region].works = true;
@@ -492,6 +521,7 @@ export function withdraw(state, armyId) {
   if (!to) return null;
   const name = describeArmy(state, a);
   a.moved = true;
+  if (a.side === "P") noteHabit(state, "retreat");
   relocate(state, a, to);
   log(state, `${name} fell back to ${REGIONS[to].name}.`);
   return to;

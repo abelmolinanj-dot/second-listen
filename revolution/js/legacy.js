@@ -14,6 +14,10 @@ const blank = () => ({ campaigns: 0, won: 0, lost: 0, wounds: [], honors: [], lo
 export function applyLegacy(state) {
   const L = getLegacy();
   state.legacy = {};
+  // Regiments keep their experience and honors from earlier campaigns.
+  for (const [name, r] of Object.entries(L.regiments || {})) state.regiments[name] = { ...r, honors: r.honors.slice(), notes: (r.notes || []).slice() };
+  // And the rival remembers the last time you met.
+  if (state.rival && L.rivals && L.rivals[state.rival.id]) state.rival.history = { ...L.rivals[state.rival.id] };
   for (const [id, g] of Object.entries(state.generals)) {
     const rec = L[id];
     if (!rec || g.side !== "P" || g.loyalty === undefined) continue;
@@ -68,6 +72,13 @@ export function recordLegacy(state, gameOver) {
     if (g.loyalty !== undefined) rec.loyalty = Math.round(g.loyalty);
     for (const w of (state.wounds || []).filter((x) => x.general === id)) rec.wounds.push(w.text);
     if (g.status === "captured") rec.notes.push(`Captured in ${state.scenario === "saratoga" ? "1777" : "1776"}.`);
+  }
+  // Regiments and rivals.
+  L.regiments ||= {};
+  for (const [name, r] of Object.entries(state.regiments || {})) if (r.battles > 0) L.regiments[name] = r;
+  if (state.rival) {
+    const R = (L.rivals ||= {})[state.rival.id] ||= { won: 0, lost: 0, campaigns: 0 };
+    R.won += state.rival.won; R.lost += state.rival.lost; R.campaigns++;
   }
   for (const h of honors) { (L[h.id] ||= blank()).honors.push(`${h.honor} (${state.scenario === "saratoga" ? "Saratoga, 1777" : "1776"})`); }
   saveLegacy(L);

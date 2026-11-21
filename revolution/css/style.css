@@ -622,3 +622,17 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 /* A retro finish: fine dithering over the whole map, like an old 256-color screen. */
 #mapwrap::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: conic-gradient(rgba(10, 10, 30, .07) 25%, transparent 0 50%, rgba(10, 10, 30, .07) 0 75%, transparent 0); background-size: 3px 3px; mix-blend-mode: multiply; }
 @media (prefers-reduced-motion: reduce) { .smoke-col .puff, .campfire .flames, .smoke-col .flames, .move-arrow .arrow-line { animation: none; } .move-arrow .arrow-under { animation: none; stroke-dashoffset: 0; } }
+
+/* ---------- regiments and the rival ---------- */
+.regs { margin: 8px 0; padding: 8px 10px; background: #ffffff; border: 1px solid rgba(31,53,102,.25); border-left: 4px solid var(--patriot); }
+.regs-h, .rival-h { font-family: var(--caps); font-size: 14px; color: var(--ink); margin-bottom: 4px; }
+.reg { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 3px 0; border-top: 1px solid rgba(31,53,102,.12); font-size: 13.5px; }
+.reg:first-of-type { border-top: 0; }
+.reg-name { font-weight: 600; color: var(--ink); }
+.reg-lvl { font-size: 12px; color: var(--ink-soft); }
+.reg-lvl.lvl2, .reg-lvl.lvl3 { color: var(--accent); font-weight: 600; }
+.reg-honors { flex-basis: 100%; font-size: 12px; font-style: italic; color: var(--ink-soft); }
+.rival { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; padding: 10px; background: #fff5f6; border: 1px solid rgba(200,16,46,.35); border-left: 4px solid var(--british); }
+.rival .portrait { flex: 0 0 auto; }
+.rival-rec { font-size: 13px; color: var(--ink-soft); }
+.rival-read { font-size: 13.5px; margin-top: 4px; color: var(--ink); }
