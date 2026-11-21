@@ -16,6 +16,7 @@ import { getLegacy } from "./legacy.js";
 import { ROSTER, levelOf, LEVELS } from "./regiments.js";
 import { ROLES, ROLES_FOR } from "./roles.js";
 import { QUICK_BATTLES, runQuickBattle, quickRecord } from "./quickbattle.js";
+import { playBattle, getReplays } from "./battlefield.js";
 import { GENERALS as GEN } from "./data/generals.js";
 import { ACHIEVEMENTS } from "./data/achievements.js";
 import { FACTS } from "./data/facts.js";
@@ -314,6 +315,7 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       notes: [b.facts.length, FACTS.length],
       letters: [letterIds.filter((id) => b.letters.includes(id)).length, letterIds.length],
       regiments: [Object.keys(getLegacy().regiments || {}).length, ROSTER.length],
+      replays: [getReplays().length, 5],
     };
     let body = "";
     if (tab === "honors") {
@@ -322,6 +324,10 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       body = `<div class="book-gallery">${Object.entries(SCENE_CAPTIONS).map(([id, [t, who]]) => b.scenes.includes(id) && SCENES[id]
         ? `<figure><div class="bg-img" style="background-image:url('${SCENES[id]}')"></div><figcaption><b>${esc(t)}</b><span>${esc(who)}</span></figcaption></figure>`
         : `<figure class="locked"><div class="bg-img"></div><figcaption><b>Not yet found</b><span>Keep playing</span></figcaption></figure>`).join("")}</div>`;
+    } else if (tab === "replays") {
+      const list = getReplays();
+      body = list.length ? list.map((r, i) => `<div class="honor"><div class="honor-medal">${r.result && r.result.won ? "★" : "✕"}</div><div><b>The Battle of ${esc(r.place)}</b><span>${esc(r.date)} · ${esc(r.result ? r.result.verdict : "")} · ${r.frames.length} quarter hours</span><p><button class="btn small" data-replay="${i}">Watch the replay</button></p></div></div>`).join("")
+        : `<p class="page-lead">Every battle you command on the battlefield is recorded. Your last five are kept here to watch again, and you can save a picture of any of them to share.</p>`;
     } else if (tab === "regiments") {
       const L = getLegacy().regiments || {};
       const list = Object.values(L).sort((x, y) => y.xp - x.xp);
@@ -332,12 +338,18 @@ export function createFrontend({ savedGame, onBegin, onContinue, hasPlayed }) {
       const seen = letterIds.filter((id) => b.letters.includes(id));
       body = seen.length ? `<ul class="book-letters">${seen.map((id) => { const e = EVENTS[id]; const t = Array.isArray(e.title) ? e.title[0] : typeof e.title === "function" ? id : e.title; return `<li><b>${esc(t)}</b><span>${esc(e.fromName || FIGURES[typeof e.from === "string" ? e.from : ""]?.name || "")}</span></li>`; }).join("")}</ul>` : `<p class="page-lead">Every different letter you receive is listed here.</p>`;
     }
-    const tabs = [["honors", "Honors"], ["regiments", "Regiments"], ["paintings", "Paintings"], ["notes", "Notes"], ["letters", "Letters"]];
+    const tabs = [["honors", "Honors"], ["regiments", "Regiments"], ["replays", "Replays"], ["paintings", "Paintings"], ["notes", "Notes"], ["letters", "Letters"]];
     show("scr-page", `${backBar("History Book")}<div class="page">
       <div class="tabs">${tabs.map(([id, label]) => `<button class="tab ${tab === id ? "on" : ""}" data-tab="${id}">${label} <small>${counts[id][0]}/${counts[id][1]}</small></button>`).join("")}</div>
       <div class="book-body">${body}</div></div>`);
     on("#back", showMain);
     for (const t of root.querySelectorAll("[data-tab]")) t.onclick = () => { sfx.tap(); showBook(t.dataset.tab); };
+    for (const r of root.querySelectorAll("[data-replay]")) r.onclick = () => {
+      const rec = getReplays()[Number(r.dataset.replay)];
+      if (!rec) return;
+      root.style.display = "none";
+      playBattle({ replay: rec, onDone: () => { root.style.display = ""; music.march(); showBook("replays"); } });
+    };
   }
 
   // ----- settings -----

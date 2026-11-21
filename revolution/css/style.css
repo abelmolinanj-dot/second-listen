@@ -716,3 +716,9 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .qb-last.lost { border-color: var(--accent); }
 .qb-last b { font-family: var(--serif); font-size: 22px; font-weight: 400; }
 .qb-last textarea { flex: 1 1 260px; height: 40px; font-size: 13px; resize: none; }
+
+/* ---------- the civilians' war ---------- */
+.civ-art { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; image-rendering: pixelated; border: 3px solid var(--ink); margin-bottom: 10px; background: #000; }
+.civ-kicker { font-family: var(--caps); font-size: 13px; color: var(--accent); letter-spacing: .03em; }
+.civ h2 { margin: 2px 0 6px; }
+.civ-choices { display: grid; gap: 6px; margin: 10px 0; }

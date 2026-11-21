@@ -8,7 +8,30 @@ import { pixelSoldier } from "./pixel.js";
 import { UNIFORMS, flag } from "./soldiers.js";
 import { REGIONS } from "./data/regions.js";
 import { sfx, music, battleDrums, stopMusic } from "./sound.js";
-import { menWords, noteHabit } from "./rules.js";
+import { menWords, noteHabit, dateLabel } from "./rules.js";
+
+// ---------- replays ----------
+// Every battle you command is recorded tick by tick; the last five are kept in this browser for the History Book.
+const REPLAYS = "dispatches76-replays";
+export function getReplays() { try { return JSON.parse(localStorage.getItem(REPLAYS) || "[]"); } catch { return []; } }
+function saveReplay(rec) {
+  let list = [rec, ...getReplays()].slice(0, 5);
+  for (;;) { try { localStorage.setItem(REPLAYS, JSON.stringify(list)); return; } catch { if (list.length <= 1) return; list = list.slice(0, -1); } }
+}
+const snapUnits = (b) => b.units.map((u) => [Math.round(u.x * 10) / 10, u.lane, u.men, Math.round(u.morale), u.state[0], (u.firing ? 1 : 0) | (u.moving ? 2 : 0) | (u.melee ? 4 : 0)]);
+const STATES = { o: "ok", r: "routed", w: "withdrawn" };
+function applySnap(b, snap) {
+  snap.forEach(([x, lane, men, morale, st, f], i) => Object.assign(b.units[i], { x, lane, men, morale, state: STATES[st], firing: !!(f & 1), moving: !!(f & 2), melee: !!(f & 4) }));
+}
+function fromRecord(rec) {
+  const b = {
+    region: rec.region, tick: 0, over: false, attacker: rec.attacker, defender: rec.defender, lanes: rec.lanes,
+    orders: { P: {}, B: {} }, generals: { P: { short: rec.gName }, B: null }, generalLane: { P: "center", B: "center" }, rallies: { P: 0, B: 0 },
+    units: rec.units.map((u) => ({ ...u })), fallen: [], events: [], armyMen: rec.armyMen,
+  };
+  applySnap(b, rec.start);
+  return b;
+}
 
 const W = 800, H = 400;
 const LANE_Y = { left: 196, center: 272, right: 356 };
@@ -64,12 +87,20 @@ function backdrop(b) {
 const CANNON = `<g shape-rendering="crispEdges"><rect x="-2" y="-9" width="18" height="4" fill="#2a2a30"/><rect x="14" y="-10" width="3" height="6" fill="#1a1a1e"/><rect x="-6" y="-6" width="12" height="3" fill="#5a3a1e"/><rect x="-4" y="-7" width="8" height="8" fill="#120d10"/><rect x="-3" y="-6" width="6" height="6" fill="#7a5226"/><rect x="-1" y="-4" width="2" height="2" fill="#120d10"/></g>`;
 
 // ---------- the screen ----------
-export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
-  const seed = ((state.gameSeed ?? 1) * 7919 + state.turn * 131 + regionId.length * 17) >>> 0;
-  const b = setupBattle(state, att, def, regionId, opts, seed);
+export function playBattle({ state, att, def, regionId, opts = {}, onDone, replay = null, dateText = null }) {
+  if (replay) regionId = replay.region;
+  const b = replay ? fromRecord(replay) : setupBattle(state, att, def, regionId, opts, ((state.gameSeed ?? 1) * 7919 + state.turn * 131 + regionId.length * 17) >>> 0);
+  // The recording of this battle, for replays.
+  const rec = replay || {
+    v: 1, region: regionId, place: REGIONS[regionId].name, date: dateText || dateLabel(state), attacker: b.attacker, defender: b.defender, lanes: b.lanes,
+    gName: b.generals.P ? b.generals.P.short : "The colonel", armyMen: b.armyMen,
+    units: b.units.map((u) => ({ id: u.id, side: u.side, flag: u.flag, kind: u.kind, name: u.name, start: u.start, level: u.level || 0, honors: u.honors || 0, worn: u.worn || 0, men: u.men, morale: u.morale, x: u.x, lane: u.lane, state: u.state })),
+    frames: [], events: [], fallen: [],
+  };
+  let frame = 0;
   const mySide = "P";
   const lanePick = { left: "auto", center: "auto", right: "auto" }; // "auto" leaves the lane to the general
-  let phase = "deploy", speed = 1, paused = false, timer = null, shownEvents = 0, fallenShown = 0;
+  let phase = replay ? "replay" : "deploy", speed = replay ? 2 : 1, paused = false, timer = null, shownEvents = 0, fallenShown = 0;
   const gName = b.generals.P ? b.generals.P.short : "The colonel";
   const defending = b.defender === mySide;
 
@@ -214,6 +245,14 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
       if ($("bf-cancel")) $("bf-cancel").onclick = () => close(null);
       return;
     }
+    if (phase === "replay") {
+      c.innerHTML = `<div class="bf-h">A replay of the battle of ${esc(rec.place)}, ${esc(rec.date)}.</div><div class="bf-actions"><button class="bf-btn" id="bf-pause">${paused ? "Resume" : "Pause"}</button><button class="bf-btn" id="bf-speed">Speed ${speed}x</button><button class="bf-btn" id="bf-pic">Save a picture</button><button class="bf-btn" id="bf-close">Close</button></div>`;
+      $("bf-pause").onclick = () => { paused = !paused; controls(); if (!paused) replayLoop(); };
+      $("bf-speed").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; controls(); };
+      $("bf-pic").onclick = savePicture;
+      $("bf-close").onclick = () => close(null);
+      return;
+    }
     if (phase !== "fight") { c.innerHTML = ""; return; }
     const laneRows = LANES.map((l) => {
       const ours = mine.filter((u) => u.lane === l && u.state === "ok"), theirs = b.units.filter((u) => u.side !== mySide && u.lane === l && u.state === "ok");
@@ -249,6 +288,7 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
   // ---- running the battle ----
   function begin() {
     phase = "fight";
+    rec.start = snapUnits(b);
     sfx.drumroll();
     stopMusic();
     battleDrums.start();
@@ -264,6 +304,7 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
     const charging = LANES.filter((l) => b.orders.B[l] === "charge" && !b._bCharge?.[l]);
     for (const l of charging) { (b._bCharge ||= {})[l] = true; sfx.charge(0.4); }
     step(b);
+    rec.frames.push({ u: snapUnits(b), ev: b.events.length, fl: b.fallen.length });
     drawUnits(); puffs(); hud();
     // Sounds: each side's volleys from its own side of the stereo field, and the guns.
     for (const side of ["P", "B"]) {
@@ -286,7 +327,10 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
     const myLoss = Math.round(b.armyMen[mySide] * b[`loss${mySide}`]);
     const foe = mySide === "P" ? "B" : "P";
     const theirLoss = Math.round(b.armyMen[foe] * b[`loss${foe}`]);
-    const moments = b.events.filter((e) => /breaks and runs|flank is open|rides along/.test(e.text)).slice(-4);
+    const moments = b.events.filter((e) => /breaks and runs|break and run|flank is open|rides along/.test(e.text)).slice(-4);
+    rec.events = b.events; rec.fallen = b.fallen;
+    rec.result = { won, verdict: won ? "Victory" : b.attacker === mySide ? "The attack failed" : "Defeat", myLoss, theirLoss };
+    saveReplay(rec);
     const res = $("bf-result");
     res.hidden = false;
     res.innerHTML = `<div class="bf-card ${won ? "won" : "lost"}">
@@ -294,8 +338,75 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
       <p>${won ? (b.attacker === mySide ? "The enemy is driven from the field." : "The enemy is thrown back.") : b.attacker === mySide ? "The army falls back to where it started." : "The army is driven from the field."}</p>
       <p>Your losses: <b>${menWords(myLoss)}</b> · The enemy's: <b>${menWords(theirLoss)}</b></p>
       ${moments.length ? `<ul>${moments.map((e) => `<li>${esc(e.text)}</li>`).join("")}</ul>` : ""}
-      <button class="bf-big" id="bf-done">Continue</button></div>`;
+      <div class="bf-actions"><button class="bf-big" id="bf-done">Continue</button><button class="bf-btn" id="bf-pic">Save a picture</button></div></div>`;
     $("bf-done").onclick = () => close(o);
+    $("bf-pic").onclick = savePicture;
+  }
+
+  // ---- watching a replay ----
+  function replayLoop() {
+    clearTimeout(timer);
+    if (paused || phase !== "replay") return;
+    const f = rec.frames[frame++];
+    if (!f) { replayEnd(); return; }
+    applySnap(b, f.u);
+    b.tick = frame;
+    b.events = rec.events.slice(0, f.ev);
+    b.fallen = rec.fallen.slice(0, f.fl);
+    drawUnits(); puffs(); hud();
+    for (const side of ["P", "B"]) {
+      const firing = b.units.filter((u) => u.side === side && u.state === "ok" && u.firing && u.kind !== "guns").length;
+      if (firing) sfx.volley(firing * 2, side === "P" ? -0.5 : 0.5);
+    }
+    timer = setTimeout(replayLoop, 900 / speed);
+  }
+  function replayEnd() {
+    battleDrums.stop();
+    const r = rec.result || {};
+    const res = $("bf-result");
+    res.hidden = false;
+    res.innerHTML = `<div class="bf-card ${r.won ? "won" : "lost"}"><div class="bf-verdict">${esc(r.verdict || "The end")}</div>
+      <p>Your losses: <b>${menWords(r.myLoss || 0)}</b> · The enemy's: <b>${menWords(r.theirLoss || 0)}</b></p>
+      <div class="bf-actions"><button class="bf-big" id="bf-done">Close</button><button class="bf-btn" id="bf-pic">Save a picture</button></div></div>`;
+    $("bf-done").onclick = () => close(null);
+    $("bf-pic").onclick = savePicture;
+  }
+
+  // ---- a picture of the field, to keep or share ----
+  async function savePicture() {
+    try {
+      const svgEl = $("bf-svg").cloneNode(true);
+      svgEl.setAttribute("width", W); svgEl.setAttribute("height", H);
+      svgEl.insertAdjacentHTML("afterbegin", `<style>.bf-tag text{font-family:monospace;font-size:11px;fill:#f4efe2;paint-order:stroke;stroke:#120d10;stroke-width:2.4px}.bf-puff{fill:#e9e4d8;opacity:.6}.bs-fire,.bf-b{display:none}</style>`);
+      // CSS transforms don't survive the trip into an image, so write each regiment's place as an attribute.
+      for (const el of svgEl.querySelectorAll(".bf-unit")) {
+        const m = (el.style.transform || "").match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)\s*scale\(([-\d.]+)\)/);
+        if (m) { el.setAttribute("transform", `translate(${m[1]} ${m[2]}) scale(${m[3]})`); el.style.transform = ""; }
+      }
+      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svgEl)], { type: "image/svg+xml" }));
+      const img = new Image();
+      await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; img.src = url; });
+      const cv = document.createElement("canvas");
+      cv.width = W * 2; cv.height = H * 2 + 90;
+      const g = cv.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      g.fillStyle = "#0c1a38"; g.fillRect(0, 0, cv.width, cv.height);
+      g.drawImage(img, 0, 0, W * 2, H * 2);
+      URL.revokeObjectURL(url);
+      g.fillStyle = "#c8102e"; g.fillRect(0, H * 2, cv.width, 6);
+      g.fillStyle = "#ffffff"; g.font = "bold 40px Georgia, serif";
+      g.fillText(`The Battle of ${rec.place}, ${rec.date}`, 24, H * 2 + 52);
+      g.font = "28px Georgia, serif"; g.fillStyle = "#dfe6f6";
+      const verdict = rec.result ? rec.result.verdict : "";
+      g.fillText(`${verdict} · Dispatches of '76`, 24, H * 2 + 84);
+      const blob = await new Promise((ok) => cv.toBlob(ok, "image/png"));
+      const file = new File([blob], `battle-of-${rec.place.toLowerCase().replace(/[^a-z]+/g, "-")}.png`, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: `The Battle of ${rec.place}` }); return; }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = file.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.__lastPicture = file.name;
+    } catch { /* sharing was cancelled, or the picture could not be made */ }
   }
   function close(result) {
     clearTimeout(timer);
@@ -305,5 +416,6 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
   }
 
   drawUnits(); hud(); controls();
+  if (replay) { stopMusic(); battleDrums.start(); timer = setTimeout(replayLoop, 600); }
   return b;
 }

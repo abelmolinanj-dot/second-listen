@@ -13,6 +13,8 @@ import {
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, settleTray } from "./letters.js";
 import { setupRival, updateRival } from "./rival.js";
+import { pickCivilian } from "./civilians.js";
+import { makeRng } from "./rng.js";
 
 // Each scenario's scripted letters only fire in that scenario.
 for (const [id, s] of Object.entries(SCENARIOS)) registerEvents(s.SCENARIO_EVENTS, id);
@@ -280,6 +282,8 @@ function openMonth(state, { first }) {
   for (const r of scenarioOf(state).REINFORCEMENTS.filter((x) => x.turn === state.turn)) landReinforcement(state, r);
   scenarioOf(state).SCENARIO.onOpenMonth?.(state);
   updateRival(state);
+  // Now and then, a scene from the civilians' war (shown by the interface after the newspaper).
+  if (!state.civilian) state.civilian = pickCivilian(state, makeRng({ seed: (((state.gameSeed ?? 1) * 97) + state.turn * 131) >>> 0 }));
 
   deliverMail(state);
   log(state, dateLabel(state), "date");

@@ -41,6 +41,8 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 - **Choose who you are**: play a campaign as the Board of War, as the commander in the field (your own army fights better, but taxes come in short), as Nathanael Greene (cheaper armies, longer supply, weaker attacks) or as Benedict Arnold (fierce attacks, but Congress gives you little credit) (`js/roles.js`).
 - **What-if missions**: alternate histories branch off the campaign map, unlocked by how your campaigns end. "What If: Burgoyne Breaks Through" is playable (finish Saratoga without forcing his surrender); three more are waiting to be built.
 - **Quick Battle**: seven famous battles (Long Island, Trenton, Princeton, Bennington, Brandywine, Freeman's Farm, Germantown) with about the real numbers, played straight away on the battlefield, with your record and a result to share.
+- **The civilians' war**: every couple of months, a short pixel-art scene of ordinary people caught in the war: a farm family hiding its grain, a printer deciding what to print, a Loyalist neighbor and an angry crowd, the women of the camp, free Black men asking to enlist, a Quaker meeting, smallpox in a village, a Hessian deserter. Your choice changes how the region feels, and sometimes the army. Each comes with a true history note (`js/civilians.js`).
+- **Replays**: every battle you command is recorded; watch it again from the result card, keep your last five in the History Book, and save a picture of the field to share.
 - **Marches take time**: every move has a march time in days, from the real miles between regions, the post roads, hills and forests, the size of the army, the weather and river crossings. The days show on the map when you pick an army. Long marches leave the men tired for a fight; a forced march is faster but costs stragglers.
 - **Army condition**: armies wear down on long marches, in winter camps in the open, when cut off from supply and when unpaid, and recover with rest. Worn-out armies fight worse and lose men, and you can see it: faded coats, then rags, bandages and bare feet in the snow.
 - **Set pieces**: famous moments played as short pixel-art action games (`js/setpiece.js`). Steer the Durham boats through the ice on Christmas night; ferry the trapped army off Long Island by night while keeping the campfires lit; silence the Chew house windows at Germantown while the columns push past. How you do changes what happens next, and you can always let the officers handle it.
@@ -82,6 +84,7 @@ Once this folder is on the repository's main branch, GitHub Pages also serves it
 | `js/battlefield.js` | The battlefield screen you command a battle from |
 | `js/regiments.js` | Named regiments, their experience and battle honors |
 | `js/rival.js` | The rival British general who learns your habits |
+| `js/civilians.js` | The civilians' war: scenes, pixel art and choices |
 | `js/roles.js` | Who you play as, and what each role changes |
 | `js/quickbattle.js` | Quick Battle: famous battles outside the campaign |
 | `js/data/scenarioBurgoyne.js` | The what-if: Burgoyne breaks through, 1777 to 1778 |

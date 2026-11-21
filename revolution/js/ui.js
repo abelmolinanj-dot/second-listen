@@ -18,6 +18,7 @@ import { TERRAIN_DEFS, terrainLayer, overlayLayer, placeIcons, waterLayer, extra
 import { SOLDIER_DEFS, armyFigure, battleMarker, bust, battleScene } from "./soldiers.js";
 import { playBattle } from "./battlefield.js";
 import { playSetPiece } from "./setpiece.js";
+import { SCENES as CIV, sceneArt, answerCivilian } from "./civilians.js";
 import { applySeason, resetSeason, LIVING_DEFS, smokeColumn, SHIP, arrowPath } from "./living.js";
 import { assignRegiments, kindsFor, recordOf, levelOf, LEVELS } from "./regiments.js";
 import { STYLES, setupRival } from "./rival.js";
@@ -847,6 +848,24 @@ function askDefense(ctx) {
   });
 }
 
+// A scene from the civilians' war: a pixel picture, a few lines, and a choice that changes how a region feels.
+function showCivilian(after) {
+  const c = state.civilian;
+  const sc = c && CIV[c.id];
+  if (!sc) { state.civilian = null; after(); return; }
+  const place = REGIONS[c.region].name;
+  modal(`<div class="civ">${sceneArt(c)}<div class="civ-kicker">The people's war · ${esc(place)} · ${esc(dateLabel(state))}</div><h2>${esc(sc.title)}</h2><p>${esc(sc.text(place))}</p>
+    <div class="civ-choices">${sc.choices.map((ch, i) => `<button class="choice" data-civ="${i}"><b>${esc(ch.label)}</b><span>${esc(ch.hint)}</span></button>`).join("")}</div>
+    <div class="didyouknow"><b>In history:</b> ${esc(sc.note)}</div></div>`, (card) => {
+    sfx.letter();
+    for (const b of card.querySelectorAll("[data-civ]")) b.onclick = () => {
+      const out = answerCivilian(state, Number(b.dataset.civ));
+      save(); renderTop(); renderPanel();
+      modal(`<h2>${esc(sc.title)}</h2><p class="outcome">${esc(out)}</p><div class="modal-actions"><button class="btn primary" id="civ-next">Continue</button></div>`, (cc) => { cc.querySelector("#civ-next").onclick = after; });
+    };
+  });
+}
+
 // The month's news, set as the front page of a period newspaper.
 function headlineFor(battles, notes) {
   const big = battles.slice().sort((a, b) => (b.attacker.men + b.defender.men) - (a.attacker.men + a.defender.men))[0];
@@ -897,7 +916,7 @@ function showReport(summary, lines, voices = []) {
   save();
   const open = urgent(state).length;
   h += `<div class="modal-actions"><button class="btn primary" id="go">${open ? "Read the letter" : "Continue"}</button></div>`;
-  modal(h, (c) => { c.querySelector("#go").onclick = () => (open ? showLetters() : closeModal()); });
+  modal(h, (c) => { c.querySelector("#go").onclick = () => { const after = () => (open ? showLetters() : closeModal()); if (state.civilian) showCivilian(after); else after(); }; });
 }
 
 function showGameOver(summary) {

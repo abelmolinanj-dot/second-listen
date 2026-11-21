@@ -92,7 +92,8 @@ function draw(u, pose) {
     if (worn >= 2) { g.rect(x - (x < 5 ? 1 : 0), 22 - lift, 3, 1, "#c99a7a"); g.set(x, 22 - lift, "#8a1a1a"); } // bare feet in the snow
     else g.rect(x - (x < 5 ? 1 : 0), 22 - lift, 3, 1, INK);
   };
-  if (pose === "walk1") { leg(3, 0); leg(6, 1); }
+  if (u.skirt) { g.rect(2, 15 + bob, 7, 7, u.skirt); g.dither(2, 20 + bob, 7, 1, u.skirt, shade(u.skirt, -0.2)); g.rect(3, 22, 2, 1, INK); g.rect(6, 22, 2, 1, INK); }
+  else if (pose === "walk1") { leg(3, 0); leg(6, 1); }
   else if (pose === "walk2") { leg(3, 1); leg(6, 0); }
   else if (pose === "fire" || pose === "load") { leg(2, 0); leg(7, 0); }
   else { leg(3, 0); leg(6, 0); }
@@ -132,7 +133,15 @@ function draw(u, pose) {
   if (worn >= 2) { g.rect(3, 4 + y0, 5, 1, "#eae4d4"); g.set(6, 4 + y0, "#a3161c"); } // a bandage
 
   // ---- hat ----
-  if (u.hat === "mitre") {
+  if (u.hat === "none") {
+    g.rect(3, 3 + y0, 5, 1, u.hair);
+  } else if (u.hat === "cap") {
+    // A woman's white linen cap.
+    g.rect(2, 2 + y0, 7, 3, "#f4efe2"); g.rect(3, 1 + y0, 5, 1, "#f4efe2"); g.set(2, 5 + y0, "#f4efe2"); g.set(8, 5 + y0, "#f4efe2");
+  } else if (u.hat === "round") {
+    // A Quaker's broad round hat.
+    g.rect(0, 3 + y0, 11, 1, "#17131a"); g.rect(3, 0 + y0, 5, 3, "#221c26");
+  } else if (u.hat === "mitre") {
     const brass = "#c9a23a";
     g.rect(3, 0 + y0, 5, 4, brass); g.rect(4, -2 + y0, 3, 2, brass); g.set(5, -3 + y0, "#f2eee2");
     g.dither(3, 2 + y0, 5, 1, brass, shade(brass, -0.3)); g.rect(3, 3 + y0, 5, 1, "#a3161c");
@@ -145,7 +154,12 @@ function draw(u, pose) {
   }
 
   // ---- arms and the musket ----
-  if (pose === "fire") {
+  if (u.unarmed) {
+    // A civilian: both arms at the sides, perhaps holding something.
+    g.rect(1, 9 + y0, 1, 5, coat); g.set(1, 14 + y0, skin);
+    g.rect(9, 9 + y0, 1, 5, coat); g.set(9, 14 + y0, skin);
+    if (u.holds) g.rect(9, 12 + y0, 3, 3, u.holds);
+  } else if (pose === "fire") {
     // Leveled musket, butt at the right shoulder, pointing right.
     g.rect(8, 9, 2, 2, coat); g.rect(10, 10, 1, 1, skin);
     g.rect(1, 9, 1, 3, coat); g.rect(1, 11, 3, 1, coat); g.set(4, 11, skin);
