@@ -8,7 +8,7 @@ import { REGIONS } from "./data/regions.js";
 import { SCENARIOS, DEFAULT_SCENARIO, scenarioOf } from "./data/scenarios.js";
 import {
   armyList, armyAt, armyMen, militiaMen, newArmy, monthlyIncome, armyUpkeep, earn, spend, changeCause, log,
-  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather, supplyPath,
+  isWinter, dateLabel, money, fmtMen, menWords, COST, generalOf, findGeneralArmy, enemy, rollWeather, supplyPath, moveArmy,
 } from "./rules.js";
 import { britishTurn } from "./ai.js";
 import { registerEvents, deliverMail, soldierLetter, settleTray } from "./letters.js";
@@ -65,21 +65,44 @@ export function newGame(seed = Date.now() % 2147483647, scenarioId = DEFAULT_SCE
 }
 
 // The player has finished their moves. Returns what happened, for the turn summary.
+// If the British attack one of the player's big armies and state.fightDefense is on, the turn pauses:
+// the summary comes back with paused: true and state.pendingDefense set. The player fights the battle, then
+// resumeBritishAttack(state, outcome) resolves it and carries on with the rest of the turn.
 export function endTurn(state) {
   if (state.gameOver) return null;
-  const summary = { battles: [], moves: [], notes: [] };
-  const before = state.log.length;
-
+  if (state.pendingDefense) return { paused: true, battles: state.midTurn.battles, moves: state.midTurn.moves, notes: [] };
   // Any letter left unanswered is handled by the sender.
   settleTray(state);
+  state.midTurn = { battles: [], moves: [], before: state.log.length, startBattles: state.battles.length };
+  return continueTurn(state);
+}
+
+// Fight the attack the British turn stopped for. outcome comes from the battlefield, or null to fight it the quick way.
+export function resumeBritishAttack(state, outcome = null) {
+  if (!state.pendingDefense || !state.midTurn) return null;
+  const p = state.pendingDefense;
+  state.pendingDefense = null;
+  if (p && state.armies[p.armyId]) {
+    const r = moveArmy(state, p.armyId, p.target, { share: p.share, withGeneral: true, outcome });
+    if (typeof r === "object") (r.type === "battle" ? state.midTurn.battles : state.midTurn.moves).push(r);
+  }
+  return continueTurn(state);
+}
+
+function continueTurn(state) {
+  const m = state.midTurn;
+  const summary = { battles: m.battles, moves: m.moves, notes: [] };
+  const before = m.before;
 
   // 2. The British move.
-  const startBattles = state.battles.length;
+  const startBattles = m.startBattles;
   const reports = britishTurn(state);
   for (const r of reports) {
     if (r.type === "battle") summary.battles.push(r);
     else summary.moves.push(r);
   }
+  if (reports.paused) { summary.paused = true; return summary; }
+  state.midTurn = null;
   for (const b of state.battles.slice(startBattles)) {
     if (b.attacker.side === "P" || b.defender.side === "P") {
       const patriotWon = (b.attackerWins ? b.attacker : b.defender).side === "P";

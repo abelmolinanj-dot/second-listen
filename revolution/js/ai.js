@@ -92,6 +92,17 @@ export function britishTurn(state) {
     let share = 1;
     const leavingCity = REGIONS[army.region].city && best.kind !== "merge";
     if (leavingCity && threatTo(state, army.region, "B") > 0 && armyMen(army) > 5000) share = 0.75;
+
+    // A big attack on one of the player's armies: stop here, so the player can command the defense.
+    // The turn picks up again with resumeBritishAttack in turn.js.
+    if (state.fightDefense && best.kind === "attack") {
+      const foe = armyAt(state, best.region, "P");
+      if (foe && armyMen(foe) >= 3000 && armyMen(army) * share >= 3000) {
+        state.pendingDefense = { armyId: army.id, target: best.region, share, sea: !!best.sea };
+        reports.paused = true;
+        return reports;
+      }
+    }
     const r = moveArmy(state, army.id, best.region, { share, withGeneral: true });
     if (typeof r === "object") reports.push(r);
     else log(state, "British AI: " + r);

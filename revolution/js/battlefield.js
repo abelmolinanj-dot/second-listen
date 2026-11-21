@@ -71,6 +71,7 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
   const lanePick = { left: "auto", center: "auto", right: "auto" }; // "auto" leaves the lane to the general
   let phase = "deploy", speed = 1, paused = false, timer = null, shownEvents = 0, fallenShown = 0;
   const gName = b.generals.P ? b.generals.P.short : "The colonel";
+  const defending = b.defender === mySide;
 
   const root = document.createElement("div");
   root.id = "battlefield";
@@ -179,7 +180,7 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
   function hud() {
     const hour = Math.min(10, Math.floor(b.tick / 4) + 1);
     const clock = 7 + Math.floor(b.tick / 4);
-    $("bf-clock").textContent = phase === "deploy" ? "Dawn. Place your regiments." : `${clock > 12 ? clock - 12 : clock}:00 ${clock >= 12 ? "pm" : "am"} · hour ${hour} of 10`;
+    $("bf-clock").textContent = phase === "deploy" ? (defending ? "Dawn. The enemy is coming." : "Dawn. Place your regiments.") : `${clock > 12 ? clock - 12 : clock}:00 ${clock >= 12 ? "pm" : "am"} · hour ${hour} of 10`;
     const str = (side) => b.units.filter((u) => u.side === side && u.state === "ok").reduce((s, u) => s + u.men * (0.3 + u.morale / 100), 0);
     const sp = str("P"), sb = str("B"), tot = sp + sb || 1;
     $("bf-sp").style.width = `${(sp / tot) * 100}%`;
@@ -200,14 +201,14 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
     if (phase === "deploy") {
       const rows = mine.map((u) => `<div class="bf-row"><div class="bf-unitname"><b>${esc(u.name)}</b><small>${esc(KINDS[u.kind].label)} · ${menWords(u.men)}</small></div>
         <div class="bf-btns">${[...LANES, "reserve"].map((l) => `<button class="bf-btn${u.lane === l ? " on" : ""}" data-place="${u.id}" data-lane="${l}">${l === "reserve" ? "Reserve" : LANE_NAMES[l]}</button>`).join("")}</div></div>`).join("");
-      c.innerHTML = `<div class="bf-h">Your regiments. The left flank is the top lane, the right flank the bottom.</div>${rows}
+      c.innerHTML = `<div class="bf-h">${defending ? "The British are attacking. Place your regiments to receive them." : "Your regiments."} The left flank is the top lane, the right flank the bottom.</div>${rows}
         <div class="bf-row"><div class="bf-unitname"><b>${esc(gName)}</b><small>rides with the</small></div><div class="bf-btns">${LANES.map((l) => `<button class="bf-btn${b.generalLane.P === l ? " on" : ""}" data-glane="${l}">${LANE_NAMES[l]}</button>`).join("")}</div></div>
-        <div class="bf-actions"><button class="bf-big" id="bf-go">Begin the battle</button><button class="bf-btn" id="bf-quick">Let ${esc(gName)} fight it</button><button class="bf-btn" id="bf-cancel">Call off the attack</button></div>`;
+        <div class="bf-actions"><button class="bf-big" id="bf-go">Begin the battle</button><button class="bf-btn" id="bf-quick">Let ${esc(gName)} fight it</button>${defending ? "" : `<button class="bf-btn" id="bf-cancel">Call off the attack</button>`}</div>`;
       for (const x of c.querySelectorAll("[data-place]")) x.onclick = () => { const u = b.units.find((v) => v.id === x.dataset.place); u.lane = x.dataset.lane; sfx.tap(); drawUnits(); controls(); };
       for (const x of c.querySelectorAll("[data-glane]")) x.onclick = () => { b.generalLane.P = x.dataset.glane; sfx.tap(); controls(); };
       $("bf-go").onclick = begin;
       $("bf-quick").onclick = () => close("quick");
-      $("bf-cancel").onclick = () => close(null);
+      if ($("bf-cancel")) $("bf-cancel").onclick = () => close(null);
       return;
     }
     if (phase !== "fight") { c.innerHTML = ""; return; }
@@ -222,7 +223,7 @@ export function playBattle({ state, att, def, regionId, opts = {}, onDone }) {
     c.innerHTML = `${laneRows}
       ${reserve ? `<div class="bf-row"><div class="bf-unitname"><b>Reserve</b><small>${esc(reserve.name)}, ${menWords(reserve.men)}: send to the</small></div><div class="bf-btns">${LANES.map((l) => `<button class="bf-btn" data-res="${l}">${LANE_NAMES[l]}</button>`).join("")}</div></div>` : ""}
       <div class="bf-row"><div class="bf-unitname"><b>${esc(gName)}</b><small>rides to the</small></div><div class="bf-btns">${LANES.map((l) => `<button class="bf-btn${b.generalLane.P === l ? " on" : ""}" data-glane="${l}">${LANE_NAMES[l]}</button>`).join("")}<button class="bf-btn red" id="bf-rally" ${b.rallies.P ? "" : "disabled"}>Rally (${b.rallies.P})</button></div></div>
-      <div class="bf-actions"><button class="bf-btn" id="bf-pause">${paused ? "Resume" : "Pause"}</button><button class="bf-btn" id="bf-speed">Speed ${speed}x</button><button class="bf-btn" id="bf-retreat">Retreat the army</button></div>`;
+      <div class="bf-actions"><button class="bf-btn" id="bf-pause">${paused ? "Resume" : "Pause"}</button><button class="bf-btn" id="bf-speed">Speed ${speed}x</button><button class="bf-btn" id="bf-retreat">${defending ? "Give up the field" : "Retreat the army"}</button></div>`;
     for (const x of c.querySelectorAll("[data-order]")) x.onclick = () => {
       lanePick[x.dataset.order] = x.dataset.o; sfx.tap();
       if (x.dataset.o === "charge") sfx.charge({ left: -0.3, center: 0, right: 0.3 }[x.dataset.order]);

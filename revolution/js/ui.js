@@ -8,7 +8,7 @@ import {
   dateLabel, isWinter, money, fmtMen, menWords, COST, RECRUIT_BATCH, MILITIA_MONTHS, describeArmy, SIDES, WEATHER, season,
   supplyPath, buildDepot, SUPPLY_RANGE, DEPOT_COST, TACTICS, flankChance,
 } from "./rules.js";
-import { newGame, endTurn, scenarioOf, SAVE_VERSION } from "./turn.js";
+import { newGame, endTurn, resumeBritishAttack, scenarioOf, SAVE_VERSION } from "./turn.js";
 import { answerLetter, unanswered, urgent, trayLetters, senderName, senderRole, EVENTS } from "./letters.js";
 import { FIGURES, FIGURE_GROUPS } from "./data/figures.js";
 import { randomQuote } from "./data/quotes.js";
@@ -499,7 +499,7 @@ function modal(html, onReady) {
   if (onReady) onReady($("#modal-card"));
 }
 function closeModal() { $("#modal").hidden = true; render(); }
-$("#modal").addEventListener("click", (e) => { if (e.target.id === "modal" && state && !urgent(state).length) closeModal(); });
+$("#modal").addEventListener("click", (e) => { if (e.target.id === "modal" && state && !urgent(state).length && !state.pendingDefense) closeModal(); });
 
 const paras = (text) => text.split(/\n\n+/).map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
 
@@ -676,16 +676,21 @@ $("#btn-menu").onclick = () => showMenu();
 // ---------- turns ----------
 function onEndTurn() {
   if (urgent(state).length) { showLetters(); return; }
-  const before = state.log.length;
-  const startTurn = state.turn;
+  const ctx = { before: state.log.length, startTurn: state.turn, wasWinter: isWinter(state) };
   ui.army = null; ui.target = null; ui.split = false;
-  const wasWinter = isWinter(state);
   sfx.drumroll();
   nightFalls();
   tutorial.event("endTurn");
-  const summary = endTurn(state);
+  state.fightDefense = true; // big British attacks stop the turn so you can command the defense
+  afterBritish(endTurn(state), ctx);
+}
+
+// The British turn has run, or stopped to let you fight an attack on one of your armies.
+function afterBritish(summary, ctx) {
+  const { before, startTurn, wasWinter } = ctx;
   save();
   render();
+  if (summary && summary.paused) { askDefense(ctx); return; }
   $("#end-turn") && ($("#end-turn").disabled = true);
   if (summary) markBattles(summary.battles);
   const fresh = state.log.filter((l) => l.turn >= startTurn).slice(0, state.log.length - before);
@@ -698,6 +703,33 @@ function onEndTurn() {
     if (isWinter(state) && !wasWinter && !state.seenScenes?.winter) { (state.seenScenes ||= {}).winter = true; save(); music.dirge(); playScene("winter", {}, next); }
     else next();
   }, 2600); // long enough to watch the British move by night and read the quote
+}
+
+// The British are attacking one of your armies: command the defense, or leave it to the general.
+function askDefense(ctx) {
+  const p = state.pendingDefense;
+  const att = p && state.armies[p.armyId], def = p && armyAt(state, p.target, "P");
+  if (!att || !def) { afterBritish(resumeBritishAttack(state, null), ctx); return; }
+  const attNow = p.share < 1 ? { ...att, regulars: Math.round(att.regulars * p.share), militia: att.militia.map((m) => ({ ...m, men: Math.round(m.men * p.share) })) } : att;
+  const ag = generalOf(state, att), dg = generalOf(state, def), r = REGIONS[p.target];
+  const hold = 1 - winChance(state, attNow, def, p.target, { sea: p.sea });
+  const art = battleScene({ left: militiaMen(def) > def.regulars ? "militia" : "continental", right: att.hessian ? "hessian" : "british", terrain: r.terrain || (r.city || r.fort ? "city" : "open"), leftFlag: "P", rightFlag: att.hessian ? "H" : "B" });
+  const who = dg ? `${dg.short}'s army` : "your troops";
+  $("#modal").hidden = false;
+  modal(`<div class="closeup-art">${art}<div class="closeup-title"><span>${esc(dateLabel(state))}</span><h2>The British are attacking!</h2></div></div>
+    <p class="closeup-forces"><b>${menWords(armyMen(attNow))}</b> ${att.hessian ? "Hessians" : "British"}${ag ? ` under ${esc(ag.short)}` : ""} are marching on ${esc(who)} at <b>${esc(r.name)}</b>, ${menWords(armyMen(def))} strong${def.dugIn ? " and dug in" : ""}.</p>
+    <p class="meta">Left to ${esc(dg ? dg.short : "the colonel")}, the odds are about ${Math.round(hold * 100)}% that the line holds.</p>
+    <button class="btn primary fight-it" id="df-command">Command the defense ›</button>
+    <div class="modal-actions"><button class="btn" id="df-quick">Let ${esc(dg ? dg.short : "the colonel")} fight it</button></div>`, (c) => {
+    sfx.drumroll();
+    let once = false; // one answer per attack
+    c.querySelector("#df-quick").onclick = () => { if (once) return; once = true; $("#modal").hidden = true; afterBritish(resumeBritishAttack(state, null), ctx); };
+    c.querySelector("#df-command").onclick = () => {
+      if (once) return; once = true;
+      $("#modal").hidden = true;
+      playBattle({ state, att: attNow, def, regionId: p.target, opts: { sea: p.sea }, onDone: (res) => afterBritish(resumeBritishAttack(state, res && typeof res === "object" ? res : null), ctx) });
+    };
+  });
 }
 
 // The month's news, set as the front page of a period newspaper.
@@ -716,6 +748,13 @@ function headlineFor(battles, notes) {
   return ["News from the Army", "A quiet month, as quiet months go in wartime"];
 }
 
+// The first real sentence of a letter, for a news item that has nothing else to say.
+function newsLine(body) {
+  const text = String(body || "").replace(/^(Sir|Sirs|Gentlemen|Messieurs|My dear friends?|My lords),?s*/i, "").replace(/s+/g, " ").trim();
+  const m = text.match(/^.{20,220}?[.!?](s|$)/);
+  return m ? m[0].trim() : text.slice(0, 200);
+}
+
 function showReport(summary, lines, voices = []) {
   const S = scenarioOf(state).SCENARIO;
   const battles = summary ? summary.battles : [];
@@ -730,7 +769,7 @@ function showReport(summary, lines, voices = []) {
   let h = `<div class="gazette"><div class="gz-mast"><div class="gz-rule"></div><div class="gz-name">${esc(S.newspaper || "The Pennsylvania Evening Post")}</div><div class="gz-meta"><span>Price Four Coppers</span><span>${esc(dateLabel(state))}</span><span>No. ${issue}</span></div><div class="gz-rule"></div></div>`;
   h += `<h2 class="gz-head">${esc(head)}</h2><p class="gz-deck">${esc(deck)}</p>`;
   h += `<div class="gz-cols">`;
-  if (news.length) h += `<section><h3>Dispatches</h3>${news.map((l) => `<div class="gz-story"><b>${esc(l.title)}.</b> ${esc(l.outcome || "")} <i>(${esc(l.fromName)})</i></div>`).join("")}</section>`;
+  if (news.length) h += `<section><h3>Dispatches</h3>${news.map((l) => `<div class="gz-story"><b>${esc(l.title)}.</b> ${esc(l.outcome || newsLine(l.body))} <i>(${esc(l.fromName)})</i></div>`).join("")}</section>`;
   if (battles.length) h += `<section><h3>From the Seat of War</h3>${battles.map(battleHtml).join("")}</section>`;
   if (moves.length) h += `<section><h3>Movements of the Enemy</h3>${moves.map((m) => `<div class="logline">${m.side === "B" ? "British troops" : "Our troops"} moved from ${esc(REGIONS[m.from].name)} to ${esc(REGIONS[m.to].name)}.</div>`).join("")}</section>`;
   if (notes.length) h += `<section><h3>Intelligence &amp; Reports</h3>${notes.map((l) => `<div class="logline ${l.kind}">${esc(l.text)}</div>`).join("")}</section>`;
@@ -814,6 +853,8 @@ function continueGame() {
   $("#modal").hidden = true;
   fitView();
   render();
+  // Saved in the middle of a British attack: pick the battle up again.
+  if (state.pendingDefense && state.midTurn) { askDefense({ before: state.midTurn.before, startTurn: state.turn, wasWinter: isWinter(state) }); return; }
   if (urgent(state).length) showLetters();
 }
 
