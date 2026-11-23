@@ -41,9 +41,44 @@ function figure(dress, x, y, flip = false, scale = 0.9) {
   return `<g transform="translate(${x},${y}) scale(${flip ? -1 : 1},1)">${svg}</g>`;
 }
 
+const PICS = {
+  "grain": [
+    "grain",
+    "Edward Hicks, The Cornell Farm, 1848: a Bucks County farm"
+  ],
+  "printer": [
+    "printer",
+    "Charles E. Mills, Franklin the Printer, about 1914"
+  ],
+  "loyalist": [
+    "loyalist",
+    "Philip Dawe (attributed), The Bostonians Paying the Excise-Man, or Tarring and Feathering, 1774"
+  ],
+  "women": [
+    "women",
+    "Currier & Ives, Molly Pitcher at the Battle of Monmouth, nineteenth century"
+  ],
+  "enlist": [
+    "enlist",
+    "Jean-Baptiste de Verger, a soldier of the 1st Rhode Island Regiment, 1781"
+  ],
+  "quaker": [
+    "quaker",
+    "Egbert van Heemskerck, A Quaker Meeting (in England), about 1685"
+  ],
+  "smallpox": [
+    "smallpox",
+    "Edward Hicks, The Residence of David Twining in 1787, painted about 1846"
+  ],
+  "deserter": [
+    "deserter",
+    "Daniel Chodowiecki, Hessians Taken at Trenton Brought into Philadelphia, 1784"
+  ]
+};
 export function sceneArt(c) {
-  const def = SCENES[c.id];
-  return `<svg class="civ-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${BACK[def.back]()}${def.figures.map(([d, x, y, f]) => figure(d, x, y, f)).join("")}</svg>`;
+  const [file, caption] = PICS[c.id] || [];
+  if (!file) return "";
+  return `<figure class="civ-print"><img src="img/scenes/people/${file}.jpg" alt=""><figcaption>${caption.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</figcaption></figure>`;
 }
 
 // ---------- the scenes ----------

@@ -1,4 +1,5 @@
-// Set pieces: famous moments of the war played as short action games, on a 320 by 180 pixel canvas.
+// Set pieces: famous moments of the war played as short action games, drawn like period maps (and, for the
+// Chew House, on della Gatta's 1782 painting of it).
 //   delaware:   Christmas night 1776. Steer the Durham boats through the ice and get the army across before dawn.
 //   longisland: August 1776. Ferry the trapped army off Long Island by night, and keep the campfires burning.
 //   chew:       Germantown, October 1777. Silence the stone house's windows while the columns push past it.
@@ -42,13 +43,13 @@ export function playSetPiece(kind, onDone) {
   root.id = "setpiece";
   root.innerHTML = `
     <div class="sp-top"><div class="sp-title">${esc(info.title)}</div><div class="sp-hud" id="sp-hud"></div></div>
-    <div class="sp-stage"><canvas id="sp-canvas" width="${W}" height="${H}"></canvas>
+    <div class="sp-stage"><canvas id="sp-canvas" width="${W * 2}" height="${H * 2}"></canvas>
       <div class="sp-card" id="sp-card">${info.art ? `<div class="sp-art" style="background-image:url('${info.art}')"></div>` : ""}<div class="sp-when">${esc(info.when)}</div><h2>${esc(info.title)}</h2><p>${esc(info.intro)}</p><p class="sp-how">${esc(info.how)}</p>
         <div class="sp-btns"><button class="bf-big" id="sp-go">Take command</button><button class="bf-btn" id="sp-skip">${esc(info.officers)}</button></div></div></div>
     <div class="sp-extra" id="sp-extra"></div>`;
   document.body.appendChild(root);
   const cv = root.querySelector("#sp-canvas"), g = cv.getContext("2d");
-  g.imageSmoothingEnabled = false;
+  g.imageSmoothingEnabled = true;
   const hud = root.querySelector("#sp-hud"), card = root.querySelector("#sp-card"), extra = root.querySelector("#sp-extra");
   const game = GAMES[kind]();
   let raf = 0, last = 0, running = false, ended = false;
@@ -65,6 +66,7 @@ export function playSetPiece(kind, onDone) {
     const dt = Math.min(0.05, (t - last) / 1000 || 0);
     last = t;
     if (running) game.update(dt, keys);
+    g.setTransform(2, 0, 0, 2, 0, 0);
     game.draw(g);
     hud.textContent = game.hud();
     if (game.extra) { const x = game.extra(); if (extra.dataset.v !== x.key) { extra.dataset.v = x.key; extra.innerHTML = x.html; x.bind?.(extra); } }
@@ -84,20 +86,62 @@ export function playSetPiece(kind, onDone) {
   raf = requestAnimationFrame(frame);
 }
 
-// ---------- drawing helpers ----------
-const px = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
-function soldierPx(g, x, y, coat, step = 0, face = 1) {
-  px(g, x + 1, y, 3, 1, "#17131a"); px(g, x, y + 1, 5, 1, "#17131a"); // hat
-  px(g, x + 1, y + 2, 3, 2, "#d9a37c"); // face
-  px(g, x + 1, y + 4, 3, 3, coat); px(g, x + 2, y + 4, 1, 3, "#e9e4d6"); // coat, belts
-  px(g, x + 1 + (step ? 1 : 0), y + 7, 1, 2, "#e9e4d6"); px(g, x + 3 - (step ? 1 : 0), y + 7, 1, 2, "#e9e4d6"); // legs
-  px(g, x + (face > 0 ? 4 : 0), y - 2, 1, 7, "#6d7480"); // musket
+// ---------- drawing: the look of a period map, ink on white paper, with washes of color ----------
+const INK = "#0c1a38", PAPER = "#fbfaf6", BLUE = "#1d3f8f", RED = "#c8102e";
+const px = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+// A company or regiment as a block on the plan.
+function block(g, x, y, w, h, color, alpha = 1) { g.globalAlpha = alpha; g.fillStyle = color; g.fillRect(x, y, w, h); g.strokeStyle = "#ffffff"; g.lineWidth = 0.5; g.strokeRect(x, y, w, h); g.globalAlpha = 1; }
+// A rowing boat as the engravers drew it: a dark hull, oars out, men aboard as blue marks.
+function boat(g, x, y, men, t) {
+  g.fillStyle = INK; g.beginPath(); g.moveTo(x - 12, y - 2); g.quadraticCurveTo(x, y + 6, x + 12, y - 2); g.lineTo(x + 10, y - 3); g.lineTo(x - 10, y - 3); g.closePath(); g.fill();
+  const o = Math.sin(t * 8 + x) * 2;
+  g.strokeStyle = INK; g.lineWidth = 0.7; g.beginPath(); g.moveTo(x - 5, y); g.lineTo(x - 9, y + 5 + o); g.moveTo(x + 5, y); g.lineTo(x + 9, y + 5 - o); g.moveTo(x - 5, y - 2); g.lineTo(x - 9, y - 7 - o); g.moveTo(x + 5, y - 2); g.lineTo(x + 9, y - 7 + o); g.stroke();
+  for (let i = 0; i < men; i++) block(g, x - 7 + i * 5, y - 7, 3, 3, BLUE);
 }
-function snowfall(g, flakes, dt, wind = -8) {
-  for (const f of flakes) { f.y += f.v * dt; f.x += wind * dt; if (f.y > H) { f.y = -2; f.x = Math.random() * W; } if (f.x < 0) f.x = W; px(g, f.x, f.y, 1, 1, "#ffffff"); }
+// A soft cloud of powder smoke or fog.
+function cloud(g, x, y, r, alpha, color = "200,205,212") {
+  const grad = g.createRadialGradient(x, y, 0, x, y, r);
+  grad.addColorStop(0, `rgba(${color},${alpha})`); grad.addColorStop(1, `rgba(${color},0)`);
+  g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
 }
-const flakesOf = (n) => Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, v: 18 + Math.random() * 30 }));
+// A warm glow: campfires, muzzle flashes.
+function glow(g, x, y, r, alpha) {
+  const grad = g.createRadialGradient(x, y, 0, x, y, r);
+  grad.addColorStop(0, `rgba(255,236,170,${alpha})`); grad.addColorStop(0.4, `rgba(240,140,40,${alpha * 0.8})`); grad.addColorStop(1, "rgba(200,60,20,0)");
+  g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+}
+// Engraved water: a pale wash crossed by fine ink lines that drift with the current.
+function water(g, x, y, w, h, t, down = true) {
+  px(g, x, y, w, h, "#dfe7ef");
+  g.strokeStyle = "rgba(12,26,56,.28)"; g.lineWidth = 0.5;
+  for (let i = 0; i < 40; i++) {
+    const lx = x + ((i * 53) % w), ly = y + (((i * 37) + (down ? t * 26 : 0)) % h), lx2 = x + (((i * 53) + (down ? 0 : t * 18)) % w);
+    g.beginPath();
+    if (down) { g.moveTo(lx, ly); g.quadraticCurveTo(lx + 3, ly + 3, lx, ly + 7); } else { g.moveTo(lx2, ly); g.quadraticCurveTo(lx2 + 4, ly - 1.5, lx2 + 8, ly); }
+    g.stroke();
+  }
+}
+// Land on the plan: white paper, hachures along the shore, trees as stippled rings.
+function land(g, x, y, w, h, shoreX = null, shoreY = null, seed = 1) {
+  px(g, x, y, w, h, PAPER);
+  g.strokeStyle = INK; g.lineWidth = 0.5;
+  if (shoreX !== null) for (let yy = y; yy < y + h; yy += 3) { g.beginPath(); g.moveTo(shoreX, yy); g.lineTo(shoreX + (shoreX > x + w / 2 ? -4 : 4), yy + 2); g.stroke(); }
+  if (shoreY !== null) for (let xx = x; xx < x + w; xx += 3) { g.beginPath(); g.moveTo(xx, shoreY); g.lineTo(xx + 2, shoreY + (shoreY > y + h / 2 ? -4 : 4)); g.stroke(); }
+  let r = seed;
+  const rand = () => { r = (r * 16807) % 2147483647; return r / 2147483647; };
+  for (let i = 0; i < Math.floor((w * h) / 260); i++) { const tx = x + 4 + rand() * (w - 8), ty = y + 4 + rand() * (h - 8); g.beginPath(); g.arc(tx, ty, 1.4, 0, Math.PI * 2); g.stroke(); }
+}
+const label = (g, text, x, y, size = 6, italic = true, align = "center") => { g.fillStyle = INK; g.font = `${italic ? "italic " : ""}${size}px "IM Fell English", Georgia, serif`; g.textAlign = align; g.fillText(text, x, y); };
+// Sleet: fine grey streaks.
+function sleet(g, flakes, dt) {
+  g.strokeStyle = "rgba(90,100,115,.45)"; g.lineWidth = 0.5;
+  for (const f of flakes) { f.y += f.v * dt; f.x -= 10 * dt; if (f.y > H) { f.y = -4; f.x = Math.random() * W; } if (f.x < 0) f.x = W; g.beginPath(); g.moveTo(f.x, f.y); g.lineTo(f.x - 1.2, f.y + 3); g.stroke(); }
+}
+const flakesOf = (n) => Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, v: 40 + Math.random() * 40 }));
 const clockText = (startHour, hours, frac) => { const t = startHour + hours * Math.min(1, frac); const h = Math.floor(t) % 24, m = Math.floor((t % 1) * 60); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`; };
+// della Gatta's 1782 painting of Germantown, for the Chew House.
+const GERMANTOWN = typeof Image !== "undefined" ? Object.assign(new Image(), { src: "img/scenes/battles/germantown.jpg" }) : null;
+
 
 // ---------- the games ----------
 const GAMES = {
@@ -137,27 +181,29 @@ const GAMES = {
       },
       draw(g) {
         const night = Math.min(1, S.t / T);
-        px(g, 0, 0, W, H, "#0d1424");
-        // Banks: Pennsylvania on the left, New Jersey on the right, in snow.
-        px(g, 0, 0, RIVER[0], H, "#c9d3de"); px(g, RIVER[1], 0, W - RIVER[1], H, "#c9d3de");
-        for (let y = 4; y < H; y += 22) { px(g, 10, y, 4, 8, "#1f3320"); px(g, 8, y + 4, 8, 4, "#2a4428"); px(g, RIVER[1] + 16, y + 9, 4, 8, "#1f3320"); px(g, RIVER[1] + 14, y + 13, 8, 4, "#2a4428"); }
-        // The river, with streaks of current.
-        px(g, RIVER[0], 0, RIVER[1] - RIVER[0], H, "#24415e");
-        for (let i = 0; i < 26; i++) { const y = ((i * 37 + S.t * 30) % (H + 10)) - 5; px(g, RIVER[0] + ((i * 53) % (RIVER[1] - RIVER[0] - 10)), y, 6, 1, "#3a5f80"); }
-        for (const f of S.floes) { px(g, f.x, f.y, f.w, f.h, "#e6eef5"); px(g, f.x + 1, f.y + f.h - 2, f.w - 2, 2, "#a9bccd"); px(g, f.x + 2, f.y + 1, 3, 1, "#ffffff"); }
-        // The Durham boat: dark hull, oars, men standing.
-        const bx = S.bx, by = S.by;
-        px(g, bx - 10, by - 2, 20, 5, "#3a2a1c"); px(g, bx - 8, by + 3, 16, 1, "#21160d");
-        for (let i = -6; i <= 6; i += 6) { soldierPx(g, bx + i - 2, by - 12, "#24407a", Math.floor(S.t * 3) % 2); }
-        const oar = Math.sin(S.t * 8) * 2;
-        px(g, bx - 6, by + 3 + oar, 1, 4, "#8a6a45"); px(g, bx + 4, by + 3 - oar, 1, 4, "#8a6a45");
-        for (const s of S.splash) px(g, s.x - 6, s.y - 6, 12 * s.t, 3, "#ffffff");
-        // Loads waiting and loads landed.
-        for (let i = 0; i < NEED - S.loads - 1; i++) soldierPx(g, 4 + (i % 3) * 9, 150 - Math.floor(i / 3) * 12, "#24407a");
-        for (let i = 0; i < S.loads; i++) soldierPx(g, RIVER[1] + 4 + (i % 4) * 9, 150 - Math.floor(i / 4) * 12, "#24407a");
-        // Sleet, and the sky lightening toward dawn.
-        snowfall(g, S.flakes, 1 / 60);
-        if (night > 0.75) { g.fillStyle = `rgba(230,170,120,${(night - 0.75) * 0.9})`; g.fillRect(0, 0, W, H); }
+        // Pennsylvania and New Jersey in snow, the Delaware between, drawn as on a map of the crossing.
+        land(g, 0, 0, RIVER[0], H, RIVER[0] - 1, null, 7); land(g, RIVER[1], 0, W - RIVER[1], H, RIVER[1] + 1, null, 11);
+        water(g, RIVER[0], 0, RIVER[1] - RIVER[0], H, S.t, true);
+        g.save(); g.translate(14, 90); g.rotate(-Math.PI / 2); label(g, "PENNSYLVANIA", 0, 0, 7, false); g.restore();
+        g.save(); g.translate(W - 10, 90); g.rotate(Math.PI / 2); label(g, "NEW JERSEY", 0, 0, 7, false); g.restore();
+        label(g, "McConkey's Ferry", 22, 12, 5.5); label(g, "Johnson's Ferry", W - 22, 12, 5.5);
+        label(g, "River Delaware", (RIVER[0] + RIVER[1]) / 2, H - 6, 7);
+        // Ice floes: white, outlined and shaded in ink.
+        for (const f of S.floes) {
+          g.fillStyle = "#ffffff"; g.strokeStyle = INK; g.lineWidth = 0.6;
+          g.beginPath(); g.moveTo(f.x, f.y + f.h * 0.3); g.lineTo(f.x + f.w * 0.3, f.y); g.lineTo(f.x + f.w, f.y + f.h * 0.2); g.lineTo(f.x + f.w * 0.9, f.y + f.h); g.lineTo(f.x + f.w * 0.2, f.y + f.h * 0.9); g.closePath(); g.fill(); g.stroke();
+          g.beginPath(); g.moveTo(f.x + f.w * 0.3, f.y + f.h * 0.7); g.lineTo(f.x + f.w * 0.7, f.y + f.h * 0.8); g.stroke();
+        }
+        // Glover's Durham boat, and ripples where it hits the ice.
+        boat(g, S.bx, S.by, 3, S.t);
+        for (const s of S.splash) { g.strokeStyle = `rgba(12,26,56,${s.t})`; g.lineWidth = 0.7; g.beginPath(); g.arc(s.x, s.y, 14 - s.t * 12, 0, Math.PI * 2); g.stroke(); }
+        // The army waiting on the Pennsylvania shore, and the loads landed in New Jersey.
+        for (let i = 0; i < NEED - S.loads - 1; i++) block(g, 6 + (i % 3) * 10, 150 - Math.floor(i / 3) * 12, 7, 9, BLUE);
+        for (let i = 0; i < S.loads; i++) block(g, RIVER[1] + 6 + (i % 3) * 10, 150 - Math.floor(i / 3) * 12, 7, 9, BLUE);
+        // Sleet, the dark of the night, and the grey of dawn coming.
+        sleet(g, S.flakes, 1 / 60);
+        g.fillStyle = `rgba(12,26,56,${0.22 * (1 - Math.max(0, night - 0.7) * 3)})`; g.fillRect(0, 0, W, H);
+        if (night > 0.75) { g.fillStyle = `rgba(240,200,160,${(night - 0.75) * 0.8})`; g.fillRect(0, 0, W, H); }
       },
       hud: () => `${clockText(23, 4, S.t / T)} · ${S.loads} of ${NEED} loads across`,
       score: () => S.loads / NEED,
@@ -194,34 +240,36 @@ const GAMES = {
         if (S.pickets >= 100 || S.t >= T) game.over = true;
       },
       draw(g) {
-        px(g, 0, 0, W, H, "#0b1220");
-        // Manhattan shore at the top, Brooklyn at the bottom, the East River between.
-        px(g, 0, 0, W, 26, "#1d2418"); for (let x = 6; x < W; x += 30) { px(g, x, 8, 10, 8, "#3b2e24"); px(g, x + 3, 11, 2, 2, "#e8b84a"); }
-        px(g, 0, 26, W, 128, "#14283e");
-        for (let i = 0; i < 30; i++) { const y = 30 + ((i * 41) % 120), x = ((i * 67 + S.t * 18) % (W + 20)) - 10; px(g, x, y, 7, 1, "#22405e"); }
-        px(g, 0, 154, W, 26, "#2a2418");
+        // New York at the top, Brooklyn at the bottom, the East River between, as on a map of the retreat.
+        land(g, 0, 0, W, 26, null, 25, 5);
+        for (let x = 14; x < W - 10; x += 24) { g.strokeStyle = INK; g.lineWidth = 0.5; g.strokeRect(x, 6, 12, 7); g.beginPath(); for (let k = 0; k < 12; k += 2) { g.moveTo(x + k, 6); g.lineTo(x + k + 2, 13); } g.stroke(); }
+        label(g, "NEW YORK", W / 2, 22, 7, false);
+        water(g, 0, 26, W, 128, S.t, false);
+        label(g, "East River", W - 40, 92, 8);
+        land(g, 0, 154, W, 26, null, 155, 9);
+        label(g, "BROOKLYN", W - 30, 176, 6, false);
         // Companies waiting on the Brooklyn shore.
-        for (let i = 0; i < S.waiting; i++) soldierPx(g, 8 + (i % 15) * 20, 164 - Math.floor(i / 15) * 9, "#24407a");
-        // Campfires: tap to stoke.
+        for (let i = 0; i < S.waiting; i++) block(g, 8 + (i % 15) * 19, 160 + Math.floor(i / 15) * 8, 8, 5, BLUE);
+        // Campfires: tap to stoke. A dying fire fades to a grey ring.
         for (const f of S.fires) {
-          px(g, f.x - 4, 175, 8, 2, "#3b2614");
-          if (f.life > 0.05) { const h = 2 + f.life * 6; px(g, f.x - 2, 175 - h, 4, h, f.life > 0.4 ? "#ffb02e" : "#e8501f"); px(g, f.x - 1, 175 - h * 0.6, 2, h * 0.5, "#fff2a8"); }
-          else px(g, f.x - 2, 171, 4, 4, "#555");
+          if (f.life > 0.05) glow(g, f.x, 174, 3 + f.life * 7, 0.55 + f.life * 0.4);
+          g.strokeStyle = INK; g.lineWidth = 0.6; g.beginPath(); g.arc(f.x, 174, 2.5, 0, Math.PI * 2); g.stroke();
+          if (f.life < 0.15) { g.strokeStyle = RED; g.beginPath(); g.arc(f.x, 174, 6, 0, Math.PI * 2); g.stroke(); }
         }
-        // Boats.
+        // The boats: a ring around each one waiting at the shore for a company.
         for (const b of S.boats) {
-          px(g, b.x - 12, b.y - 2, 24, 5, "#3a2a1c");
-          if (b.state === "out") for (let i = -8; i <= 8; i += 8) soldierPx(g, b.x + i - 2, b.y - 11, "#24407a");
-          if (b.state === "dock") { px(g, b.x - 12, b.y - 8, 24, 2, S.waiting ? "#e8d9a8" : "#555"); }
-          const oar = Math.sin(S.t * 9 + b.x) * 2; px(g, b.x - 13, b.y + oar, 2, 1, "#8a6a45"); px(g, b.x + 11, b.y - oar, 2, 1, "#8a6a45");
+          if (b.state === "dock" && S.waiting) { g.strokeStyle = RED; g.lineWidth = 0.8; g.setLineDash([2, 2]); g.beginPath(); g.arc(b.x, b.y - 2, 14, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
+          boat(g, b.x, b.y, b.state === "out" ? 3 : 0, S.t);
         }
         // Companies safe on Manhattan.
-        for (let i = 0; i < S.saved; i++) px(g, 6 + (i % 30) * 10, 20, 4, 4, "#24407a");
-        // Fog, thick until near dawn, and the pickets' line creeping in from the left.
-        const fog = S.t < T * 0.8 ? 0.35 : Math.max(0, 0.35 - (S.t - T * 0.8) / (T * 0.2) * 0.35);
-        g.fillStyle = `rgba(200,210,220,${fog})`; g.fillRect(0, 26, W, 128);
-        px(g, 0, 150, (S.pickets / 100) * W, 3, "#c8102e");
-        for (let x = 4; x < (S.pickets / 100) * W; x += 26) soldierPx(g, x, 140, "#b8241e", Math.floor(S.t * 3) % 2);
+        for (let i = 0; i < S.saved; i++) block(g, 6 + (i % 30) * 10, 15, 6, 4, BLUE);
+        // Fog over the river, thick until dawn; the British pickets closing in from the left in red.
+        const fog = S.t < T * 0.8 ? 1 : Math.max(0, 1 - (S.t - T * 0.8) / (T * 0.2));
+        for (let i = 0; i < 9; i++) cloud(g, ((i * 41 + S.t * 6) % (W + 60)) - 30, 60 + ((i * 23) % 80), 46, 0.5 * fog, "235,238,242");
+        const reach = (S.pickets / 100) * W;
+        g.strokeStyle = RED; g.lineWidth = 1; g.setLineDash([3, 2]); g.beginPath(); g.moveTo(0, 157); g.lineTo(reach, 157); g.stroke(); g.setLineDash([]);
+        for (let x = 4; x < reach; x += 22) block(g, x, 150, 9, 4, RED);
+        g.fillStyle = "rgba(12,26,56,.18)"; g.fillRect(0, 0, W, H);
       },
       hud: () => `${clockText(22, 9, S.t / T)} · ${S.saved} of ${TOTAL} companies across · British pickets ${Math.round(S.pickets)}%`,
       score: () => S.saved / TOTAL,
@@ -233,14 +281,14 @@ const GAMES = {
 
   chew() {
     const T = 40;
-    const WIN = [[118, 52], [148, 52], [178, 52], [118, 82], [148, 82], [178, 82]];
+    const WIN = [[152, 56], [175, 56], [198, 56], [237, 60], [262, 60], [200, 131]];
     const S = { t: 0, progress: 0, losses: 0, windows: WIN.map(() => ({ state: "idle", t: Math.random() * 2 })), bypass: false, hits: 0, silenced: 0, flashes: [] };
     const game = {
       over: false,
       press(x, y) {
         WIN.forEach(([wx, wy], i) => {
           const w = S.windows[i];
-          if (Math.abs(x - (wx + 6)) < 12 && Math.abs(y - (wy + 7)) < 12 && w.state === "aim") { w.state = "quiet"; w.t = 3.2; S.silenced++; sfx.volley(4, 0); S.flashes.push({ x: wx, y: wy, t: 0.3 }); }
+          if (Math.abs(x - wx) < 10 && Math.abs(y - wy) < 16 && w.state === "aim") { w.state = "quiet"; w.t = 3.2; S.silenced++; sfx.volley(4, 0); S.flashes.push({ x: wx, y: wy, t: 0.3 }); }
         });
       },
       extra() {
@@ -264,29 +312,23 @@ const GAMES = {
         if (S.progress >= 100 || S.t >= T) game.over = true;
       },
       draw(g) {
-        // Fog over Germantown: grey-green, thinning as the morning goes on.
-        px(g, 0, 0, W, H, "#59645a");
-        px(g, 0, 120, W, 60, "#3d4a30");
-        // The Chew house: grey stone, two floors of windows, a pitched roof.
-        px(g, 104, 34, 100, 78, "#8a8579"); px(g, 98, 26, 112, 10, "#4a3a30"); px(g, 112, 18, 84, 10, "#3b2e26");
-        for (let x = 104; x < 204; x += 8) px(g, x, 34, 1, 78, "#7a756a");
-        px(g, 146, 92, 16, 20, "#3b2e26");
-        WIN.forEach(([wx, wy], i) => {
+        // della Gatta's painting of the Chew House (1782), cropped close to the house.
+        if ((GERMANTOWN && GERMANTOWN.complete && GERMANTOWN.naturalWidth)) g.drawImage(GERMANTOWN, 860, 300, 420, 236, 0, 0, W, H); else px(g, 0, 0, W, H, "#8a8f86");
+        // The windows: a glow when a soldier inside takes aim, darkness when a volley has silenced it.
+        WIN.forEach(([cx, cy], i) => {
           const w = S.windows[i];
-          px(g, wx, wy, 12, 14, w.state === "quiet" ? "#2a2622" : "#1a1714");
-          px(g, wx, wy + 6, 12, 1, "#8a8579"); px(g, wx + 6, wy, 1, 14, "#8a8579");
-          if (w.state === "aim") { px(g, wx + 2, wy + 2, 8, 10, Math.floor(S.t * 10) % 2 ? "#c8102e" : "#e84a2a"); px(g, wx + 4, wy + 5, 4, 4, "#fff2a8"); }
+          if (w.state === "aim") { glow(g, cx, cy, 16, 0.55 + 0.35 * Math.abs(Math.sin(S.t * 14))); g.strokeStyle = RED; g.lineWidth = 1.2; g.strokeRect(cx - 7, cy - 13, 14, 26); }
+          if (w.state === "quiet") { g.fillStyle = "rgba(10,10,14,.55)"; g.fillRect(cx - 5, cy - 11, 10, 22); }
         });
-        for (const f of S.flashes) { g.fillStyle = f.enemy ? "rgba(255,210,120,.9)" : "rgba(240,240,230,.9)"; g.fillRect(f.x - 6, f.y - 4, 24, 22); }
-        // The road, and the American columns pushing past along it.
-        px(g, 0, 130, W, 10, "#6b5a40");
+        for (const f of S.flashes) cloud(g, f.x, f.y, 26, 0.8, f.enemy ? "255,210,140" : "240,240,232");
+        // Smoke drifting off the house, and the fog lifting as the morning goes on.
+        for (let i = 0; i < 6; i++) cloud(g, ((i * 61 + S.t * 8) % (W + 40)) - 20, 50 + ((i * 29) % 70), 28, 0.35);
+        g.fillStyle = `rgba(200,206,200,${Math.max(0, 0.5 - S.t / T * 0.5)})`; g.fillRect(0, 0, W, H);
+        // The American columns pushing past: blue blocks along the bottom of the picture.
+        g.fillStyle = "rgba(251,250,246,.85)"; g.fillRect(0, H - 16, W, 16);
         const lead = (S.progress / 100) * (W + 40) - 30;
-        for (let i = 0; i < 14; i++) { const x = lead - i * 11; if (x > -8 && x < W) soldierPx(g, x, 128 + (i % 2) * 4, "#24407a", Math.floor(S.t * 4 + i) % 2); }
-        // Smoke drifting from the windows.
-        g.fillStyle = "rgba(220,220,210,.35)";
-        for (let i = 0; i < 8; i++) g.fillRect(((i * 47 + S.t * 9) % W), 40 + ((i * 29) % 60), 14, 8);
-        // The fog, lifting.
-        g.fillStyle = `rgba(190,198,190,${Math.max(0, 0.45 - S.t / T * 0.45)})`; g.fillRect(0, 0, W, H);
+        for (let i = 0; i < 12; i++) { const x = lead - i * 12; if (x > -10 && x < W) block(g, x, H - 12, 9, 7, BLUE); }
+        label(g, "The American columns", 6, H - 3, 6, true, "left");
       },
       hud: () => `${clockText(6, 2.5, S.t / T)} · columns past the house ${Math.min(100, Math.round(S.progress))}% · men lost ${Math.round(S.losses)}`,
       score: () => Math.max(0, Math.min(1, S.progress / 100) - Math.max(0, S.losses - 120) / 900),

@@ -751,3 +751,16 @@ button.gcard { width: 100%; text-align: left; font: inherit; color: var(--ink); 
 .bp-fire { animation: bp-fire .45s steps(2) infinite; }
 @keyframes bp-fire { 50% { opacity: .15; } }
 @media (prefers-reduced-motion: reduce) { .bf-cloud, .bp-fire { animation: none; } }
+
+/* Civilian scenes: a real print or painting, shown whole on a navy mat with its caption. */
+.civ-print { margin: 0 0 10px; padding: 10px; background: #0c1a38; text-align: center; }
+.civ-print img { display: block; margin: 0 auto; max-width: 100%; max-height: 280px; object-fit: contain; box-shadow: 0 0 0 1px #ffffff; }
+.civ-print figcaption { margin-top: 6px; font-family: var(--serif); font-style: italic; font-size: 13px; color: #dfe6f6; }
+/* Set pieces in the period-map style: smooth drawing, plain lettering. */
+#sp-canvas { image-rendering: auto; background: #fbfaf6; }
+#setpiece { font-family: var(--sans); font-size: 15px; }
+#setpiece .sp-title { font-family: var(--serif); font-size: 22px; text-transform: none; }
+#setpiece .sp-hud { font-size: 14px; }
+#setpiece .sp-card h2 { font-family: var(--serif); font-size: 28px; text-transform: none; }
+#setpiece .sp-card p { font-size: 15px; line-height: 1.4; }
+#setpiece .sp-when { font-size: 13px; }
